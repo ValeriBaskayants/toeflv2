@@ -2,6 +2,7 @@ import { NestFactory } from '@nestjs/core';
 import { ValidationPipe } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { json, urlencoded } from 'express';
+import cookieParser from 'cookie-parser'; 
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
@@ -11,10 +12,12 @@ async function bootstrap() {
 
   app.use(json({ limit: '50mb' }));
   app.use(urlencoded({ limit: '50mb', extended: true }));
+  
+  app.use(cookieParser());
 
   app.enableCors({
     origin: config.get<string>('corsOrigin') || 'http://localhost:5173',
-    credentials: true,
+    credentials: true, 
   });
 
   app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));

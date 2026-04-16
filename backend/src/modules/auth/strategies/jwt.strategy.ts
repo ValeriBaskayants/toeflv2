@@ -2,48 +2,31 @@ import { Injectable, UnauthorizedException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { PassportStrategy } from '@nestjs/passport';
 import { ExtractJwt, Strategy } from 'passport-jwt';
-import type { Request } from 'express'; 
-import { UsersService } from '../../users/users.service';
-
-export type JwtPayload = {
-  sub: string;    
-  email: string;
-  roles: string[];
-};
+import type { JwtPayload, JwtUserPayload } from '../interfaces/jwt-payload.interface';
 
 @Injectable()
-export class JwtStrategy extends PassportStrategy(Strategy) {
-  constructor(
-    private readonly configService: ConfigService,
-    private readonly usersService: UsersService, 
-  ) {
+export class JwtStrategy extends PassportStrategy(Strategy, 'jwt') {
+  constructor(configService: ConfigService) {
     super({
-      jwtFromRequest: ExtractJwt.fromExtractors([
-        (request: Request) => {
-          let token = null;
-          if (request && request.cookies) {
-            token = request.cookies['access_token'];
-          }
-          return token;
-        },
-        ExtractJwt.fromAuthHeaderAsBearerToken(),
-      ]),
+      // Access token comes ONLY from Authorization: Bearer header
+      // NOT from cookies (refresh token is in cookie, access token is in memory)
+      jwtFromRequest: ExtractJwt.fromAuthHeaderAsBearerToken(),
       ignoreExpiration: false,
-      secretOrKey: configService.get<string>('jwt.secret'),
+      secretOrKey: configService.getOrThrow<string>('jwt.secret'),
     });
   }
 
-  async validate(payload: JwtPayload) {
-    if (!payload.sub) {
-      throw new UnauthorizedException('Invalid token payload');
+  // NO DB CALL — the JWT is cryptographically verified above
+  // Trust the payload: it's signed and not expired
+  // Performance: this runs on EVERY protected request
+  validate(payload: JwtPayload): JwtUserPayload {
+    if (!payload.sub || !payload.role) {
+      throw new UnauthorizedException('Malformed token payload');
     }
 
-    const user = await this.usersService.findById(payload.sub);
-    
-    if (!user) {
-      throw new UnauthorizedException('User no longer exists');
-    }
-
-    return user;
+    return {
+      id: payload.sub,
+      role: payload.role,
+    };
   }
 }

@@ -1,8 +1,11 @@
 import { Module } from '@nestjs/common';
+import { APP_GUARD } from '@nestjs/core';
 import { ConfigModule, ConfigService } from '@nestjs/config';
-import { ThrottlerModule } from '@nestjs/throttler';
+import { ThrottlerModule, ThrottlerGuard } from '@nestjs/throttler';
 import configuration from './config/configuration';
 import PrismaModule from './modules/prisma/prisma.module';
+import { AuthModule } from './modules/auth/auth.module';
+import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
@@ -13,13 +16,28 @@ import PrismaModule from './modules/prisma/prisma.module';
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
-        throttlers: [{
-          ttl: (config.get<number>('throttle.ttl') ?? 60) * 1000,
-          limit: config.get<number>('throttle.limit') ?? 120,
-        }],
+        throttlers: [
+          {
+            ttl: config.getOrThrow<number>('throttle.ttl') * 1000,
+            limit: config.getOrThrow<number>('throttle.limit'),
+          },
+        ],
       }),
     }),
-    PrismaModule
+    PrismaModule,
+    AuthModule, // AuthModule internally imports UsersModule and SessionsModule
+  ],
+  providers: [
+    // ThrottlerGuard first — rate limit BEFORE auth check
+    {
+      provide: APP_GUARD,
+      useClass: ThrottlerGuard,
+    },
+    // JwtAuthGuard globally — all routes protected unless @Public()
+    {
+      provide: APP_GUARD,
+      useClass: JwtAuthGuard,
+    },
   ],
 })
 export class AppModule {}

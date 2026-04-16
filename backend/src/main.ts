@@ -1,30 +1,39 @@
-import { NestFactory } from '@nestjs/core';
-import { ValidationPipe } from '@nestjs/common';
+import { NestFactory, Reflector } from '@nestjs/core';
+import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
-import { json, urlencoded } from 'express';
-import cookieParser from 'cookie-parser'; 
+import cookieParser from 'cookie-parser';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
-async function bootstrap() {
-  const app = await NestFactory.create(AppModule, { bodyParser: false });
+async function bootstrap(): Promise<void> {
+  const logger = new Logger('Bootstrap');
+
+  const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
-  app.use(json({ limit: '50mb' }));
-  app.use(urlencoded({ limit: '50mb', extended: true }));
-  
   app.use(cookieParser());
 
   app.enableCors({
-    origin: config.get<string>('corsOrigin') || 'http://localhost:5173',
+    origin: config.get('CORS_ORIGIN'), 
     credentials: true, 
+    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
   });
 
-  app.useGlobalPipes(new ValidationPipe({ whitelist: true, transform: true }));
+  app.useGlobalPipes(
+    new ValidationPipe({
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+    }),
+  );
+
   app.useGlobalFilters(new HttpExceptionFilter());
 
-  const port = config.get<number>('port') || 3001;
+  app.enableShutdownHooks();
+
+  const port = config.getOrThrow<number>('port');
   await app.listen(port);
-  console.log(`🚀 Backend running on http://localhost:${port}`);
+  logger.log(`Backend running on http://localhost:${port}`);
 }
-bootstrap();
+
+void bootstrap();

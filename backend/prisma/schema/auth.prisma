@@ -4,28 +4,29 @@ enum Role {
 }
 
 model User {
-  id        String    @id @default(auto()) @map("_id") @db.ObjectId
-  email     String    @unique
-  googleId  String    @unique
-  name      String
-  avatar    String?
-  role      Role      @default(USER)
-  
-  sessions  Session[] 
-  
-  createdAt DateTime  @default(now())
-  updatedAt DateTime  @updatedAt
+  id       String    @id @default(auto()) @map("_id") @db.ObjectId
+  email    String    @unique
+  googleId String    @unique
+  name     String
+  avatar   String?
+  role     Role      @default(USER)
+  sessions Session[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 }
 
 model Session {
   id        String   @id @default(auto()) @map("_id") @db.ObjectId
-  tokenHash String   @unique 
+  tokenHash String   @unique
+  uaHash    String
+  ip        String?
   userId    String   @db.ObjectId
   user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-  
-  userAgent String?
-  ip        String?
-  
+
   expiresAt DateTime
   createdAt DateTime @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
 }

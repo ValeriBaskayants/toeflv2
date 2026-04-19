@@ -5,7 +5,7 @@ import { PrismaService } from '../prisma/prisma.service';
 
 @Injectable()
 export class SessionsService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   // Cryptographically secure: 64 bytes = 512 bits of entropy
   generateRefreshToken(): string {
@@ -23,6 +23,7 @@ export class SessionsService {
     return createHash('sha256').update(userAgent).digest('hex');
   }
 
+
   async createSession(params: {
     userId: string;
     refreshToken: string;
@@ -33,8 +34,14 @@ export class SessionsService {
     const tokenHash = this.hashToken(params.refreshToken);
     const uaHash = this.hashUserAgent(params.userAgent);
 
+    // Convert to number just in case a string slipped through
+    const days = Number(params.expiresInDays);
+
+    // Fallback to 7 days if the value is missing or not a number
+    const safeDays = isNaN(days) ? 7 : days;
+
     const expiresAt = new Date();
-    expiresAt.setDate(expiresAt.getDate() + params.expiresInDays);
+    expiresAt.setDate(expiresAt.getDate() + safeDays);
 
     return this.prisma.session.create({
       data: {

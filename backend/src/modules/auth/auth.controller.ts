@@ -30,7 +30,7 @@ export class AuthController {
 
   // Sets HttpOnly cookie for refresh token
   private setRefreshCookie(res: Response, token: string): void {
-    const expiresInDays = this.configService.getOrThrow<number>('jwt.refreshExpiresInDays');
+    const days = this.configService.getOrThrow<number>('jwt.refreshDays');
 
     res.cookie(REFRESH_TOKEN_COOKIE, token, {
       httpOnly: true,
@@ -38,7 +38,7 @@ export class AuthController {
       // In prod: true (HTTPS required)
       secure: this.configService.get<string>('nodeEnv') === 'production',
       sameSite: 'lax', // 'lax' required for OAuth redirect flow (not 'strict')
-      maxAge: expiresInDays * 24 * 60 * 60 * 1000,
+      maxAge: days * 24 * 60 * 60 * 1000,
       path: '/',
     });
   }

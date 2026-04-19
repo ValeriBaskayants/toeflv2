@@ -4,7 +4,7 @@ import { z } from 'zod';
 const envSchema = z.object({
   PORT: z.coerce.number().default(3001),
   NODE_ENV: z.enum(['development', 'production', 'test']).default('development'),
-  
+
   // База данных
   DATABASE_URL: z.string().url(),
 
@@ -12,7 +12,7 @@ const envSchema = z.object({
   JWT_SECRET: z.string().min(16),
   JWT_EXPIRES_IN: z.string().default('7d'),
   ADMIN_PASSWORD: z.string(),
-
+  REFRESH_EXPIRES_DAYS: z.coerce.number().default(7),
   // Google OAuth
   GOOGLE_CLIENT_ID: z.string(),
   GOOGLE_CLIENT_SECRET: z.string(),
@@ -40,9 +40,10 @@ export default () => {
     database: {
       url: parsed.data.DATABASE_URL,
     },
-    jwt: {
+   jwt: {
       secret: parsed.data.JWT_SECRET,
       expiresIn: parsed.data.JWT_EXPIRES_IN,
+      refreshDays: parsed.data.REFRESH_EXPIRES_DAYS, // New key!
     },
     google: {
       clientId: parsed.data.GOOGLE_CLIENT_ID,

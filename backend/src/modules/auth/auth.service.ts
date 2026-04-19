@@ -27,7 +27,7 @@ export class AuthService {
   }
 
   private getRefreshExpiresInDays(): number {
-    return this.configService.getOrThrow<number>('jwt.refreshExpiresInDays');
+    return this.configService.getOrThrow<number>('jwt.expiresIn');
   }
 
   // Called after Google OAuth: user is already fetched/created by GoogleStrategy

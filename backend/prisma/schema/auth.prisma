@@ -3,14 +3,35 @@ enum Role {
   ADMIN
 }
 
+enum Level {
+  A1
+  A1_PLUS
+  A2
+  A2_PLUS
+  B1
+  B1_PLUS
+  B2
+  B2_PLUS
+  C1
+  C2
+}
+
 model User {
-  id       String    @id @default(auto()) @map("_id") @db.ObjectId
-  email    String    @unique
-  googleId String    @unique
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  email    String @unique
+  googleId String @unique
   name     String
   avatar   String?
-  role     Role      @default(USER)
-  sessions Session[]
+  role     Role   @default(USER)
+
+  currentLevel     Level    @default(A1)
+  totalXp          Int      @default(0)
+  streak           Int      @default(0)
+  lastActivityDate DateTime?
+
+  sessions      Session[]
+  levelProgress LevelProgress?
+  activities    DailyActivity[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

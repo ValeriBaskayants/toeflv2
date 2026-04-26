@@ -1,0 +1,49 @@
+// Level enum is declared in auth.prisma.
+// Prisma merges all *.prisma files in the schema folder automatically.
+
+model GrammarRule {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  topic       String
+  slug        String @unique
+  // FIX: was `String`, now uses the shared Level enum — type-safe, validated at DB level
+  level       Level
+  summary     String @default("")
+  coreConcept String @default("")
+  structure   String @default("")
+
+  usages      Usage[]
+  sections    Section[]
+  comparisons Comparison[]
+
+  commonMistakes String[]
+  signalWords    String[]
+  relatedTopics  String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([level])
+}
+
+type Usage {
+  title       String
+  explanation String
+  examples    Example[]
+}
+
+type Section {
+  title    String
+  content  String
+  examples Example[]
+}
+
+type Comparison {
+  compareWith String
+  explanation String
+  examples    Example[]
+}
+
+type Example {
+  sentence    String
+  translation String?
+}

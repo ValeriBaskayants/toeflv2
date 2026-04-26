@@ -4,8 +4,6 @@
   background: var(--bg);
 }
 
-/* ── Main area (offset by sidebar width on desktop) ──────────────────────── */
-
 .main {
   flex: 1;
   margin-left: var(--sidebar-w);
@@ -22,34 +20,20 @@
   animation: fadeUp var(--duration-slow) var(--ease-out) both;
 }
 
-@keyframes fadeUp {
-  from { opacity: 0; transform: translateY(10px); }
-  to   { opacity: 1; transform: translateY(0); }
-}
-
-/* ── Mobile overlay ───────────────────────────────────────────────────────── */
-
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.55);
+  background: rgba(0, 0, 0, 0.4);
   z-index: 199;
-  backdrop-filter: blur(2px);
-  animation: fadeIn 200ms ease;
+  backdrop-filter: blur(4px);
+  animation: fadeIn var(--duration-base) ease;
 }
-
-@keyframes fadeIn {
-  from { opacity: 0; }
-  to   { opacity: 1; }
-}
-
-/* ── Mobile top bar ───────────────────────────────────────────────────────── */
 
 .mobileBar {
   display: none;
   align-items: center;
-  gap: 0.875rem;
-  padding: 0.875rem 1.25rem;
+  gap: 1rem;
+  padding: 1rem 1.25rem;
   border-bottom: 1px solid var(--border);
   background: var(--surface);
   position: sticky;
@@ -58,8 +42,8 @@
 }
 
 .hamburger {
-  width: 38px;
-  height: 38px;
+  width: 40px;
+  height: 40px;
   border-radius: var(--radius-sm);
   display: flex;
   align-items: center;
@@ -67,7 +51,6 @@
   background: var(--surface-2);
   border: 1px solid var(--border);
   color: var(--text-2);
-  cursor: pointer;
   transition: all var(--duration-fast) ease;
   flex-shrink: 0;
 }
@@ -79,13 +62,10 @@
 }
 
 .mobileTitle {
-  font-family: 'Syne', sans-serif;
   font-weight: 700;
-  font-size: 1rem;
+  font-size: 1.125rem;
   color: var(--text-1);
 }
-
-/* ── Mobile breakpoints ───────────────────────────────────────────────────── */
 
 @media (max-width: 768px) {
   .main {

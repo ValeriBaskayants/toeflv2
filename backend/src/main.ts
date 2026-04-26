@@ -7,28 +7,28 @@ import { HttpExceptionFilter } from './common/filters/http-exception.filter';
 
 async function bootstrap(): Promise<void> {
   const logger = new Logger('Bootstrap');
-
   const app = await NestFactory.create(AppModule);
   const config = app.get(ConfigService);
 
   app.use(cookieParser());
 
+  // Global API prefix — controllers use /readings, /exercises etc. (no api/ in them)
+  app.setGlobalPrefix('api');
+
   app.enableCors({
-    origin: config.get('CORS_ORIGIN'), 
-    credentials: true, 
-    methods: ['GET', 'POST', 'PUT', 'DELETE', 'PATCH'],
+    origin:      config.getOrThrow<string>('corsOrigin'),
+    credentials: true,
   });
 
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist: true,
-      forbidNonWhitelisted: true,
-      transform: true,
+      whitelist:            true,
+      forbidNonWhitelisted: true, // reject unknown fields immediately
+      transform:            true, // auto-cast @Type() decorators
     }),
   );
 
   app.useGlobalFilters(new HttpExceptionFilter());
-
   app.enableShutdownHooks();
 
   const port = config.getOrThrow<number>('port');

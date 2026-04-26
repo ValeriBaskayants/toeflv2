@@ -1,10 +1,12 @@
 import { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
+import { Layers, Bot, BarChart2, TrendingUp, Globe, Moon, BookOpen } from 'lucide-react';
 import i18n from '@/i18n';
 import { useAppSelector } from '@/store/store';
 import { selectIsAuthenticated, selectIsInitializing } from '@/store/Slices/AuthSlice';
 import styles from './LoginPage.module.css';
+import React from 'react';
 
 const GOOGLE_AUTH_URL = `${import.meta.env['VITE_API_BASE_URL'] as string}/auth/google`;
 
@@ -14,13 +16,18 @@ const LANGUAGES = [
   { code: 'hy', label: 'HY' },
 ] as const;
 
-const FEATURES = [
-  { icon: '🃏', key: 'spaced' },
-  { icon: '🤖', key: 'ai' },
-  { icon: '📊', key: 'levels' },
-  { icon: '📈', key: 'progress' },
-  { icon: '🌍', key: 'multilingual' },
-] as const;
+interface FeatureItem {
+  icon: React.ReactNode;
+  key: string;
+}
+
+const FEATURES: FeatureItem[] = [
+  { icon: <Layers size={20} />, key: 'spaced' },
+  { icon: <Bot size={20} />, key: 'ai' },
+  { icon: <BarChart2 size={20} />, key: 'levels' },
+  { icon: <TrendingUp size={20} />, key: 'progress' },
+  { icon: <Globe size={20} />, key: 'multilingual' },
+];
 
 function GoogleLogo() {
   return (
@@ -42,7 +49,7 @@ function ThemeToggle() {
 
   return (
     <button className={styles['iconBtn']} onClick={toggle} type="button" aria-label="Toggle theme">
-      🌙
+      <Moon size={18} />
     </button>
   );
 }
@@ -77,7 +84,6 @@ export function LoginPage() {
   const isAuthenticated = useAppSelector(selectIsAuthenticated);
   const isInitializing = useAppSelector(selectIsInitializing);
 
-  // If user somehow lands on /login while already authenticated, redirect away
   useEffect(() => {
     if (!isInitializing && isAuthenticated) {
       navigate('/dashboard', { replace: true });
@@ -85,65 +91,60 @@ export function LoginPage() {
   }, [isAuthenticated, isInitializing, navigate]);
 
   const handleGoogleLogin = () => {
-    // Full-page redirect — browser navigates to our backend which
-    // sets the state param and redirects to Google's OAuth page
     window.location.href = GOOGLE_AUTH_URL;
   };
 
   return (
     <div className={styles['root']}>
-      {/* ── Left: Brand panel ── */}
-      <aside className={styles['brand']}>
-        <div className={styles['brandDecorTop']} aria-hidden="true" />
-        <div className={styles['brandDecorBottom']} aria-hidden="true" />
+      <div className={styles['container']}>
+        
+        <aside className={styles['brand']}>
+          <div className={styles['brandContent']}>
+            <div className={styles['logoRow']}>
+              <div className={styles['logoIcon']}>
+                <BookOpen size={28} color="var(--accent)" />
+              </div>
+              <span className={styles['logoText']}>TOEFL Prep</span>
+            </div>
 
-        <div className={styles['brandContent']}>
-          <div className={styles['logoRow']}>
-            <span className={styles['logoEmoji']} aria-hidden="true">📚</span>
-            <span className={styles['logoText']}>TOEFL Prep</span>
+            <p className={styles['tagline']}>{t('auth.tagline')}</p>
+
+            <ul className={styles['featureList']} aria-label="Features">
+              {FEATURES.map(({ icon, key }) => (
+                <li key={key} className={styles['featureItem']}>
+                  <div className={styles['featureIcon']}>{icon}</div>
+                  <span>{t(`features.${key}`)}</span>
+                </li>
+              ))}
+            </ul>
+          </div>
+        </aside>
+
+        <main className={styles['authPanel']}>
+          <div className={styles['controls']}>
+            <LanguageSelector />
+            <ThemeToggle />
           </div>
 
-          <p className={styles['tagline']}>{t('auth.tagline')}</p>
+          <div className={styles['card']}>
+            <header className={styles['cardHeader']}>
+              <h1 className={styles['title']}>{t('auth.welcome')}</h1>
+              <p className={styles['subtitle']}>{t('auth.tagline')}</p>
+            </header>
 
-          <ul className={styles['featureList']} aria-label="Features">
-            {FEATURES.map(({ icon, key }) => (
-              <li key={key} className={styles['featureItem']}>
-                <span className={styles['featureIcon']} aria-hidden="true">{icon}</span>
-                <span>{t(`features.${key}`)}</span>
-              </li>
-            ))}
-          </ul>
-        </div>
+            <button
+              className={styles['googleBtn']}
+              onClick={handleGoogleLogin}
+              type="button"
+            >
+              <GoogleLogo />
+              <span>{t('auth.signIn')}</span>
+            </button>
 
-        <div className={styles['levelBadge']} style={{ top: '15%', right: '12%' }} aria-hidden="true">C2</div>
-        <div className={styles['levelBadge']} style={{ bottom: '25%', right: '8%' }} aria-hidden="true">B2</div>
-      </aside>
-
-      {/* ── Right: Auth panel ── */}
-      <main className={styles['authPanel']}>
-        <div className={styles['controls']}>
-          <LanguageSelector />
-          <ThemeToggle />
-        </div>
-
-        <div className={styles['card']}>
-          <header className={styles['cardHeader']}>
-            <h1 className={styles['title']}>{t('auth.welcome')}</h1>
-            <p className={styles['subtitle']}>{t('auth.tagline')}</p>
-          </header>
-
-          <button
-            className={styles['googleBtn']}
-            onClick={handleGoogleLogin}
-            type="button"
-          >
-            <GoogleLogo />
-            <span>{t('auth.signIn')}</span>
-          </button>
-
-          <p className={styles['disclaimer']}>{t('auth.disclaimer')}</p>
-        </div>
-      </main>
+            <p className={styles['disclaimer']}>{t('auth.disclaimer')}</p>
+          </div>
+        </main>
+      </div>
     </div>
   );
 }

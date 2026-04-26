@@ -1,11 +1,13 @@
-import type { Role } from '@prisma/client';
+import type { Level, Role } from '@prisma/client';
 
-// Shape of user returned from DB after Google OAuth
-// Used as req.user after GoogleStrategy.validate()
+
 export interface AuthenticatedUser {
-  id: string;
-  email: string;
-  name: string;
-  avatar: string | null;
-  role: Role;
+  id:           string;
+  email:        string;
+  name:         string;
+  avatar:       string | null;
+  role:         Role;
+  currentLevel: Level;
+  totalXp:      number;
+  streak:       number;
 }

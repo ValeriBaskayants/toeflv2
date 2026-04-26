@@ -1,0 +1,34 @@
+// Level enum is declared in auth.prisma.
+
+enum Difficulty {
+  EASY
+  MEDIUM
+  HARD
+}
+
+type Blank {
+  position Int
+  answer   String
+  // options: alternative choices shown to the user (for multiple-choice blanks)
+  options  String[]
+}
+
+model Exercise {
+  id         String     @id @default(auto()) @map("_id") @db.ObjectId
+  topic      String
+  // FIX: was `String`, now uses the shared Level enum
+  level      Level
+  difficulty Difficulty @default(EASY)
+  // sentence is unique — used as idempotency key for bulkCreate
+  sentence   String     @unique
+
+  blanks      Blank[]
+  explanation String   @default("")
+  tags        String[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([level, difficulty])
+  @@index([topic])
+}

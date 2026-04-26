@@ -1,0 +1,51 @@
+enum QuestionType {
+  MULTIPLE_CHOICE
+  TRUE_FALSE
+  FILL_IN_THE_BLANK
+}
+
+model ReadingMaterial {
+  id               String        @id @default(auto()) @map("_id") @db.ObjectId
+  title            String        @unique
+  slug             String        @unique 
+  description      String?       
+  
+  content          String        
+  contentBlocks    Json?         
+
+  level            Level         
+  topic            String
+  tags             String[]
+
+  wordCount        Int           @default(0)
+  estimatedMinutes Int           @default(3)
+
+  coverImageUrl    String?
+  // status и audioUrl убрали, раз они не нужны
+
+  createdAt        DateTime      @default(now())
+  updatedAt        DateTime      @updatedAt
+
+  questions        QuestionEmbedded[]
+  vocabulary       VocabularyEmbedded[]
+
+  @@index([level, topic])
+}
+
+type VocabularyEmbedded {
+  word              String
+  translation       String
+  contextSentence   String?
+}
+
+type QuestionEmbedded {
+  type              QuestionType   @default(MULTIPLE_CHOICE)
+  text              String
+  explanation       String?
+  options           QuestionOptionEmbedded[]
+}
+
+type QuestionOptionEmbedded {
+  text       String
+  isCorrect  Boolean @default(false)
+}

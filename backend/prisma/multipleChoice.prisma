@@ -1,0 +1,22 @@
+model MultipleChoice {
+  id           String     @id @default(auto()) @map("_id") @db.ObjectId
+  
+  // Основной контент
+  question     String     @unique
+  options      String[]
+  correctIndex Int
+  explanation  String     @default("")
+  
+  // Метаданные для фильтрации
+  topic        String     @default("")
+  level        Level      // Используем общий Enum, который мы определили ранее
+  difficulty   Difficulty @default(easy) // Используем Difficulty из exercises.prisma
+
+  // Таймстампы
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  // Индексы для быстрой выборки (как в твоем Mongoose коде)
+  @@index([level, difficulty])
+  @@index([topic])
+}

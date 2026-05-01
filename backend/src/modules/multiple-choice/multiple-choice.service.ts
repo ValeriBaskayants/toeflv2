@@ -1,36 +1,87 @@
 import { Injectable } from '@nestjs/common';
-import { InjectModel } from '@nestjs/mongoose';
-import { Model } from 'mongoose';
-import { MultipleChoice, MultipleChoiceDocument } from './schemas/multiple-choice.schema';
+import { Difficulty, Level, Prisma } from '@prisma/client';
+import { PrismaService } from '../prisma/prisma.service';
+import type { CreateMultipleChoiceDto } from './dto/bulk-create-multiple-choice.dto';
+import type { GetMultipleChoiceDto } from './dto/get-multiple-choice.dto';
+
+const DEFAULT_LIMIT = 50;
+const MAX_LIMIT = 100;
 
 @Injectable()
 export class MultipleChoiceService {
-  constructor(@InjectModel(MultipleChoice.name) private model: Model<MultipleChoiceDocument>) {}
+  constructor(private readonly prisma: PrismaService) {}
 
-  async findAll(query: { level?: string; difficulty?: string; limit?: number }) {
-    const filter: any = {};
-    if (query.level) filter.level = query.level;
-    if (query.difficulty) filter.difficulty = query.difficulty;
-    return this.model.find(filter).limit(query.limit || 100).lean();
-  }
+  async findAll(query: GetMultipleChoiceDto) {
+    const where: Prisma.MultipleChoiceWhereInput = {};
 
-  async findRandom(level: string, count: number) {
-    return this.model.aggregate([
-      { $match: { level } },
-      { $sample: { size: count } },
-    ]);
-  }
-
-  async bulkCreate(items: any[]) {
-    let inserted = 0, skipped = 0, errors = 0;
-    for (const item of items) {
-      try {
-        const exists = await this.model.findOne({ question: item.question });
-        if (exists) { skipped++; continue; }
-        await this.model.create(item);
-        inserted++;
-      } catch { errors++; }
+    if (query.level !== undefined) {
+      where.level = query.level;
     }
-    return { inserted, skipped, errors };
+    if (query.difficulty !== undefined) {
+      where.difficulty = query.difficulty;
+    }
+    if (query.topic !== undefined) {
+      where.topic = { contains: query.topic, mode: 'insensitive' };
+    }
+
+    const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+
+    return this.prisma.multipleChoice.findMany({
+      where,
+      orderBy: [{ level: 'asc' }, { difficulty: 'asc' }],
+      take,
+    });
+  }
+
+  async findRandom(level: Level, count: number) {
+    const raw = await this.prisma.multipleChoice.aggregateRaw({
+      pipeline: [
+        { $match: { level } },
+        { $sample: { size: count } },
+      ],
+    });
+
+    return (raw as unknown as Array<Record<string, unknown>>).map((item) => {
+      const { _id, ...rest } = item;
+      const oid = _id as { $oid?: string } | string | null;
+      return {
+        ...rest,
+        id: typeof oid === 'object' && oid !== null && '$oid' in oid
+          ? oid.$oid
+          : String(oid),
+      };
+    });
+  }
+
+  async bulkCreate(items: CreateMultipleChoiceDto[]): Promise<{
+    totalProcessed: number;
+    inserted: number;
+    skipped: number;
+  }> {
+    if (items.length === 0) {
+      return { totalProcessed: 0, inserted: 0, skipped: 0 };
+    }
+
+    const questions = items.map((i) => i.question);
+
+    const existing = await this.prisma.multipleChoice.findMany({
+      where: { question: { in: questions } },
+      select: { question: true },
+    });
+
+    const existingSet = new Set(existing.map((e) => e.question));
+    const toInsert = items.filter((i) => !existingSet.has(i.question));
+
+    if (toInsert.length > 0) {
+      await this.prisma.multipleChoice.createMany({
+        data: toInsert,
+      });
+    }
+
+    return {
+      totalProcessed: items.length,
+      inserted: toInsert.length,
+      skipped: existing.length,
+    };
   }
 }

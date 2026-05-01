@@ -37,7 +37,6 @@ export class ReadingsService {
       where,
       select:  LIST_SELECT,
       orderBy: { createdAt: 'desc' },
-      // Hard limit: no pagination yet, but cap to prevent full-table dump
       take: 100,
     });
   }
@@ -54,9 +53,6 @@ export class ReadingsService {
     return result;
   }
 
-  // FIX: removed fragile id.length !== 24 check.
-  // Prisma will throw PrismaClientKnownRequestError (P2023) if the id is malformed —
-  // that is caught and re-thrown by the global HttpExceptionFilter.
   async findById(id: string) {
     const result = await this.prisma.readingMaterial.findUnique({
       where: { id },
@@ -69,11 +65,6 @@ export class ReadingsService {
     return result;
   }
 
-  // ── bulkCreate ─────────────────────────────────────────────────────────────
-  // Used by the admin panel to import content in bulk.
-  // Design: filter duplicates in-memory, then single createMany call.
-  // Race condition risk: two concurrent identical imports could both pass the
-  // duplicate check. `createMany` with `skipDuplicates: true` handles that.
 
   async bulkCreate(readings: CreateReadingDto[]): Promise<{
     totalProcessed: number;
@@ -84,7 +75,6 @@ export class ReadingsService {
       return { totalProcessed: 0, inserted: 0, skipped: 0 };
     }
 
-    // Prepare: compute derived fields, fill slug if omitted
     const prepared = readings.map((r) => {
       const wordCount = r.content.trim().split(/\s+/).length;
       return {
@@ -95,7 +85,6 @@ export class ReadingsService {
       };
     });
 
-    // Check existing by title OR slug in one query
     const existing = await this.prisma.readingMaterial.findMany({
       where: {
         OR: [

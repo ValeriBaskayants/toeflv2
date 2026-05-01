@@ -1,14 +1,23 @@
-import { Controller, Get, Query, UseGuards } from '@nestjs/common';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { MultipleChoiceService } from './multiple-choice.service';
+import { GetMultipleChoiceDto } from './dto/get-multiple-choice.dto';
+import { BulkCreateMultipleChoiceDto } from './dto/bulk-create-multiple-choice.dto';
+import { Roles } from '../auth/decorators/roles.decorator';
+import { RolesGuard } from '../auth/guards/roles.guard';
 
-@Controller('api/multiple-choice')
-@UseGuards(JwtAuthGuard)
+@Controller('multiple-choice')
 export class MultipleChoiceController {
-  constructor(private service: MultipleChoiceService) {}
+  constructor(private readonly service: MultipleChoiceService) {}
 
   @Get()
-  findAll(@Query() q: any) {
-    return this.service.findAll({ level: q.level, difficulty: q.difficulty, limit: +q.limit });
+  findAll(@Query() query: GetMultipleChoiceDto) {
+    return this.service.findAll(query);
+  }
+
+  @Post('bulk')
+  @UseGuards(RolesGuard)
+  @Roles('ADMIN')
+  bulkCreate(@Body() dto: BulkCreateMultipleChoiceDto) {
+    return this.service.bulkCreate(dto.items);
   }
 }

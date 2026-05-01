@@ -1,4 +1,4 @@
-import { NestFactory, Reflector } from '@nestjs/core';
+import { NestFactory } from '@nestjs/core';
 import { ValidationPipe, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import cookieParser from 'cookie-parser';
@@ -11,20 +11,19 @@ async function bootstrap(): Promise<void> {
   const config = app.get(ConfigService);
 
   app.use(cookieParser());
-
-  // Global API prefix — controllers use /readings, /exercises etc. (no api/ in them)
   app.setGlobalPrefix('api');
 
   app.enableCors({
-    origin:      config.getOrThrow<string>('corsOrigin'),
+    origin: config.getOrThrow<string>('corsOrigin'),
     credentials: true,
   });
 
   app.useGlobalPipes(
     new ValidationPipe({
-      whitelist:            true,
-      forbidNonWhitelisted: true, // reject unknown fields immediately
-      transform:            true, // auto-cast @Type() decorators
+      whitelist: true,
+      forbidNonWhitelisted: true,
+      transform: true,
+      forbidUnknownValues: true,
     }),
   );
 

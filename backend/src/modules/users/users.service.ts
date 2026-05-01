@@ -1,7 +1,8 @@
 import { Injectable, InternalServerErrorException, Logger } from '@nestjs/common';
 import { PrismaService } from '../prisma/prisma.service';
-import { buildInitialProgress } from 'src/constants/level-requirements';
+import { buildInitialProgress } from '../../constants/level-requirements';
 import type { AuthenticatedUser } from '../auth/interfaces/authenticated-user.interface';
+import type { UserProfile } from './interfaces/user-profile.interface';
 
 interface GoogleProfile {
   googleId: string;
@@ -10,11 +11,16 @@ interface GoogleProfile {
   avatar?: string;
 }
 
-export interface UserWithProgress extends AuthenticatedUser {
-  currentLevel: string;
-  totalXp: number;
-  streak: number;
-}
+const USER_PROFILE_SELECT = {
+  id: true,
+  email: true,
+  name: true,
+  avatar: true,
+  role: true,
+  currentLevel: true,
+  totalXp: true,
+  streak: true,
+} as const;
 
 @Injectable()
 export class UsersService {
@@ -22,45 +28,30 @@ export class UsersService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-
-  private get userSelect() {
-    return {
-      id:           true,
-      email:        true,
-      name:         true,
-      avatar:       true,
-      role:         true,
-      currentLevel: true,
-      totalXp:      true,
-      streak:       true,
-    } as const;
-  }
-
-
   async findOrCreate(profile: GoogleProfile): Promise<AuthenticatedUser> {
     const byGoogle = await this.prisma.user.findUnique({
-      where:  { googleId: profile.googleId },
-      select: this.userSelect,
+      where: { googleId: profile.googleId },
+      select: { id: true, email: true, name: true, avatar: true, role: true },
     });
 
     if (byGoogle !== null) {
       return this.prisma.user.update({
-        where:  { id: byGoogle.id },
-        data:   { name: profile.name, avatar: profile.avatar ?? null },
-        select: this.userSelect,
+        where: { id: byGoogle.id },
+        data: { name: profile.name, avatar: profile.avatar ?? null },
+        select: { id: true, email: true, name: true, avatar: true, role: true },
       });
     }
 
     const byEmail = await this.prisma.user.findUnique({
-      where:  { email: profile.email },
-      select: this.userSelect,
+      where: { email: profile.email },
+      select: { id: true, email: true, name: true, avatar: true, role: true },
     });
 
     if (byEmail !== null) {
       return this.prisma.user.update({
-        where:  { id: byEmail.id },
-        data:   { googleId: profile.googleId, avatar: profile.avatar ?? null },
-        select: this.userSelect,
+        where: { id: byEmail.id },
+        data: { googleId: profile.googleId, avatar: profile.avatar ?? null },
+        select: { id: true, email: true, name: true, avatar: true, role: true },
       });
     }
 
@@ -74,15 +65,15 @@ export class UsersService {
       return await this.prisma.$transaction(async (tx) => {
         const user = await tx.user.create({
           data: {
-            googleId:     profile.googleId,
-            email:        profile.email,
-            name:         profile.name,
-            avatar:       profile.avatar ?? null,
+            googleId: profile.googleId,
+            email: profile.email,
+            name: profile.name,
+            avatar: profile.avatar ?? null,
             currentLevel: initialLevel,
-            totalXp:      0,
-            streak:       0,
+            totalXp: 0,
+            streak: 0,
           },
-          select: this.userSelect,
+          select: { id: true, email: true, name: true, avatar: true, role: true },
         });
 
         await tx.levelProgress.create({
@@ -100,11 +91,17 @@ export class UsersService {
     }
   }
 
-
   async findById(id: string): Promise<AuthenticatedUser | null> {
     return this.prisma.user.findUnique({
-      where:  { id },
-      select: this.userSelect,
+      where: { id },
+      select: { id: true, email: true, name: true, avatar: true, role: true },
+    });
+  }
+
+  async findProfileById(id: string): Promise<UserProfile | null> {
+    return this.prisma.user.findUnique({
+      where: { id },
+      select: USER_PROFILE_SELECT,
     });
   }
 }

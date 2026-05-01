@@ -1,9 +1,11 @@
-import { Body, Controller, Get, Param, Post, Query } from '@nestjs/common';
+import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { ReadingsService } from './readings.service';
 import { GetReadingsDto } from './dto/get-readings.dto';
 import { BulkCreateReadingsDto } from './dto/bulk-create-reading.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
+import { RolesGuard } from '../auth/guards/roles.guard';
+import { Roles } from '../auth/decorators/roles.decorator';
 
 // Prefix 'readings' — global 'api' prefix is set in main.ts
 // Full path: GET /api/readings
@@ -33,6 +35,8 @@ export class ReadingsController {
 
   // POST /api/readings/bulk — admin only (TODO: add @Roles('ADMIN') guard)
   @Post('bulk')
+    @UseGuards(RolesGuard)
+    @Roles('ADMIN')
   bulkCreate(@Body() dto: BulkCreateReadingsDto) {
     return this.service.bulkCreate(dto.readings);
   }

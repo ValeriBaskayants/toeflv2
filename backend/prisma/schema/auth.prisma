@@ -28,11 +28,12 @@ model User {
   totalXp          Int      @default(0)
   streak           Int      @default(0)
   lastActivityDate DateTime?
-
   sessions      Session[]
   levelProgress LevelProgress?
   activities    DailyActivity[]
-
+  bookmarks Bookmark[]
+  vocabularyProgress UserVocabularyProgress[]
+  writingSubmissions WritingSubmission[]
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

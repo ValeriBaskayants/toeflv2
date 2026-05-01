@@ -21,7 +21,6 @@ export class GrammarRulesService {
   constructor(private readonly prisma: PrismaService) {}
 
   async findAll(level?: Level) {
-    // FIX: removed logger.log on every call — list queries are not business events
     return this.prisma.grammarRule.findMany({
       where:   level !== undefined ? { level } : undefined,
       select:  LIST_SELECT,

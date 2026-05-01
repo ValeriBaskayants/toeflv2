@@ -1,0 +1,64 @@
+enum MistakeSource {
+  QUIZ
+  WRITING
+  READING
+  LISTENING
+}
+
+enum ErrorCategory {
+  GRAMMAR      
+  VOCABULARY  
+  SPELLING     
+  LOGIC     
+}
+
+enum MasteryStatus {
+  LEARNING     
+  REVIEWING   
+  MASTERED   
+}
+
+model UserMistake {
+  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  
+  userId      String   @db.ObjectId
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  targetId    String   // ID конкретного вопроса/задания
+  source      MistakeSource
+  grammarRuleId String? @db.ObjectId
+  topic       String   // e.g., "Present Simple", "Passive Voice"
+  category    ErrorCategory // Позволит строить графики: "У вас 80% ошибок в Грамматике"
+  level       Level    @default(A1) // Взято из твоего enum Level
+
+  status      MasteryStatus @default(LEARNING)
+  nextReview  DateTime?     // Когда юзеру снова показать этот вопрос
+  easeFactor  Float         @default(2.5) // Множитель интервала (алгоритм SuperMemo)
+
+  wrongCount  Int      @default(1)
+  correctCount Int     @default(0) // Сколько раз он потом ответил ПРАВИЛЬНО при повторении
+
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  attempts    MistakeAttempt[]
+
+  @@unique([userId, targetId])
+  
+  @@index([userId, nextReview])
+  @@index([userId, topic])
+}
+
+model MistakeAttempt {
+  id              String   @id @default(auto()) @map("_id") @db.ObjectId
+  
+  userMistakeId   String   @db.ObjectId
+  userMistake     UserMistake @relation(fields: [userMistakeId], references: [id], onDelete: Cascade)
+
+  userAnswer      String   // Что юзер ввел (даже если это бред)
+  correctAnswer   String   // Что ожидалось
+  isCorrect       Boolean  @default(false) // При повторении он может ответить правильно!
+
+  createdAt       DateTime @default(now()) // То же самое, что твой occurredAt
+}
+

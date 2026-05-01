@@ -6,20 +6,26 @@ import configuration from './config/configuration';
 import PrismaModule from './modules/prisma/prisma.module';
 import { AuthModule } from './modules/auth/auth.module';
 import { ProgressModule } from './modules/progress/progress.module';
+import { ExercisesModule } from './modules/exercises/exercises.module';
+import { GrammarRulesModule } from './modules/grammar-rules/grammar-rules.module';
+import { MultipleChoiceModule } from './modules/multiple-choice/multiple-choice.module';
+import { ReadingsModule } from './modules/readings/readings.module';
+import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
+import { WritingModule } from './modules/writing/writing.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 
 @Module({
   imports: [
     ConfigModule.forRoot({
-      load:     [configuration],
+      load: [configuration],
       isGlobal: true,
     }),
     ThrottlerModule.forRootAsync({
-      inject:     [ConfigService],
+      inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
         throttlers: [
           {
-            ttl:   config.getOrThrow<number>('throttle.ttl') * 1000,
+            ttl: config.getOrThrow<number>('throttle.ttl') * 1000,
             limit: config.getOrThrow<number>('throttle.limit'),
           },
         ],
@@ -28,11 +34,15 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
     PrismaModule,
     AuthModule,
     ProgressModule,
+    ExercisesModule,
+    GrammarRulesModule,
+    MultipleChoiceModule,
+    ReadingsModule,
+    VocabularyModule,
+    WritingModule,
   ],
   providers: [
-    // ThrottlerGuard first — rate limit BEFORE auth check on every request
     { provide: APP_GUARD, useClass: ThrottlerGuard },
-    // JwtAuthGuard globally — all routes protected unless @Public() is present
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })

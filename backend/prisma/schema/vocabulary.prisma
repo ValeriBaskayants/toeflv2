@@ -1,0 +1,97 @@
+
+// Части речи
+enum PartOfSpeech {
+  NOUN
+  VERB
+  ADJECTIVE
+  ADVERB
+  PHRASE
+}
+
+// Статус изучения слова пользователем
+enum WordLearningStatus {
+  NEW
+  LEARNING
+  REVIEW
+  MASTERED
+}
+
+// ── EMBEDDED TYPES (Вложенные типы для MongoDB) ──────────────────────────
+
+// Формы глаголов (Mongoose schema: forms)
+type WordForms {
+  base              String?
+  past              String?
+  pastParticiple    String?
+  thirdPerson       String?
+  presentParticiple String?
+}
+
+// ── MODELS (Модели коллекций) ────────────────────────────────────────────
+
+// 1. Общий словарь (Справочник слов)
+model Vocabulary {
+  id              String       @id @default(auto()) @map("_id") @db.ObjectId
+  
+  word            String       @unique
+  level           Level        // Используем твой глобальный Level (A1, A2...)
+  type            PartOfSpeech @default(NOUN)
+  
+  pronunciation   String       @default("")
+  definition      String
+  definitionRu    String       @default("")
+  
+  examples        String[]
+  synonyms        String[]
+  antonyms        String[]
+  
+  imageUrl        String?
+  
+  forms           WordForms?   // Вложенный объект с формами
+  isIrregularVerb Boolean      @default(false)
+
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+
+  // Обратная связь: список всех "прогрессов" юзеров для этого слова
+  userProgress    UserVocabularyProgress[]
+
+  // Индексы для быстрой фильтрации словаря
+  @@index([level, type])
+}
+
+// 2. Личный прогресс пользователя по конкретному слову (Алгоритм Anki/SuperMemo)
+model UserVocabularyProgress {
+  id              String             @id @default(auto()) @map("_id") @db.ObjectId
+
+  // --- Связи (Relations) ---
+  
+  // Связь с пользователем (У тебя должна быть модель User)
+  userId          String             @db.ObjectId
+  user            User               @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  // Связь со словом из словаря
+  wordId          String             @db.ObjectId
+  vocabulary      Vocabulary         @relation(fields: [wordId], references: [id], onDelete: Cascade)
+
+  // --- Алгоритм интервального повторения ---
+  
+  easinessFactor  Float              @default(2.5) // В Prisma дробные числа это Float
+  interval        Int                @default(1)
+  repetitions     Int                @default(0)
+  nextReviewDate  DateTime           @default(now())
+  
+  status          WordLearningStatus @default(NEW)
+  lastReviewedAt  DateTime?
+
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
+
+  // --- Индексы ---
+
+  // КРИТИЧЕСКИ ВАЖНО: У одного юзера может быть только ОДНА запись прогресса на одно слово
+  @@unique([userId, wordId]) 
+  
+  // Индекс для выборки: "Какие слова этому юзеру нужно повторить сегодня?"
+  @@index([userId, nextReviewDate])
+}

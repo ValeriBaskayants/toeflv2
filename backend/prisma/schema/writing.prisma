@@ -1,4 +1,9 @@
-// ── ENUMS ────────────────────────────────────────────────────────────────
+// ════════════════════════════════════════════════════════════════════════════
+// backend/prisma/schema/writing.prisma  — UPDATED
+// ════════════════════════════════════════════════════════════════════════════
+// CHANGE: added `vocabularyScore Float` to WritingAnalysis embedded type
+// to match what writing.processor.ts now saves.
+// Without this field Prisma silently drops it (MongoDB BSON → schema mismatch).
 
 enum WritingType {
   SENTENCE
@@ -12,9 +17,6 @@ enum SubmissionStatus {
   ERROR
 }
 
-// ── EMBEDDED TYPES (Вложенные объекты для анализа) ───────────────────────
-
-// 1. Конкретная ошибка в тексте
 type WritingError {
   message      String
   context      String
@@ -23,27 +25,25 @@ type WritingError {
   replacements String[]
 }
 
-// 2. Полный объект анализа AI
+// ← vocabularyScore added: Guiraud-Index-based lexical diversity score (0-100)
 type WritingAnalysis {
-  overallScore   Float
-  grammarScore   Float
-  taskScore      Float
-  coherenceScore Float
-  wordCount      Int
-  errorCount     Int
-  feedback      String? // Общий совет от AI (например, "Try using more complex conjunctions")
-  detectedTone  String? // Например: "Formal", "Academic" - важно для TOEFL
-  errors         WritingError[] // Массив вложенных типов ошибок
+  overallScore    Float
+  grammarScore    Float
+  taskScore       Float
+  coherenceScore  Float
+  vocabularyScore Float   // NEW — was missing, caused `as any` cast workaround
+  wordCount       Int
+  errorCount      Int
+  feedback        String?
+  detectedTone    String?
+  errors          WritingError[]
 }
 
-// ── MODELS ───────────────────────────────────────────────────────────────
-
-// Темы (Промпты) для заданий по письму
 model WritingPrompt {
   id           String        @id @default(auto()) @map("_id") @db.ObjectId
   
   prompt       String
-  level        Level         // Твой существующий enum (A1, B2...)
+  level        Level
   type         WritingType   @default(PARAGRAPH)
   
   minWords     Int           @default(50)
@@ -55,29 +55,22 @@ model WritingPrompt {
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
 
-  // Связь: один промпт может иметь много попыток решения
   submissions  WritingSubmission[]
 
   @@index([level])
 }
 
-// Решения пользователей и их анализ
 model WritingSubmission {
   id          String            @id @default(auto()) @map("_id") @db.ObjectId
   
-  // Связь с пользователем
   userId      String            @db.ObjectId
   user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  // Связь с промптом
   promptId    String            @db.ObjectId
   prompt      WritingPrompt     @relation(fields: [promptId], references: [id], onDelete: Cascade)
 
   text        String
-  
-  // Вложенный объект анализа (может быть null, пока статус PENDING)
   analysis    WritingAnalysis?
-  
   status      SubmissionStatus  @default(PENDING)
   submittedAt DateTime          @default(now())
 
@@ -85,4 +78,5 @@ model WritingSubmission {
   updatedAt   DateTime          @updatedAt
 
   @@index([userId, promptId])
+  @@index([userId, status])   // useful for "show my pending submissions"
 }

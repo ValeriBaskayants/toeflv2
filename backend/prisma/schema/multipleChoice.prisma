@@ -7,8 +7,8 @@ model MultipleChoice {
   explanation  String     @default("")
   
   topic        String     @default("")
-  level        Level      // Используем общий Enum, который мы определили ранее
-  difficulty   Difficulty @default(EASY) // Используем Difficulty из exercises.prisma
+  level        Level     
+  difficulty   Difficulty @default(EASY)
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt

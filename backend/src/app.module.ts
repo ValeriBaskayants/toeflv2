@@ -13,7 +13,7 @@ import { ReadingsModule } from './modules/readings/readings.module';
 import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
 import { WritingModule } from './modules/writing/writing.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
-
+import { BullModule } from '@nestjs/bull';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -30,6 +30,16 @@ import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
           },
         ],
       }),
+    }),
+    BullModule.forRootAsync({
+      imports: [ConfigModule],
+      useFactory: async (configService: ConfigService) => ({
+        redis: {
+          host: configService.getOrThrow<number>('redis.host'),
+          port: configService.getOrThrow<number>('redis.port'),
+        },
+      }),
+      inject: [ConfigService],
     }),
     PrismaModule,
     AuthModule,

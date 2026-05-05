@@ -31,13 +31,17 @@ function addDays(date: Date, days: number): Date {
   return d;
 }
 
-function applySM2(card: SM2Card, quality: 0 | 1 | 2 | 3): SM2Result {
+export type SM2Quality = 0 | 1 | 2 | 3 | 4 | 5;
+
+function applySM2(card: SM2Card, quality: SM2Quality): SM2Result {
   let { easinessFactor, interval, repetitions } = card;
 
-  if (quality < 2) {
+  if (quality < 3) {
+    // Forgot — reset to beginning
     repetitions = 0;
     interval = 1;
   } else {
+    // Remembered
     if (repetitions === 0) {
       interval = 1;
     } else if (repetitions === 1) {
@@ -48,16 +52,17 @@ function applySM2(card: SM2Card, quality: 0 | 1 | 2 | 3): SM2Result {
     repetitions += 1;
   }
 
+  // Стандартная формула SM-2
   easinessFactor = Math.max(
     1.3,
-    easinessFactor + 0.1 - (3 - quality) * (0.08 + (3 - quality) * 0.02),
+    easinessFactor + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02),
   );
 
   const status: WordLearningStatus =
     repetitions === 0 ? 'NEW' :
-    repetitions < 3 ? 'LEARNING' :
-    repetitions < 6 ? 'REVIEW' :
-    'MASTERED';
+      repetitions < 4 ? 'LEARNING' :
+        easinessFactor < 2.0 ? 'REVIEW' :
+          'MASTERED';
 
   return {
     easinessFactor,
@@ -71,7 +76,7 @@ function applySM2(card: SM2Card, quality: 0 | 1 | 2 | 3): SM2Result {
 
 @Injectable()
 export class VocabularyService {
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async findAll(query: GetVocabularyDto) {
     const where: Prisma.VocabularyWhereInput = {};

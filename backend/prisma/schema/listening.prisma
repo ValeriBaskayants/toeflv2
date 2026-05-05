@@ -1,0 +1,111 @@
+enum ListeningType {
+  LECTURE
+  CONVERSATION
+}
+
+enum ListeningMode {
+  EASY
+  MEDIUM
+  HARD
+}
+
+enum ListeningSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+type ListeningSegment {
+  index    Int
+  text     String
+  startSec Float
+  endSec   Float
+  speaker  String?
+}
+
+type ListeningAnswerRecord {
+  questionId    String
+  selectedIndex Int
+  isCorrect     Boolean
+  answeredAtSec Float?
+}
+
+type ListeningNote {
+  id         String
+  text       String
+  anchorSec  Float?
+  createdAt  String
+}
+
+model ListeningMaterial {
+  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  title     String
+  topic     String
+  level     Level
+  type      ListeningType
+  fullText  String
+  segments  ListeningSegment[]
+
+  speakerRate  Float  @default(1.0)
+  speakerLang  String @default("en-US")
+  speakerPitch Float  @default(1.0)
+
+  allowedModes ListeningMode[]
+
+  questions ListeningQuestion[]
+  sessions  ListeningSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([level, type])
+  @@index([topic])
+}
+
+model ListeningQuestion {
+  id                  String            @id @default(auto()) @map("_id") @db.ObjectId
+  listeningMaterialId String            @db.ObjectId
+  listeningMaterial   ListeningMaterial @relation(fields: [listeningMaterialId], references: [id], onDelete: Cascade)
+
+  question     String
+  options      String[]
+  correctIndex Int
+  explanation  String?
+
+  referenceStartSec Float?
+  referenceEndSec   Float?
+
+  orderIndex Int @default(0)
+
+  @@index([listeningMaterialId])
+}
+
+model ListeningSession {
+  id         String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String            @db.ObjectId
+  user       User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  materialId String            @db.ObjectId
+  material   ListeningMaterial @relation(fields: [materialId], references: [id], onDelete: Cascade)
+
+  mode   ListeningMode
+  status ListeningSessionStatus @default(IN_PROGRESS)
+
+  playCount       Int @default(0)
+  maxAllowedPlays Int
+
+  notes ListeningNote[]
+
+  answers ListeningAnswerRecord[]
+
+  correctCount Int?
+  totalCount   Int?
+  rawAccuracy  Float?
+  finalScore   Int?
+  xpEarned     Int?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId, materialId])
+  @@index([userId, status])
+}

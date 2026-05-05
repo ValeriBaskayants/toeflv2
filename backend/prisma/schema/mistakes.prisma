@@ -24,19 +24,19 @@ model UserMistake {
   userId      String   @db.ObjectId
   user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  targetId    String   // ID конкретного вопроса/задания
+  targetId    String  
   source      MistakeSource
   grammarRuleId String? @db.ObjectId
-  topic       String   // e.g., "Present Simple", "Passive Voice"
-  category    ErrorCategory // Позволит строить графики: "У вас 80% ошибок в Грамматике"
-  level       Level    @default(A1) // Взято из твоего enum Level
+  topic       String 
+  category    ErrorCategory 
+  level       Level    @default(A1) 
 
   status      MasteryStatus @default(LEARNING)
-  nextReview  DateTime?     // Когда юзеру снова показать этот вопрос
-  easeFactor  Float         @default(2.5) // Множитель интервала (алгоритм SuperMemo)
+  nextReview  DateTime?     
+  easeFactor  Float         @default(2.5)
 
   wrongCount  Int      @default(1)
-  correctCount Int     @default(0) // Сколько раз он потом ответил ПРАВИЛЬНО при повторении
+  correctCount Int     @default(0) 
 
   createdAt   DateTime @default(now())
   updatedAt   DateTime @updatedAt
@@ -55,10 +55,10 @@ model MistakeAttempt {
   userMistakeId   String   @db.ObjectId
   userMistake     UserMistake @relation(fields: [userMistakeId], references: [id], onDelete: Cascade)
 
-  userAnswer      String   // Что юзер ввел (даже если это бред)
-  correctAnswer   String   // Что ожидалось
-  isCorrect       Boolean  @default(false) // При повторении он может ответить правильно!
+  userAnswer      String 
+  correctAnswer   String  
+  isCorrect       Boolean  @default(false) 
 
-  createdAt       DateTime @default(now()) // То же самое, что твой occurredAt
+  createdAt       DateTime @default(now()) 
 }
 

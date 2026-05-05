@@ -1,13 +1,11 @@
-import { Module } from '@nestjs/common';
-import { MongooseModule } from '@nestjs/mongoose';
-import { Mistake, MistakeSchema } from './schemas/mistake.schema';
-import { MistakesService } from './mistakes.service';
-import { MistakesController } from './mistakes.controller';
+import { Module } from "@nestjs/common";
+import { MistakesService } from "./mistakes.service";
+import { MistakeController } from "./mistakes.controller";
 
 @Module({
-  imports: [MongooseModule.forFeature([{ name: Mistake.name, schema: MistakeSchema }])],
-  controllers: [MistakesController],
+  controllers: [MistakeController],
   providers: [MistakesService],
-  exports: [MistakesService],
+  exports: [MistakesService]
 })
-export class MistakesModule {}
+
+export class MistakeModule{}

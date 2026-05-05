@@ -1,19 +1,32 @@
-import { Controller, Get, Query, UseGuards, Request } from '@nestjs/common';
-import { JwtAuthGuard } from '../../common/guards/jwt-auth.guard';
+import { Controller, Get, Query } from '@nestjs/common';
+import { IsEnum, IsOptional } from 'class-validator';
+import { MistakeSource } from '@prisma/client';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
 import { MistakesService } from './mistakes.service';
-
-@Controller('api/mistakes')
-@UseGuards(JwtAuthGuard)
+ 
+class GetMistakesDto {
+  @IsOptional()
+  @IsEnum(MistakeSource)
+  source?: MistakeSource;
+}
+ 
+@Controller('mistakes')
 export class MistakesController {
-  constructor(private service: MistakesService) {}
-
+  constructor(private readonly mistakesService: MistakesService) {}
+ 
+  // GET /api/mistakes?source=QUIZ
   @Get()
-  findAll(@Request() req: any, @Query('itemType') itemType: string) {
-    return this.service.findAll(req.user.sub, itemType);
+  findAll(
+    @CurrentUser() user: JwtUserPayload,
+    @Query() query: GetMistakesDto,
+  ) {
+    return this.mistakesService.findAll(user.id, query.source);
   }
-
+ 
+  // GET /api/mistakes/weak-spots
   @Get('weak-spots')
-  getWeakSpots(@Request() req: any) {
-    return this.service.getWeakSpots(req.user.sub);
+  getWeakSpots(@CurrentUser() user: JwtUserPayload) {
+    return this.mistakesService.getWeakSpots(user.id);
   }
 }

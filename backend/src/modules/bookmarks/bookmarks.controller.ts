@@ -1,28 +1,31 @@
-import { Controller, Get, Post, Delete, Body, Param, UseGuards, Request } from '@nestjs/common';
-import { JwtAuthGuard } from '../auth/guards/jwt-auth.guard';
+import { Controller, Get, Post, Delete, Body, Param } from '@nestjs/common';
 import { BookmarksService } from './bookmarks.service';
-import { BookmarkType } from '@prisma/client';
-import { Request as ExpressRequest } from 'express';
-
-type AuthenticatedRequest = ExpressRequest & { user: { sub: string } };
-
+import { ToggleBookmarkDto } from './dto/toggle-bookmark.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
+ 
 @Controller('bookmarks')
-@UseGuards(JwtAuthGuard)
 export class BookmarksController {
-  constructor(private service: BookmarksService) {}
-
+  constructor(private readonly service: BookmarksService) {}
+ 
   @Get()
-  findAll(@Request() req: AuthenticatedRequest) {
-    return this.service.findAll(req.user.sub);
+  findAll(@CurrentUser() user: JwtUserPayload) {
+    return this.service.findAll(user.id);
   }
-
+ 
   @Post()
-  toggle(@Request() req: AuthenticatedRequest, @Body() body: { itemId: string; itemType: BookmarkType }) {
-    return this.service.toggle(req.user.sub, body.itemId, body.itemType);
+  toggle(
+    @CurrentUser() user: JwtUserPayload,
+    @Body() dto: ToggleBookmarkDto,
+  ) {
+    return this.service.toggle(user.id, dto.targetId, dto.type);
   }
-
+ 
   @Delete(':id')
-  remove(@Request() req: AuthenticatedRequest, @Param('id') id: string) {
-    return this.service.remove(req.user.sub, id);
+  remove(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id') id: string,
+  ) {
+    return this.service.remove(user.id, id);
   }
 }

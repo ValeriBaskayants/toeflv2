@@ -23,17 +23,21 @@ model User {
   name     String
   avatar   String?
   role     Role   @default(USER)
-
+ 
   currentLevel     Level    @default(A1)
   totalXp          Int      @default(0)
   streak           Int      @default(0)
   lastActivityDate DateTime?
-  sessions      Session[]
-  levelProgress LevelProgress?
-  activities    DailyActivity[]
-  bookmarks Bookmark[]
-  vocabularyProgress UserVocabularyProgress[]
-  writingSubmissions WritingSubmission[]
+ 
+  sessions              Session[]
+  levelProgress         LevelProgress?
+  activities            DailyActivity[]
+  bookmarks             Bookmark[]
+  vocabularyProgress    UserVocabularyProgress[]
+  writingSubmissions    WritingSubmission[]
+  mistakes              UserMistake[]
+  listeningSession      ListeningSession[]   // ← ADD THIS
+ 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

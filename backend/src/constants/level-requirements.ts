@@ -1,7 +1,5 @@
 import type { Level } from '@prisma/client';
 
-// ─── Level display names ──────────────────────────────────────────────────────
-// Prisma enums use SCREAMING_SNAKE_CASE (A1_PLUS). This map converts to display form.
 
 export const LEVEL_DISPLAY: Record<Level, string> = {
   A1:      'A1',
@@ -16,18 +14,12 @@ export const LEVEL_DISPLAY: Record<Level, string> = {
   C2:      'C2',
 };
 
-// ─── Level order ──────────────────────────────────────────────────────────────
-// Ordered array used for computing next level without string manipulation.
 
 export const LEVEL_ORDER: Level[] = [
   'A1', 'A1_PLUS', 'A2', 'A2_PLUS',
   'B1', 'B1_PLUS', 'B2', 'B2_PLUS',
   'C1', 'C2',
 ];
-
-// ─── Requirements per level ───────────────────────────────────────────────────
-// These are the minimum thresholds to unlock the level test.
-// accuracy / avgScore fields are percentages (0–100).
 
 export interface LevelRequirement {
   grammar:     { required: number; accuracyMin: number };
@@ -111,7 +103,6 @@ export const LEVEL_REQUIREMENTS: Record<Level, LevelRequirement> = {
     listening:  { required: 160,  accuracyMin: 85 },
     quiz:       { required: 420,  accuracyMin: 88 },
   },
-  // C2 is the final level — no test to unlock, no requirements
   C2: {
     grammar:    { required: 0, accuracyMin: 0 },
     vocabulary: { required: 0 },
@@ -122,12 +113,11 @@ export const LEVEL_REQUIREMENTS: Record<Level, LevelRequirement> = {
   },
 };
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 export function getNextLevel(current: Level): Level | null {
   const idx = LEVEL_ORDER.indexOf(current);
   if (idx === -1 || idx === LEVEL_ORDER.length - 1) {
-    return null; // C2 has no next level
+    return null; 
   }
   return LEVEL_ORDER[idx + 1] ?? null;
 }

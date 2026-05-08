@@ -3,7 +3,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import { useAppDispatch } from '@/store/store';
 import { setAccessToken, setUser, clearAuth, setInitializing } from '@/store/Slices/AuthSlice';
-import { authApi } from '@/api/api';
+import { authApi } from '@/api/services/auth';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './AuthCallbackPage.module.css';
 

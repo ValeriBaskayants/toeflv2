@@ -15,6 +15,7 @@ async function bootstrap(): Promise<void> {
 
   app.enableCors({
     origin: config.getOrThrow<string>('corsOrigin'),
+    methods: ['POST', 'PUT', 'PATCH', 'GET'],
     credentials: true,
   });
 

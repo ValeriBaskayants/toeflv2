@@ -222,7 +222,7 @@ export class ListeningService {
     const isCorrect = dto.selectedIndex === question.correctIndex;
 
     // Replace or insert the answer record for this question
-    const existingAnswers = (session.answers as Array<{ questionId: string }>) ?? [];
+    const existingAnswers =(session.answers as Prisma.ListeningAnswerRecordCreateInput[]) ?? [];
     const filtered = existingAnswers.filter(
       (a) => a.questionId !== dto.questionId,
     );

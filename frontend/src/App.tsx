@@ -5,7 +5,7 @@ import axios from 'axios';
 import { store } from '@/store/store';
 import { setAccessToken, setUser, clearAuth, setInitializing } from '@/store/Slices/AuthSlice';
 import { AppRouter } from '@/router/AppRouter';
-import { authApi } from '@/api/api';
+import { authApi } from '@/api/services/auth';
 import { initTheme } from './hooks/useTheme/Usetheme';
 import type { RefreshResponse } from './types/auth/Auth.types';
 import '@/i18n';

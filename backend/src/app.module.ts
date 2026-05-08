@@ -14,6 +14,9 @@ import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
 import { WritingModule } from './modules/writing/writing.module';
 import { JwtAuthGuard } from './modules/auth/guards/jwt-auth.guard';
 import { BullModule } from '@nestjs/bull';
+import { ListeningModule } from './modules/listening/listening.module';
+import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
+import { MistakeModule } from './modules/mistakes/mistakes.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -35,8 +38,8 @@ import { BullModule } from '@nestjs/bull';
       imports: [ConfigModule],
       useFactory: async (configService: ConfigService) => ({
         redis: {
-          host: configService.getOrThrow<number>('redis.host'),
-          port: configService.getOrThrow<number>('redis.port'),
+          host: configService.getOrThrow<string>('redis.host'), 
+          port: configService.getOrThrow<number>('redis.port'), 
         },
       }),
       inject: [ConfigService],
@@ -50,10 +53,14 @@ import { BullModule } from '@nestjs/bull';
     ReadingsModule,
     VocabularyModule,
     WritingModule,
+    MultipleChoiceModule,
+    ListeningModule,
+    BookmarksModule,
+    MistakeModule
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
-export class AppModule {}
+export class AppModule { }

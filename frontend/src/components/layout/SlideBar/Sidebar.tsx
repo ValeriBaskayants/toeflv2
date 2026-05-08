@@ -18,7 +18,7 @@ import {
 import i18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import { clearAuth, selectUser } from '@/store/Slices/AuthSlice';
-import { api } from '@/api/api';
+import { api } from '@/api/services/auth';
 import { useTheme } from '@/hooks/useTheme/Usetheme';
 import styles from './Sidebar.module.css';
 

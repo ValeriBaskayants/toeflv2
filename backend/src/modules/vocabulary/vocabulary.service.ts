@@ -123,7 +123,7 @@ export class VocabularyService {
   async reviewWord(
     userId: string,
     wordId: string,
-    quality: 0 | 1 | 2 | 3,
+    quality: SM2Quality,
   ) {
     const existing = await this.prisma.userVocabularyProgress.findUnique({
       where: { userId_wordId: { userId, wordId } },
@@ -206,7 +206,6 @@ export class VocabularyService {
           nextReviewDate: now,
           status: 'NEW' as WordLearningStatus,
         })),
-        skipDuplicates: true,
       });
     }
 
@@ -245,7 +244,6 @@ export class VocabularyService {
     if (toInsert.length > 0) {
       await this.prisma.vocabulary.createMany({
         data: toInsert,
-        skipDuplicates: true,
       });
     }
 

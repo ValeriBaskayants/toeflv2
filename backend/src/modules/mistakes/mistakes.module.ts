@@ -1,9 +1,9 @@
 import { Module } from "@nestjs/common";
 import { MistakesService } from "./mistakes.service";
-import { MistakeController } from "./mistakes.controller";
+import { MistakesController } from "./mistakes.controller";
 
 @Module({
-  controllers: [MistakeController],
+  controllers: [MistakesController],
   providers: [MistakesService],
   exports: [MistakesService]
 })

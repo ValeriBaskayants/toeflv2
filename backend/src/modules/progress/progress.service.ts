@@ -8,7 +8,6 @@ import {
   getNextLevel,
 } from '../../constants/level-requirements';
 
-// ─── Public interfaces ─────────────────────────────────────────────────────
 
 export interface DashboardResponse {
   currentLevel:     string;
@@ -21,11 +20,9 @@ export interface DashboardResponse {
 
 export type SkillKey = 'grammar' | 'reading' | 'listening' | 'quiz';
 
-// ─── Constants ─────────────────────────────────────────────────────────────
 
 const ACTIVITY_DAYS = 30;
 
-// ─── Service ───────────────────────────────────────────────────────────────
 
 @Injectable()
 export class ProgressService {
@@ -33,8 +30,6 @@ export class ProgressService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── getDashboard ─────────────────────────────────────────────────────────
-  // Three parallel DB queries — no sequential waterfall.
 
   async getDashboard(userId: string): Promise<DashboardResponse> {
     const cutoffDate = this.cutoffDateString(ACTIVITY_DAYS);
@@ -64,8 +59,6 @@ export class ProgressService {
     };
   }
 
-  // ── recordActivity ────────────────────────────────────────────────────────
-  // Timezone-aware: accepts an IANA timezone string from the client.
 
   async recordActivity(params: {
     userId:       string;
@@ -105,18 +98,11 @@ export class ProgressService {
     });
   }
 
-  // ── recordSkillCompletion ─────────────────────────────────────────────────
-  // Called by grammar / reading / quiz modules after a completed exercise.
-  // Updates the LevelProgress counter and running accuracy for that skill.
-  //
-  // Running accuracy formula:
-  //   newAccuracy = ((oldAccuracy * oldCompleted) + newAccuracy) / (oldCompleted + 1)
-  // This is an online mean — no need to store all historical answers.
 
   async recordSkillCompletion(params: {
     userId:   string;
     skill:    SkillKey;
-    accuracy: number; // 0-100 for this single attempt
+    accuracy: number; 
     xpEarned: number;
     timezone?: string;
   }): Promise<void> {
@@ -132,7 +118,6 @@ export class ProgressService {
     const oldCompleted = current.completed;
     const oldAccuracy  = current.accuracy;
 
-    // Online running mean — avoids storing every historical answer
     const newCompleted = oldCompleted + 1;
     const newAccuracy  = Math.round(
       (oldAccuracy * oldCompleted + params.accuracy) / newCompleted,
@@ -152,16 +137,13 @@ export class ProgressService {
     await this.recordActivity({
       userId:       params.userId,
       xpEarned:     params.xpEarned,
-      minutesSpent: 2, // conservative default
+      minutesSpent: 2, 
       timezone:     params.timezone,
     });
 
     await this.checkAndUnlockTest(params.userId);
   }
 
-  // ── recordListeningCompletion ─────────────────────────────────────────────
-  // Called by ListeningService. Identical logic to recordSkillCompletion but
-  // kept as a named method so the call-site reads clearly.
 
   async recordListeningCompletion(params: {
     userId:    string;
@@ -175,8 +157,6 @@ export class ProgressService {
     });
   }
 
-  // ── recordVocabularyLearned ───────────────────────────────────────────────
-  // Called by VocabularyService when a word reaches MASTERED status.
 
   async recordVocabularyLearned(params: {
     userId:    string;
@@ -209,12 +189,10 @@ export class ProgressService {
     await this.checkAndUnlockTest(params.userId);
   }
 
-  // ── recordWritingCompletion ───────────────────────────────────────────────
-  // Called by WritingProcessor after analysis completes.
 
   async recordWritingCompletion(params: {
     userId:    string;
-    score:     number; // 0-100 overall score
+    score:     number; 
     xpEarned:  number;
     timezone?: string;
   }): Promise<void> {
@@ -232,7 +210,6 @@ export class ProgressService {
     };
 
     const newCompleted = current.completed + 1;
-    // Running mean for avgScore
     const newAvgScore = Math.round(
       (current.avgScore * current.completed + params.score) / newCompleted,
     );
@@ -254,7 +231,6 @@ export class ProgressService {
     await this.checkAndUnlockTest(params.userId);
   }
 
-  // ── checkAndUnlockTest ────────────────────────────────────────────────────
 
   async checkAndUnlockTest(userId: string): Promise<boolean> {
     const [user, progress] = await Promise.all([
@@ -282,7 +258,6 @@ export class ProgressService {
     return false;
   }
 
-  // ── levelUp ───────────────────────────────────────────────────────────────
 
   async levelUp(userId: string): Promise<{ newLevel: Level } | null> {
     const user = await this.prisma.user.findUnique({
@@ -316,20 +291,6 @@ export class ProgressService {
     return { newLevel: nextLevel };
   }
 
-  // ── Private: computeReadiness ─────────────────────────────────────────────
-  //
-  // FIX: previously only checked quantity. Now enforces quantity × accuracy gate.
-  //
-  // Algorithm per skill:
-  //   quantityPct   = min(100, completed / required * 100)
-  //   accuracyRatio = min(1,   accuracy  / accuracyMin)
-  //   contribution  = quantityPct * max(0.4, accuracyRatio)
-  //
-  // The max(0.4) floor means: even with 0 % accuracy the skill contributes
-  // up to 40 % of its quantity, so the UI isn't stuck at 0 for beginners
-  // who are still learning. But they can never reach 100 % readiness without
-  // meeting the accuracy threshold.
-
   private computeReadiness(progress: LevelProgress, level: Level): number {
     const req = LEVEL_REQUIREMENTS[level];
 
@@ -354,7 +315,6 @@ export class ProgressService {
         progress.grammar.accuracy,
         req.grammar.accuracyMin,
       ),
-      // Vocabulary has no accuracy metric — just quantity
       req.vocabulary.required > 0
         ? Math.min(100, Math.round((progress.vocabulary.learned / req.vocabulary.required) * 100))
         : 100,
@@ -364,7 +324,6 @@ export class ProgressService {
         progress.reading.accuracy,
         req.reading.accuracyMin,
       ),
-      // Writing uses avgScore instead of accuracy
       (() => {
         if (req.writing.required === 0) { return 100; }
         const qPct       = Math.min(100, (progress.writing.completed / req.writing.required) * 100);
@@ -391,7 +350,6 @@ export class ProgressService {
     return Math.round(avg);
   }
 
-  // ── Private: streak calculation ───────────────────────────────────────────
 
   private async calculateStreak(
     userId: string,
@@ -418,12 +376,6 @@ export class ProgressService {
     return streak;
   }
 
-  // ── Private: date helpers ─────────────────────────────────────────────────
-  //
-  // FIX: was using new Date().toISOString() which returns UTC.
-  // For users in UTC+4 (Yerevan) this gives yesterday's date after midnight.
-  // localDateString() uses Intl to return the local calendar date.
-
   private localDateString(timezone?: string): string {
     const tz = timezone ?? 'UTC';
     return new Intl.DateTimeFormat('en-CA', {
@@ -432,7 +384,6 @@ export class ProgressService {
       month: '2-digit',
       day:   '2-digit',
     }).format(new Date());
-    // en-CA locale produces 'YYYY-MM-DD' — exactly what we store
   }
 
   private cutoffDateString(days: number): string {

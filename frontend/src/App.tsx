@@ -13,7 +13,7 @@ import '@/styles/globals.css';
 
 const BASE_URL = import.meta.env['VITE_API_BASE_URL'] as string;
 
-// Apply saved theme immediately — prevents flash of wrong theme on load
+
 initTheme();
 
 async function initSession(): Promise<void> {

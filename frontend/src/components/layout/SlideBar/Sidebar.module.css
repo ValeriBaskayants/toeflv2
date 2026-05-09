@@ -49,7 +49,6 @@
 }
 
 .logoLetter {
-  font-family: 'Syne', sans-serif;
   font-weight: 800;
   font-size: 0.9rem;
   color: #fff;
@@ -57,7 +56,6 @@
 }
 
 .logoText {
-  font-family: 'Syne', sans-serif;
   font-weight: 700;
   font-size: 0.975rem;
   color: var(--sidebar-text-1);
@@ -172,7 +170,6 @@
   border-radius: 5px;
   font-size: 0.72rem;
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
   color: var(--sidebar-text-3);
   background: transparent;
   border: none;

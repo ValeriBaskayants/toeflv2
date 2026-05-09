@@ -208,8 +208,6 @@ const resources = {
 
 const savedLang = localStorage.getItem('toefl_lang') ?? 'en';
 
-// void: in-memory resources init never rejects in practice,
-// but we still catch to satisfy no-floating-promises
 void i18n
   .use(initReactI18next)
   .init({
@@ -222,7 +220,6 @@ void i18n
     console.error('[i18n] init failed:', err);
   });
 
-// Persist language choice across sessions (non-sensitive data — localStorage is fine)
 i18n.on('languageChanged', (lng: string) => {
   localStorage.setItem('toefl_lang', lng);
 });

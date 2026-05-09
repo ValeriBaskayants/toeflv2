@@ -17,6 +17,7 @@ import { BullModule } from '@nestjs/bull';
 import { ListeningModule } from './modules/listening/listening.module';
 import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
 import { MistakeModule } from './modules/mistakes/mistakes.module';
+import { AdminModule } from './modules/admin/admin.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -53,6 +54,7 @@ import { MistakeModule } from './modules/mistakes/mistakes.module';
     ReadingsModule,
     VocabularyModule,
     WritingModule,
+    AdminModule,
     MultipleChoiceModule,
     ListeningModule,
     BookmarksModule,

@@ -11,8 +11,9 @@ export class WritingService {
     constructor(
         private readonly prisma: PrismaService,
         @InjectQueue('writing-analysis') private readonly analysisQueue: Queue,
-        private logger: Logger
     ) { }
+
+    private readonly logger = new Logger(WritingService.name);
 
     async getPrompts(level?: Level) {
         const where: Prisma.WritingPromptWhereInput = {};

@@ -4,9 +4,6 @@ import { Menu } from 'lucide-react';
 import { Sidebar } from '@/components/layout/SlideBar/Sidebar';
 import styles from './AppShell.module.css';
 
-// AppShell wraps all authenticated pages via React Router nested routes.
-// It renders the persistent Sidebar + a content area with <Outlet />.
-// Each child page renders inside the Outlet slot.
 
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
@@ -16,10 +13,8 @@ export function AppShell() {
 
   return (
     <div className={styles['shell']}>
-      {/* Sidebar (always mounted, hidden on mobile until opened) */}
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
 
-      {/* Mobile overlay — tap to close sidebar */}
       {sidebarOpen && (
         <div
           className={styles['overlay']}
@@ -28,9 +23,7 @@ export function AppShell() {
         />
       )}
 
-      {/* Main content area */}
       <main className={styles['main']}>
-        {/* Mobile top bar */}
         <header className={styles['mobileBar']}>
           <button
             className={styles['hamburger']}

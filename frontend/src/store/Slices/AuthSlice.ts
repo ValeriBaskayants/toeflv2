@@ -2,12 +2,8 @@ import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import type { User  } from '@/types/auth/Auth.types';
 
 interface AuthState {
-  // Access token lives ONLY in memory.
-  // On page reload, App.tsx calls POST /auth/refresh to restore it via HttpOnly cookie.
   accessToken: string | null;
   user: User | null;
-  // True while the initial POST /auth/refresh check is in flight.
-  // Keeps ProtectedRoute showing a spinner instead of redirecting to /login.
   isInitializing: boolean;
 }
 

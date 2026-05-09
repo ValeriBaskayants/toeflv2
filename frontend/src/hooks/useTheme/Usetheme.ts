@@ -9,7 +9,6 @@ function getInitialTheme(): Theme {
   if (saved === 'light' || saved === 'dark') {
     return saved;
   }
-  // Respect OS preference as default
   return window.matchMedia('(prefers-color-scheme: dark)').matches ? 'dark' : 'light';
 }
 
@@ -32,7 +31,6 @@ export function useTheme() {
   return { theme, toggleTheme };
 }
 
-// Call this once in App.tsx before render to avoid flash
 export function initTheme(): void {
   applyTheme(getInitialTheme());
 }

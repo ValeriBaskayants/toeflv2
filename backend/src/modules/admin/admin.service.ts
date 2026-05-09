@@ -63,7 +63,7 @@ export class AdminService {
     
     const adminData = await this.prisma.user.findUnique({
       where: { id: adminId },
-      select: { id: true, email: true, role: true } // Не возвращаем пароль
+      select: { id: true, email: true, role: true } 
     });
 
     return {

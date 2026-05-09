@@ -22,7 +22,6 @@
 .greetingBlock { flex: 1; }
 
 .greeting {
-  font-family: 'Syne', sans-serif;
   font-size: 1.875rem;
   font-weight: 800;
   color: var(--text-1);
@@ -46,9 +45,7 @@
   border-radius: 100px;
   font-size: 0.7rem;
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
   color: var(--accent);
-  text-transform: uppercase;
   letter-spacing: 0.06em;
   flex-shrink: 0;
   margin-top: 0.5rem;
@@ -103,7 +100,6 @@
 }
 
 .statValue {
-  font-family: 'Syne', sans-serif;
   font-size: 1.25rem;
   font-weight: 800;
   color: var(--text-1);
@@ -126,7 +122,6 @@
 }
 
 .sectionTitle {
-  font-family: 'Syne', sans-serif;
   font-size: 1rem;
   font-weight: 700;
   color: var(--text-1);
@@ -135,7 +130,6 @@
 .sectionMeta {
   font-size: 0.8rem;
   color: var(--text-3);
-  font-family: 'JetBrains Mono', monospace;
 }
 
 /* ── Weekly progress ──────────────────────────────────────────────────────── */
@@ -176,7 +170,6 @@
   font-size: 0.68rem;
   color: var(--text-3);
   font-weight: 600;
-  font-family: 'JetBrains Mono', monospace;
 }
 
 /* ── Sections grid ────────────────────────────────────────────────────────── */
@@ -243,14 +236,12 @@
 .comingSoon {
   font-size: 0.67rem;
   font-weight: 700;
-  font-family: 'JetBrains Mono', monospace;
   color: var(--text-3);
   text-transform: uppercase;
   letter-spacing: 0.05em;
 }
 
 .sectionName {
-  font-family: 'Plus Jakarta Sans', sans-serif;
   font-size: 0.95rem;
   font-weight: 700;
   color: var(--text-1);
@@ -281,7 +272,6 @@
 .sectionProgressLabel {
   font-size: 0.7rem;
   color: var(--text-3);
-  font-family: 'JetBrains Mono', monospace;
   flex-shrink: 0;
 }
 

@@ -29,7 +29,7 @@ export class AuthService {
   }
 
   private getRefreshExpiresInDays(): number {
-    return this.configService.getOrThrow<number>('jwt.refreshExpiresInDays');
+    return this.configService.getOrThrow<number>('jwt.refreshDays');
   }
 
 

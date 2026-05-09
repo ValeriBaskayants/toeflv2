@@ -14,11 +14,12 @@ import {
   Moon,
   LogOut,
   X,
+  ShieldAlert,
 } from 'lucide-react';
 import i18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import { clearAuth, selectUser } from '@/store/Slices/AuthSlice';
-import { api } from '@/api/services/auth';
+import { api } from '@/api';
 import { useTheme } from '@/hooks/useTheme/Usetheme';
 import styles from './Sidebar.module.css';
 
@@ -38,23 +39,18 @@ const NAV_SECTIONS = [
     label: 'navigation.overview',
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'navigation.dashboard' },
+      { to: '/progress',  icon: BarChart3,       label: 'navigation.progress' },
     ],
   },
   {
     label: 'navigation.practiceTitle',
     items: [
-      { to: '/writing',    icon: PenLine,         label: 'navigation.writing' },
-      { to: '/reading',    icon: BookOpen,         label: 'navigation.reading' },
-      { to: '/listening',  icon: Headphones,       label: 'navigation.listening' },
-      { to: '/speaking',   icon: Mic,              label: 'navigation.speaking' },
-      { to: '/grammar',    icon: CheckCheck,       label: 'navigation.grammar' },
-      { to: '/vocabulary', icon: Layers,           label: 'navigation.vocabulary' },
-    ],
-  },
-  {
-    label: 'navigation.analyticsTitle',
-    items: [
-      { to: '/progress', icon: BarChart3, label: 'navigation.progress' },
+      { to: '/writing',    icon: PenLine,    label: 'navigation.writing' },
+      { to: '/reading',    icon: BookOpen,   label: 'navigation.reading' },
+      { to: '/listening',  icon: Headphones, label: 'navigation.listening' },
+      { to: '/speaking',   icon: Mic,        label: 'navigation.speaking' },
+      { to: '/grammar',    icon: CheckCheck, label: 'navigation.grammar' },
+      { to: '/vocabulary', icon: Layers,     label: 'navigation.vocabulary' },
     ],
   },
 ] as const;
@@ -90,7 +86,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     try {
       await api.post('/auth/logout');
     } catch {
-      // best-effort
     } finally {
       dispatch(clearAuth());
       navigate('/login', { replace: true });
@@ -103,7 +98,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <aside className={`${styles['sidebar']} ${isOpen ? styles['sidebarOpen'] : ''}`}>
-      {/* ── Close button (mobile only) ── */}
       <button
         className={styles['closeBtn']}
         onClick={onClose}
@@ -113,7 +107,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <X size={18} />
       </button>
 
-      {/* ── Logo ── */}
       <div className={styles['logo']}>
         <div className={styles['logoMark']}>
           <span className={styles['logoLetter']}>T</span>
@@ -121,7 +114,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <span className={styles['logoText']}>TOEFL Prep</span>
       </div>
 
-      {/* ── Navigation ── */}
       <nav className={styles['nav']} aria-label="Main navigation">
         {NAV_SECTIONS.map((section) => (
           <div key={section.label} className={styles['navSection']}>
@@ -141,11 +133,26 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             ))}
           </div>
         ))}
+
+        {user?.role === 'ADMIN' && (
+          <div className={styles['navSection']}>
+            <span className={styles['sectionLabel']}>System</span>
+            <NavLink
+              to="/admin"
+              className={({ isActive }) =>
+                `${styles['navItem']} ${styles['navItemAdmin']} ${isActive ? styles['navItemActive'] : ''}`
+              }
+              onClick={onClose}
+            >
+              <ShieldAlert size={16} className={styles['navIcon']} />
+              <span>Admin Panel</span>
+            </NavLink>
+          </div>
+        )}
       </nav>
 
-      {/* ── Bottom controls ── */}
+      {/* Bottom controls */}
       <div className={styles['bottom']}>
-        {/* Language selector */}
         <div className={styles['langRow']}>
           <Globe size={14} className={styles['controlIcon']} />
           <div className={styles['langGroup']}>
@@ -163,7 +170,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        {/* Theme toggle */}
         <button
           className={styles['themeBtn']}
           onClick={toggleTheme}
@@ -174,10 +180,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           <span>{theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}</span>
         </button>
 
-        {/* Divider */}
         <div className={styles['divider']} />
 
-        {/* User row + logout */}
         {user !== null && (
           <div className={styles['userRow']}>
             <UserAvatar name={user.name} avatar={user.avatar} />

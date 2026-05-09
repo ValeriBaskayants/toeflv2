@@ -4,7 +4,6 @@ import { store } from '@/store/store';
 import { setAccessToken, clearAuth } from '@/store/Slices/AuthSlice';
 import type { RefreshResponse } from '@/types/auth/Auth.types';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
 
 interface RetryableConfig extends InternalAxiosRequestConfig {
     _retry?: boolean;
@@ -15,8 +14,6 @@ interface PendingRequest {
     reject: (error: unknown) => void;
 }
 
-// ─── Token-refresh state ──────────────────────────────────────────────────────
-// Shared across all interceptor invocations — must live at module scope.
 
 let isRefreshing = false;
 let pendingQueue: PendingRequest[] = [];
@@ -28,16 +25,14 @@ function processQueue(error: unknown, newToken: string | null): void {
     pendingQueue = [];
 }
 
-// ─── Instance ─────────────────────────────────────────────────────────────────
 
 const BASE_URL = import.meta.env['VITE_API_BASE_URL'] as string;
 
 export const api = axios.create({
     baseURL: BASE_URL,
-    withCredentials: true, // sends HttpOnly refresh-token cookie on every request
+    withCredentials: true, 
 });
 
-// ─── Request interceptor: attach access token ─────────────────────────────────
 
 api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     const { accessToken } = store.getState().auth;
@@ -47,8 +42,6 @@ api.interceptors.request.use((config: InternalAxiosRequestConfig) => {
     return config;
 });
 
-// ─── Response interceptor: silent token refresh on 401 ───────────────────────
-// Uses raw axios (not `api`) for the refresh call to avoid an interceptor loop.
 
 api.interceptors.response.use(
     (response) => response,
@@ -57,7 +50,6 @@ api.interceptors.response.use(
 
         const originalRequest = error.config as RetryableConfig | undefined;
 
-        // Only handle 401s that haven't been retried yet
         if (
             error.response?.status !== 401 ||
             originalRequest === undefined ||
@@ -66,7 +58,6 @@ api.interceptors.response.use(
             return Promise.reject(error);
         }
 
-        // Another refresh is already in flight — queue this request until it resolves
         if (isRefreshing) {
             return new Promise<string>((resolve, reject) => {
                 pendingQueue.push({ resolve, reject });

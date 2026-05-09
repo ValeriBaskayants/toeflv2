@@ -1,0 +1,645 @@
+.page {
+  padding: 2.25rem 2.5rem 4rem;
+  max-width: 960px;
+  animation: fadeUp var(--duration-slow) var(--ease-out) both;
+}
+
+@keyframes fadeUp {
+  from { opacity: 0; transform: translateY(10px); }
+  to   { opacity: 1; transform: translateY(0); }
+}
+
+/* ── Header ───────────────────────────────────────────────────────────────── */
+
+.header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.pageTitle {
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.025em;
+  margin-bottom: 0.25rem;
+}
+
+.pageSubtitle {
+  font-size: 0.9rem;
+  color: var(--text-3);
+}
+
+/* ── Level-up CTA ─────────────────────────────────────────────────────────── */
+
+.levelUpBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.65rem 1.25rem;
+  background: linear-gradient(135deg, var(--accent) 0%, #818cf8 100%);
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-size: 0.875rem;
+  font-weight: 700;
+  box-shadow: var(--shadow-accent);
+  transition: all var(--duration-base) var(--ease-out);
+  flex-shrink: 0;
+}
+
+.levelUpBtn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 12px 28px rgba(99,102,241,0.35);
+}
+
+.levelUpBtn:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Error banner ─────────────────────────────────────────────────────────── */
+
+.errorBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 0.875rem 1.25rem;
+  background: var(--danger-light);
+  border: 1px solid rgba(239,68,68,0.25);
+  border-radius: var(--radius-md);
+  color: var(--danger);
+  font-size: 0.875rem;
+  margin-bottom: 1.5rem;
+}
+
+.retryBtn {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  margin-left: auto;
+  padding: 0.35rem 0.75rem;
+  border: 1px solid var(--danger);
+  border-radius: var(--radius-sm);
+  color: var(--danger);
+  font-size: 0.8rem;
+  font-weight: 600;
+  transition: all var(--duration-fast) ease;
+}
+
+.retryBtn:hover {
+  background: var(--danger);
+  color: #fff;
+}
+
+/* ── Stats row ────────────────────────────────────────────────────────────── */
+
+.statsRow {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 0.75rem;
+  margin-bottom: 1.75rem;
+}
+
+.statCard {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.125rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--duration-base) ease;
+}
+
+.statCard:hover {
+  box-shadow: var(--shadow-md);
+  transform: translateY(-1px);
+}
+
+.statIcon {
+  width: 38px;
+  height: 38px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+}
+
+.purple { background: rgba(99,102,241,0.12);  color: #6366f1; }
+.amber  { background: rgba(245,158,11,0.12);  color: #f59e0b; }
+.green  { background: rgba(34,197,94,0.12);   color: #22c55e; }
+.blue   { background: rgba(59,130,246,0.12);  color: #3b82f6; }
+.rose   { background: rgba(244,63,94,0.12);   color: #f43f5e; }
+
+.statInfo { display: flex; flex-direction: column; gap: 0.1rem; }
+
+.statValue {
+  font-size: 1.2rem;
+  font-weight: 800;
+  color: var(--text-1);
+  line-height: 1.2;
+}
+
+.statLabel {
+  font-size: 0.7rem;
+  color: var(--text-3);
+  font-weight: 500;
+}
+
+/* ── Shared section ───────────────────────────────────────────────────────── */
+
+.sectionHeader {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 1.125rem;
+}
+
+.sectionTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.sectionMeta {
+  font-size: 0.8rem;
+  color: var(--text-3);
+}
+
+/* ── Level journey ────────────────────────────────────────────────────────── */
+
+.levelJourney {
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+}
+
+.levelTrack {
+  display: flex;
+  align-items: flex-start;
+  gap: 0;
+  margin-bottom: 1.5rem;
+  overflow-x: auto;
+  padding-bottom: 0.25rem;
+  scrollbar-width: none;
+}
+
+.levelTrack::-webkit-scrollbar { display: none; }
+
+.levelNode {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  position: relative;
+  flex: 1;
+  min-width: 52px;
+}
+
+.levelConnector {
+  position: absolute;
+  top: 14px;
+  left: 50%;
+  width: 100%;
+  height: 2px;
+  background: var(--border);
+  z-index: 0;
+}
+
+.levelConnectorPast {
+  background: var(--accent);
+}
+
+.levelDot {
+  position: relative;
+  z-index: 1;
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--border);
+  background: var(--surface);
+  font-size: 0.6rem;
+  transition: all var(--duration-base) ease;
+  margin-bottom: 0.5rem;
+}
+
+.levelDotPast {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #fff;
+}
+
+.levelDotCurrent {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 4px rgba(99,102,241,0.2);
+}
+
+.levelDotFuture {
+  opacity: 0.4;
+}
+
+.levelPulse {
+  position: absolute;
+  inset: -4px;
+  border-radius: 50%;
+  border: 2px solid var(--accent);
+  animation: pulse 2s ease-in-out infinite;
+}
+
+@keyframes pulse {
+  0%, 100% { opacity: 0.6; transform: scale(1); }
+  50%       { opacity: 0; transform: scale(1.4); }
+}
+
+.levelCheck {
+  font-size: 0.65rem;
+  line-height: 1;
+  color: #fff;
+}
+
+.levelLabel {
+  font-size: 0.68rem;
+  font-weight: 600;
+  color: var(--text-3);
+}
+
+.levelLabelCurrent {
+  color: var(--accent);
+  font-weight: 700;
+}
+
+/* Readiness bar */
+.readinessWrap {
+  margin-top: 0.25rem;
+}
+
+.readinessTrack {
+  position: relative;
+  height: 8px;
+  background: var(--surface-2);
+  border-radius: 100px;
+  overflow: visible;
+  margin-bottom: 0.625rem;
+}
+
+.readinessFill {
+  height: 100%;
+  background: linear-gradient(90deg, var(--accent), #818cf8);
+  border-radius: 100px;
+  transition: width 1s var(--ease-spring);
+}
+
+.readinessPct {
+  position: absolute;
+  top: -22px;
+  transform: translateX(-50%);
+  font-size: 0.68rem;
+  font-weight: 700;
+  color: var(--accent);
+  white-space: nowrap;
+  pointer-events: none;
+}
+
+.readinessHint {
+  font-size: 0.78rem;
+  color: var(--text-3);
+}
+
+/* ── Skill breakdown ──────────────────────────────────────────────────────── */
+
+.skillBreakdown {
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+}
+
+.skillGrid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 1rem;
+}
+
+.skillCard {
+  padding: 1.125rem;
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md);
+  transition: all var(--duration-base) ease;
+}
+
+.skillCard:hover {
+  border-color: var(--skill-color, var(--accent));
+  box-shadow: 0 4px 16px rgba(0,0,0,0.06);
+  transform: translateY(-1px);
+}
+
+.skillCardHead {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin-bottom: 0.75rem;
+}
+
+.skillIcon {
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-xs);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: color-mix(in srgb, var(--skill-color, var(--accent)) 14%, transparent);
+  color: var(--skill-color, var(--accent));
+  flex-shrink: 0;
+}
+
+.skillMeta {
+  flex: 1;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.1rem;
+}
+
+.skillName {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-1);
+  line-height: 1.2;
+}
+
+.skillDetail {
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+
+.skillPct {
+  font-size: 1rem;
+  font-weight: 800;
+  color: var(--text-1);
+  flex-shrink: 0;
+}
+
+.skillBar {
+  height: 5px;
+  background: var(--border);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-bottom: 0.625rem;
+}
+
+.skillBarFill {
+  height: 100%;
+  border-radius: 100px;
+  transition: width 0.9s var(--ease-spring);
+}
+
+.skillFooter {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.skillCount {
+  font-size: 0.7rem;
+  color: var(--text-3);
+}
+
+.skillAccuracyPip {
+  flex: 1;
+  height: 3px;
+  background: var(--border);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.skillAccuracyFill {
+  height: 100%;
+  border-radius: 100px;
+  opacity: 0.5;
+  transition: width 0.9s var(--ease-spring);
+}
+
+/* ── Activity heatmap ─────────────────────────────────────────────────────── */
+
+.heatmapSection {
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  margin-bottom: 1.5rem;
+}
+
+.heatmapGrid {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.heatmapDayLabels {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+  padding-top: 0;
+}
+
+.heatmapDayLabel {
+  height: 16px;
+  font-size: 0.62rem;
+  color: var(--text-3);
+  display: flex;
+  align-items: center;
+  width: 18px;
+}
+
+.heatmapCols {
+  display: flex;
+  gap: 4px;
+}
+
+.heatmapCol {
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.heatmapCell {
+  width: 16px;
+  height: 16px;
+  border-radius: 3px;
+  cursor: default;
+  transition: transform var(--duration-fast) ease;
+}
+
+.heatmapCell:hover {
+  transform: scale(1.25);
+}
+
+.heatmapIntensity0 { background: var(--surface-2); }
+.heatmapIntensity1 { background: rgba(99,102,241,0.25); }
+.heatmapIntensity2 { background: rgba(99,102,241,0.45); }
+.heatmapIntensity3 { background: rgba(99,102,241,0.7);  }
+.heatmapIntensity4 { background: var(--accent); }
+
+.heatmapLegend {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+}
+
+.legendLabel {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  margin: 0 4px;
+}
+
+.legendCell {
+  width: 12px;
+  height: 12px;
+  border-radius: 2px;
+}
+
+/* ── Ready banner ─────────────────────────────────────────────────────────── */
+
+.readyBanner {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  background: linear-gradient(135deg, rgba(99,102,241,0.1), rgba(129,140,248,0.08));
+  border: 1px solid rgba(99,102,241,0.3);
+  border-radius: var(--radius-lg);
+  color: var(--text-1);
+  margin-bottom: 1.5rem;
+}
+
+.readyBanner > svg {
+  color: #f59e0b;
+  flex-shrink: 0;
+}
+
+.readyBanner strong {
+  display: block;
+  font-size: 0.95rem;
+  font-weight: 700;
+  margin-bottom: 0.2rem;
+}
+
+.readyBanner p {
+  font-size: 0.8rem;
+  color: var(--text-3);
+}
+
+.levelUpBtnInline {
+  margin-left: auto;
+  padding: 0.6rem 1.125rem;
+  background: var(--accent);
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: 0.875rem;
+  font-weight: 700;
+  transition: all var(--duration-base) ease;
+  flex-shrink: 0;
+}
+
+.levelUpBtnInline:hover {
+  background: var(--accent-hover);
+  transform: translateY(-1px);
+}
+
+.levelUpBtnInline:disabled {
+  opacity: 0.65;
+  cursor: not-allowed;
+  transform: none;
+}
+
+/* ── Empty state ──────────────────────────────────────────────────────────── */
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+  padding: 4rem 2rem;
+  color: var(--text-3);
+  text-align: center;
+}
+
+.emptyState svg {
+  opacity: 0.3;
+}
+
+.emptyState p {
+  font-size: 0.95rem;
+  max-width: 320px;
+  line-height: 1.6;
+}
+
+/* ── Mobile ───────────────────────────────────────────────────────────────── */
+
+@media (max-width: 900px) {
+  .statsRow {
+    grid-template-columns: repeat(3, 1fr);
+  }
+
+  .skillGrid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 768px) {
+  .page {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+
+  .pageTitle { font-size: 1.5rem; }
+
+  .statsRow {
+    grid-template-columns: repeat(2, 1fr);
+  }
+
+  .header {
+    flex-direction: column;
+    gap: 0.875rem;
+  }
+
+  .levelUpBtn {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .heatmapCell {
+    width: 12px;
+    height: 12px;
+  }
+}
+
+@media (max-width: 480px) {
+  .page { padding: 1.25rem 1rem 3rem; }
+
+  .statsRow {
+    grid-template-columns: 1fr 1fr;
+  }
+
+  .skillGrid {
+    grid-template-columns: 1fr;
+  }
+}

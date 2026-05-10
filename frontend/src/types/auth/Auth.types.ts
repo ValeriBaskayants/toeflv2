@@ -1,14 +1,21 @@
-// Mirrors the backend AuthenticatedUser interface (auth/interfaces/authenticated-user.interface.ts)
-// Keep in sync with the backend schema manually — no codegen for this pet project
+import { type ID, Role, Level, type ISODateString } from '../globalTypes';
+
 export interface User {
-  id: string;
+  id: ID;
   email: string;
   name: string;
   avatar: string | null;
-  role: 'USER' | 'ADMIN';
+  role: Role;
+
+  currentLevel: Level;
+  totalXp: number;
+  streak: number;
+  lastActivityDate: ISODateString | null;
+
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
 }
 
-// Shape of the refresh endpoint response body
 export interface RefreshResponse {
   accessToken: string;
 }

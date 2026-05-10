@@ -15,7 +15,6 @@ class GetMistakesDto {
 export class MistakesController {
   constructor(private readonly mistakesService: MistakesService) {}
  
-  // GET /api/mistakes?source=QUIZ
   @Get()
   findAll(
     @CurrentUser() user: JwtUserPayload,
@@ -24,7 +23,6 @@ export class MistakesController {
     return this.mistakesService.findAll(user.id, query.source);
   }
  
-  // GET /api/mistakes/weak-spots
   @Get('weak-spots')
   getWeakSpots(@CurrentUser() user: JwtUserPayload) {
     return this.mistakesService.getWeakSpots(user.id);

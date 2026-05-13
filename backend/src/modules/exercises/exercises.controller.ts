@@ -4,6 +4,9 @@ import { Level } from '@prisma/client';
 import { ExercisesService } from './exercises.service';
 import { GetExercisesDto } from './dto/get-exercises.dto';
 import { BulkCreateExercisesDto } from './dto/bulk-create-exercise.dto';
+import { SubmitExerciseDto } from './dto/submit-exercise.dto';
+import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
  
@@ -25,6 +28,15 @@ export class ExercisesController {
   @Get('topics')
   getTopics(@Query() query: GetTopicsDto) {
     return this.service.getTopics(query.level);
+  }
+ 
+  @Post('submit')
+  submitAnswer(
+    @CurrentUser() user: JwtUserPayload,
+    @Body() dto: SubmitExerciseDto,
+    @Query('timezone') timezone?: string,
+  ) {
+    return this.service.submitAnswer(user.id, dto, timezone);
   }
  
   @Post('bulk')

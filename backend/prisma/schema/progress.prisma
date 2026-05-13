@@ -1,38 +1,36 @@
-
 type ProgressStats {
-  required  Int @default(0)
-  completed Int @default(0)
-  accuracy  Int @default(0)
+  required  Int   @default(0)
+  completed Int   @default(0)
+  accuracy  Float @default(0)   // ← was Int
 }
-
+ 
+type WritingStats {
+  required  Int   @default(0)
+  completed Int   @default(0)
+  avgScore  Float @default(0)   // ← was Int
+}
+ 
 type VocabularyStats {
   required Int @default(0)
   learned  Int @default(0)
 }
-
-type WritingStats {
-  required  Int @default(0)
-  completed Int @default(0)
-  avgScore  Int @default(0)
-}
-
-
+ 
 model LevelProgress {
   id     String @id @default(auto()) @map("_id") @db.ObjectId
   userId String @db.ObjectId @unique
-
+ 
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-
+ 
   grammar    ProgressStats
   vocabulary VocabularyStats
   reading    ProgressStats
   writing    WritingStats
   listening  ProgressStats
   quiz       ProgressStats
-
+ 
   isReadyForTest Boolean   @default(false)
   testUnlockedAt DateTime?
-
+ 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

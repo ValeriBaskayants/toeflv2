@@ -1,3 +1,4 @@
+import type { MultipleChoice } from "../multipleChoice/MultipleChoice.types";
 
 export interface ProgressStats {
   required: number;
@@ -25,6 +26,7 @@ export interface LevelProgressData {
   writing: WritingStats;
   listening: ProgressStats;
   quiz: ProgressStats;
+  multipleChoice:MultipleChoice
   isReadyForTest: boolean;
   testUnlockedAt: string | null;
   createdAt: string;

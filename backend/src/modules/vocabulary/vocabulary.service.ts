@@ -3,6 +3,8 @@ import { Level, PartOfSpeech, Prisma, WordLearningStatus } from '@prisma/client'
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateVocabularyDto } from './dto/bulk-create-vocabulary.dto';
 import type { GetFlashcardsDto, GetVocabularyDto } from './dto/get-vocabulary.dto';
+import { ProgressService } from '../progress/progress.service';
+import { XP_RULES } from 'src/constants/level-requirements';
 
 const DEFAULT_LIMIT = 20;
 const MAX_LIMIT = 100;
@@ -52,7 +54,6 @@ function applySM2(card: SM2Card, quality: SM2Quality): SM2Result {
     repetitions += 1;
   }
 
-  // Стандартная формула SM-2
   easinessFactor = Math.max(
     1.3,
     easinessFactor + 0.1 - (5 - quality) * (0.08 + (5 - quality) * 0.02),
@@ -76,7 +77,10 @@ function applySM2(card: SM2Card, quality: SM2Quality): SM2Result {
 
 @Injectable()
 export class VocabularyService {
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly progress :ProgressService 
+  ) { }
 
   async findAll(query: GetVocabularyDto) {
     const where: Prisma.VocabularyWhereInput = {};
@@ -120,37 +124,51 @@ export class VocabularyService {
     return { total, learned, mastered, dueToday };
   }
 
-  async reviewWord(
-    userId: string,
-    wordId: string,
-    quality: SM2Quality,
+   async reviewWord(
+    userId:    string,
+    wordId:    string,
+    quality:   SM2Quality,   // 0-5 per standard SM-2
+    timezone?: string,
   ) {
     const existing = await this.prisma.userVocabularyProgress.findUnique({
       where: { userId_wordId: { userId, wordId } },
     });
-
+ 
     const baseCard: SM2Card = existing ?? {
       easinessFactor: 2.5,
-      interval: 1,
-      repetitions: 0,
+      interval:       1,
+      repetitions:    0,
       nextReviewDate: new Date(),
-      status: 'NEW',
+      status:         'NEW',
       lastReviewedAt: null,
     };
-
-    const updated = applySM2(baseCard, quality);
-
+ 
+    const previousStatus = baseCard.status;
+    const updated        = applySM2(baseCard, quality);
+ 
     const saved = await this.prisma.userVocabularyProgress.upsert({
-      where: { userId_wordId: { userId, wordId } },
+      where:  { userId_wordId: { userId, wordId } },
       create: { userId, wordId, ...updated },
       update: updated,
     });
-
+ 
+    const justMastered =
+      previousStatus !== 'MASTERED' && saved.status === 'MASTERED';
+ 
+    if (justMastered) {
+      await this.progress.recordVocabularyLearned({
+        userId,
+        xpEarned: XP_RULES.VOCABULARY_MASTERED,
+        timezone,
+      });
+    }
+ 
     return {
-      status: saved.status,
+      status:         saved.status,
       nextReviewDate: saved.nextReviewDate,
-      interval: saved.interval,
-      repetitions: saved.repetitions,
+      interval:       saved.interval,
+      repetitions:    saved.repetitions,
+      justMastered,
     };
   }
 

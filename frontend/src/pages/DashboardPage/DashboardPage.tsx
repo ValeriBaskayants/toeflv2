@@ -62,6 +62,11 @@ function getSkillProgress(key: string, progress: LevelProgressData): SkillProgre
       const pct = required > 0 ? Math.min(100, Math.round((completed / required) * 100)) : 0;
       return { pct, label: `${completed}/${required} · avg ${avgScore}%` };
     }
+    case 'multipleChoice': {
+      const { completed, required, avgScore } = progress.multipleChoice;
+      const pct = required > 0 ? Math.min(100, Math.round((completed / required) * 100)) : 0;
+      return { pct, label: `${completed}/${required} · avg ${avgScore}%` };
+    }
     default:
       return { pct: 0, label: 'Coming soon' };
   }
@@ -85,12 +90,12 @@ function buildWeekDots(recentActivity: DailyActivity[]) {
 
 
 const SKILL_CONFIGS = [
-  { key: 'grammar',    Icon: CheckCheck, labelKey: 'dashboard.features.grammar',    color: '#14b8a6', comingSoon: false },
-  { key: 'reading',    Icon: BookOpen,   labelKey: 'dashboard.features.reading',    color: '#22c55e', comingSoon: false },
-  { key: 'listening',  Icon: Headphones, labelKey: 'dashboard.features.listening',  color: '#f59e0b', comingSoon: false },
-  { key: 'vocabulary', Icon: Layers,     labelKey: 'dashboard.features.vocabulary', color: '#8b5cf6', comingSoon: false },
-  { key: 'writing',    Icon: PenLine,    labelKey: 'dashboard.features.writing',    color: '#ec4899', comingSoon: false },
-  { key: 'speaking',   Icon: Mic,        labelKey: 'dashboard.features.speaking',   color: '#6366f1', comingSoon: true  },
+  { key: 'grammar', Icon: CheckCheck, labelKey: 'dashboard.features.grammar', color: '#14b8a6', comingSoon: false },
+  { key: 'reading', Icon: BookOpen, labelKey: 'dashboard.features.reading', color: '#22c55e', comingSoon: false },
+  { key: 'listening', Icon: Headphones, labelKey: 'dashboard.features.listening', color: '#f59e0b', comingSoon: false },
+  { key: 'vocabulary', Icon: Layers, labelKey: 'dashboard.features.vocabulary', color: '#8b5cf6', comingSoon: false },
+  { key: 'writing', Icon: PenLine, labelKey: 'dashboard.features.writing', color: '#ec4899', comingSoon: false },
+  { key: 'speaking', Icon: Mic, labelKey: 'dashboard.features.speaking', color: '#6366f1', comingSoon: true },
 ] as const;
 
 // ─── Sub-components ───────────────────────────────────────────────────────────
@@ -100,8 +105,8 @@ function GreetingMessage({ name }: { name: string }) {
   const hour = new Date().getHours();
   const periodKey =
     hour < 12 ? 'dashboard.morning' :
-    hour < 18 ? 'dashboard.afternoon' :
-    'dashboard.evening';
+      hour < 18 ? 'dashboard.afternoon' :
+        'dashboard.evening';
 
   return (
     <div className={styles['greetingBlock']}>
@@ -125,11 +130,11 @@ export function DashboardPage() {
   const isLevelingUp = useAppSelector(selectIsLevelingUp);
 
 
- useEffect(() => {
-  if (data === null && !isLoading && error === null) {  
-    void dispatch(fetchDashboard());
-  }
-}, [data, isLoading, error, dispatch]);  
+  useEffect(() => {
+    if (data === null && !isLoading && error === null) {
+      void dispatch(fetchDashboard());
+    }
+  }, [data, isLoading, error, dispatch]);
 
   const handleRetry = useCallback(() => {
     void dispatch(fetchDashboard());
@@ -240,10 +245,10 @@ export function DashboardPage() {
               <span className={styles['sectionMeta']}>
                 {data.recentActivity.length > 0
                   ? `${Math.min(data.recentActivity.filter((a) => {
-                      const d = new Date();
-                      const cutoff = new Date(d.setDate(d.getDate() - 7)).toISOString().slice(0, 10);
-                      return a.date >= cutoff;
-                    }).length, 7)} / 7 ${t('dashboard.days')}`
+                    const d = new Date();
+                    const cutoff = new Date(d.setDate(d.getDate() - 7)).toISOString().slice(0, 10);
+                    return a.date >= cutoff;
+                  }).length, 7)} / 7 ${t('dashboard.days')}`
                   : `0 / 7 ${t('dashboard.days')}`}
               </span>
             </div>

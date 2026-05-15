@@ -13,17 +13,14 @@ import {
   WEAKNESS_GATE_CAP,
 } from '../../constants/level-requirements';
 
-// ─── Public interfaces ─────────────────────────────────────────────────────
 
 export interface SkillBreakdown {
-  sms:         number; // Skill Mastery Score 0-100
+  sms:         number;
   completed:   number;
   required:    number;
-  accuracy:    number; // current EMA accuracy (0-100)
-  accuracyMin: number; // minimum required accuracy (0-100)
-  // How many more exercises needed AT current accuracy to reach 100 SMS
+  accuracy:    number; 
+  accuracyMin: number; 
   remainingCount:   number;
-  // Accuracy gap: how many percentage points below minimum (0 if meeting target)
   accuracyGap:      number;
 }
 
@@ -34,11 +31,8 @@ export interface DashboardResponse {
   progress:         LevelProgress;
   recentActivity:   DailyActivity[];
   readinessPercent: number;
-  // Per-skill SMS and gap analysis — drives the dashboard hint cards
   skillBreakdown:   Record<string, SkillBreakdown>;
-  // The skill with the lowest SMS — what's holding the user back
   weakestSkill:     string;
-  // Human-readable next action (e.g. "Do 12 more grammar exercises")
   nextMilestone:    string;
   testUnlocked:     boolean;
 }
@@ -47,7 +41,6 @@ export type ProgressSkillKey = 'grammar' | 'reading' | 'listening' | 'quiz';
 
 const ACTIVITY_DAYS = 30;
 
-// ─── Service ───────────────────────────────────────────────────────────────
 
 @Injectable()
 export class ProgressService {
@@ -55,7 +48,6 @@ export class ProgressService {
 
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── getDashboard ─────────────────────────────────────────────────────────
 
   async getDashboard(userId: string): Promise<DashboardResponse> {
     const cutoffDate = this.cutoffDateString(ACTIVITY_DAYS);

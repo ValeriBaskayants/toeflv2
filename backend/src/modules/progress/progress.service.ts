@@ -89,16 +89,16 @@ export class ProgressService {
     };
   }
 
-  // ── recordSkillCompletion (grammar / reading / listening / quiz) ──────────
-  //
-  // Uses EMA accuracy so recent performance matters more than historical.
-  // MultipleChoice is intentionally NOT routed here — it has its own method
-  // that records to UserMistake only, with no LevelProgress side effects.
+  
+  
+  
+  
+  
 
   async recordSkillCompletion(params: {
     userId:    string;
     skill:     ProgressSkillKey;
-    accuracy:  number; // 0-100 for this single attempt
+    accuracy:  number; 
     xpEarned:  number;
     timezone?: string;
   }): Promise<void> {
@@ -113,7 +113,7 @@ export class ProgressService {
     const current = progress[params.skill] as { completed: number; accuracy: number };
 
     const newCompleted = current.completed + 1;
-    // EMA: recent accuracy is weighted more than historical
+    
     const newAccuracy = emaAccuracy(
       current.completed,
       current.accuracy,
@@ -141,7 +141,7 @@ export class ProgressService {
     void this.checkAndUnlockTest(params.userId);
   }
 
-  // ── recordListeningCompletion ─────────────────────────────────────────────
+  
 
   async recordListeningCompletion(params: {
     userId:    string;
@@ -152,9 +152,9 @@ export class ProgressService {
     return this.recordSkillCompletion({ ...params, skill: 'listening' });
   }
 
-  // ── recordVocabularyLearned ───────────────────────────────────────────────
-  // Called ONLY when a word transitions to MASTERED status in SM-2.
-  // Intermediate statuses (LEARNING, REVIEW) do not affect LevelProgress.
+  
+  
+  
 
   async recordVocabularyLearned(params: {
     userId:    string;
@@ -472,7 +472,7 @@ export class ProgressService {
       ? Math.min(WEAKNESS_GATE_CAP, Math.round(avgSMS))
       : Math.round(avgSMS);
 
-    // The skill with lowest SMS — shown in UI hint
+    
     const weakestSkill = Object.entries(scores).reduce(
       (a, [k, v]) => (v < a[1] ? [k, v] as [string, number] : a),
       ['grammar', 100] as [string, number],
@@ -481,8 +481,8 @@ export class ProgressService {
     return { readinessPercent, skillBreakdown, weakestSkill };
   }
 
-  // ── buildNextMilestone ────────────────────────────────────────────────────
-  // Generates a concrete, actionable hint for the dashboard.
+  
+  
 
   private buildNextMilestone(
     skillBreakdown: Record<string, SkillBreakdown>,

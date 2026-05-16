@@ -19,11 +19,11 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     });
   }
 
-  // Called by Passport after Google redirects back with code
-  // Returns value is stored in req.user
+  
+  
   async validate(
-    _accessToken: string,   // Google's access token — we don't need it
-    _refreshToken: string,  // Google's refresh token — we don't need it
+    _accessToken: string,   
+    _refreshToken: string,  
     profile: Profile,
   ): Promise<AuthenticatedUser> {
     const email = profile.emails?.[0]?.value;
@@ -32,7 +32,7 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       throw new UnauthorizedException('Google account must have a verified email');
     }
 
-    // Find or create user in our DB — this is the ONLY DB call for auth
+    
     return this.usersService.findOrCreate({
       googleId: profile.id,
       email,

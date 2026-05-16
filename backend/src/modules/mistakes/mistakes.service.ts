@@ -45,7 +45,7 @@ export class MistakesService {
       topic:               s.topic,
       category:            s.category,
       level:               s.level,
-      errorWeight:         s._sum.wrongCount ?? 0, // null-safe
+      errorWeight:         s._sum.wrongCount ?? 0, 
       uniqueMistakesCount: s._count._all,
     }));
   }

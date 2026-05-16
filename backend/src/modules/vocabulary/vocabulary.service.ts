@@ -39,11 +39,9 @@ function applySM2(card: SM2Card, quality: SM2Quality): SM2Result {
   let { easinessFactor, interval, repetitions } = card;
 
   if (quality < 3) {
-    // Forgot — reset to beginning
     repetitions = 0;
     interval = 1;
   } else {
-    // Remembered
     if (repetitions === 0) {
       interval = 1;
     } else if (repetitions === 1) {
@@ -79,7 +77,7 @@ function applySM2(card: SM2Card, quality: SM2Quality): SM2Result {
 export class VocabularyService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly progress :ProgressService 
+    private readonly progress: ProgressService
   ) { }
 
   async findAll(query: GetVocabularyDto) {
@@ -124,37 +122,37 @@ export class VocabularyService {
     return { total, learned, mastered, dueToday };
   }
 
-   async reviewWord(
-    userId:    string,
-    wordId:    string,
-    quality:   SM2Quality,   // 0-5 per standard SM-2
+  async reviewWord(
+    userId: string,
+    wordId: string,
+    quality: SM2Quality,
     timezone?: string,
   ) {
     const existing = await this.prisma.userVocabularyProgress.findUnique({
       where: { userId_wordId: { userId, wordId } },
     });
- 
+
     const baseCard: SM2Card = existing ?? {
       easinessFactor: 2.5,
-      interval:       1,
-      repetitions:    0,
+      interval: 1,
+      repetitions: 0,
       nextReviewDate: new Date(),
-      status:         'NEW',
+      status: 'NEW',
       lastReviewedAt: null,
     };
- 
+
     const previousStatus = baseCard.status;
-    const updated        = applySM2(baseCard, quality);
- 
+    const updated = applySM2(baseCard, quality);
+
     const saved = await this.prisma.userVocabularyProgress.upsert({
-      where:  { userId_wordId: { userId, wordId } },
+      where: { userId_wordId: { userId, wordId } },
       create: { userId, wordId, ...updated },
       update: updated,
     });
- 
+
     const justMastered =
       previousStatus !== 'MASTERED' && saved.status === 'MASTERED';
- 
+
     if (justMastered) {
       await this.progress.recordVocabularyLearned({
         userId,
@@ -162,12 +160,12 @@ export class VocabularyService {
         timezone,
       });
     }
- 
+
     return {
-      status:         saved.status,
+      status: saved.status,
       nextReviewDate: saved.nextReviewDate,
-      interval:       saved.interval,
-      repetitions:    saved.repetitions,
+      interval: saved.interval,
+      repetitions: saved.repetitions,
       justMastered,
     };
   }

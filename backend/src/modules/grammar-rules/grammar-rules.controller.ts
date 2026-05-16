@@ -9,19 +9,16 @@ import { RolesGuard } from '../auth/guards/roles.guard';
 export class GrammarRulesController {
   constructor(private readonly service: GrammarRulesService) {}
  
-  // GET /api/grammar-rules?level=A1
   @Get()
   findAll(@Query() query: GetGrammarRulesDto) {
     return this.service.findAll(query.level);
   }
  
-  // GET /api/grammar-rules/:slug
   @Get(':slug')
   findBySlug(@Param('slug') slug: string) {
     return this.service.findBySlug(slug);
   }
  
-  // POST /api/grammar-rules/bulk — ADMIN only
   @Post('bulk')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')

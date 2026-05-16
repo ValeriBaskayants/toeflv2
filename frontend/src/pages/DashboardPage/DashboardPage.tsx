@@ -62,11 +62,6 @@ function getSkillProgress(key: string, progress: LevelProgressData): SkillProgre
       const pct = required > 0 ? Math.min(100, Math.round((completed / required) * 100)) : 0;
       return { pct, label: `${completed}/${required} · avg ${avgScore}%` };
     }
-    case 'multipleChoice': {
-      const { completed, required, avgScore } = progress.multipleChoice;
-      const pct = required > 0 ? Math.min(100, Math.round((completed / required) * 100)) : 0;
-      return { pct, label: `${completed}/${required} · avg ${avgScore}%` };
-    }
     default:
       return { pct: 0, label: 'Coming soon' };
   }

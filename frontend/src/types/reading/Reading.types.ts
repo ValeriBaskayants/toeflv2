@@ -6,9 +6,16 @@ export interface VocabularyEmbedded {
     contextSentence?: string;
 }
 
+export interface AnswerPayload {
+    questionIdx: number;
+    selectedOptionIdx: number;
+}
+
 export interface QuestionOption {
     text: string;
     isCorrect: boolean;
+    questionIdx: number;
+    correctIdx: number;
 }
 
 export interface Question {
@@ -18,6 +25,11 @@ export interface Question {
     options: QuestionOption[];
 }
 
+export interface SubmitReadingPayload {
+    materialId: string;
+    answers: AnswerPayload[];
+}
+
 export interface ReadingMaterial {
     id: ID;
     title: string;
@@ -25,7 +37,7 @@ export interface ReadingMaterial {
     description?: string;
 
     content: string;
-    contentBlocks?: unknown; // JSON
+    contentBlocks?: unknown;
 
     level: Level;
     topic: string;
@@ -41,4 +53,32 @@ export interface ReadingMaterial {
 
     createdAt: ISODateString;
     updatedAt: ISODateString;
+}
+
+
+export interface ReadingListItem {
+    id: ID;
+    title: string;
+    slug: string;
+    description?: string;
+    level: Level;
+    topic: string;
+    tags: string[];
+    wordCount: number;
+    estimatedMinutes: number;
+    coverImageUrl?: string;
+    createdAt: ISODateString;
+}
+
+export interface QuestionResult {
+    questionIdx: number;
+    isCorrect: boolean;
+    correctIdx: number;
+    explanation?: string;
+}
+
+export interface SubmitReadingResult {
+    results: QuestionResult[];
+    accuracy: number;
+    xpEarned: number;
 }

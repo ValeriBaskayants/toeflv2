@@ -1,5 +1,5 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import { adminApi } from '@/api/services/admin';
+import { adminApi, exercisesApi, vocabularyApi, grammarRulesApi, readingsApi, MultipleChoiceApi, writingApi, listeningApi } from '@/api';
 import type { AdminStats, ContentType, ImportLog, ImportResult } from '@/types/admin/Admin.types';
 
 
@@ -71,13 +71,13 @@ export const importContent = createAsyncThunk<
         try {
             const call = (() => {
                 switch (type) {
-                    case 'exercises': return adminApi.importExercises(data);
-                    case 'grammarRules': return adminApi.importGrammarRules(data);
-                    case 'vocabulary': return adminApi.importVocabulary(data);
-                    case 'readings': return adminApi.importReadings(data);
-                    case 'multipleChoice': return adminApi.importMultipleChoice(data);
-                    case 'writingPrompts': return adminApi.importWritingPrompts(data);
-                    case 'listening': return adminApi.importListening(data);
+                    case 'exercises': return exercisesApi.bulkCreate(data);
+                    case 'grammarRules': return grammarRulesApi.bulkCreate(data);
+                    case 'vocabulary': return vocabularyApi.bulkCreate(data);
+                    case 'readings': return readingsApi.bulkCreate(data);
+                    case 'multipleChoice': return MultipleChoiceApi.bulkCreate(data);
+                    case 'writingPrompts': return writingApi.bulkCreatePrompts(data);
+                    case 'listening': return listeningApi.bulkCreate(data);
                 }
             })();
             const { data: result } = await call;

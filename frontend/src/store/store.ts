@@ -3,12 +3,14 @@ import { useDispatch, useSelector, type TypedUseSelectorHook } from 'react-redux
 import { authSlice } from './Slices/AuthSlice';
 import { progressSlice } from './Slices/ProgressSlice';
 import { adminSlice } from './Slices/AdminSlice';
+import { readingsSlice } from './Slices/ReadingsSlice';
 
 export const store = configureStore({
   reducer: {
     auth:     authSlice.reducer,
     progress: progressSlice.reducer,
     admin:    adminSlice.reducer,
+    readings: readingsSlice.reducer
   },
 });
 

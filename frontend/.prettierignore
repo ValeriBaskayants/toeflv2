@@ -1,0 +1,11 @@
+node_modules
+dist
+build
+coverage
+.next
+.turbo
+out
+package-lock.json
+client/.next
+server/dist
+database/dist

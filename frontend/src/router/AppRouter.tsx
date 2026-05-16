@@ -1,3 +1,4 @@
+// C:\Users\valer\OneDrive\Рабочий стол\React Projects\testingAnyFrameworkOrPet\toefl\frontend\src\router\AppRouter.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/pages/LoginPage/Loginpage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage/Authcallbackpage';
@@ -6,6 +7,8 @@ import { AppShell } from '@/components/layout/AppShell/AppShell';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute/Protectedroute';
 import AdminPage from '@/pages/Adminpage/Adminpage';
 import ProgressPage from '@/pages/ProgressPage/ProgressPage';
+import ReadingListPage from '@/pages/ReadingListPage/ReadingListPage';
+import ReadingReaderPage from '@/pages/ReadingReaderPage/ReadingReaderPage'; // Добавили импорт страницы чтения
 
 function ComingSoonPage({ title }: { title: string }) {
   return (
@@ -35,13 +38,14 @@ export function AppRouter() {
       >
         <Route path="/dashboard" element={<DashboardPage />} />
         <Route path="/writing" element={<ComingSoonPage title="Writing" />} />
-        <Route path="/reading" element={<ComingSoonPage title="Reading" />} />
+        <Route path="/reading" element={<ReadingListPage />} />
+        <Route path="/reading/:slug" element={<ReadingReaderPage />} />
+        
         <Route path="/listening" element={<ComingSoonPage title="Listening" />} />
         <Route path="/speaking" element={<ComingSoonPage title="Speaking" />} />
         <Route path="/grammar" element={<ComingSoonPage title="Grammar" />} />
         <Route path="/vocabulary" element={<ComingSoonPage title="Vocabulary" />} />
         <Route path="/admin" element={<AdminPage />} />
-
         <Route path="/progress" element={<ProgressPage />} />
       </Route>
 

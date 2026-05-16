@@ -3,6 +3,11 @@ import { Level, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateGrammarRuleDto } from './dto/bulk-create-grammar-rule.dto';
 
+<<<<<<< HEAD
+=======
+// List view: omit heavy embedded arrays (usages, sections, comparisons)
+// They're only needed on the detail page
+>>>>>>> 4a26e3f (Sec)
 const LIST_SELECT = {
   id:           true,
   topic:        true,
@@ -42,6 +47,12 @@ export class GrammarRulesService {
     return rule;
   }
 
+<<<<<<< HEAD
+=======
+  // ── bulkCreate ─────────────────────────────────────────────────────────────
+  // FIX: was returning `errors: 0` hardcoded — now returns accurate counts.
+  // FIX: was accepting `any[]` — now uses typed CreateGrammarRuleDto[].
+>>>>>>> 4a26e3f (Sec)
 
   async bulkCreate(rules: CreateGrammarRuleDto[]): Promise<{
     totalProcessed: number;

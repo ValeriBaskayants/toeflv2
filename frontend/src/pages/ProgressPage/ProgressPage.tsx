@@ -32,7 +32,6 @@ import type { DailyActivity, LevelProgressData } from '@/types/progress/Progress
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './ProgressPage.module.css';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const LEVEL_ORDER = ['A1', 'A1+', 'A2', 'A2+', 'B1', 'B1+', 'B2', 'B2+', 'C1', 'C2'] as const;
 
@@ -45,7 +44,6 @@ const SKILL_CONFIGS = [
   { key: 'quiz',       Icon: Target,     label: 'Quiz',       color: '#6366f1' },
 ] as const;
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 interface SkillStats {
   pct: number;
@@ -98,7 +96,6 @@ function buildActivityGrid(recentActivity: DailyActivity[]) {
     activityMap.set(a.date, a);
   }
 
-  // Build 5 weeks × 7 days = 35 days back
   const cells: Array<{ date: string; xp: number; sessions: number; intensity: 0 | 1 | 2 | 3 | 4 }> = [];
   for (let i = 34; i >= 0; i--) {
     const d = new Date();
@@ -135,7 +132,6 @@ function computeActiveDays(recentActivity: DailyActivity[]): number {
   return recentActivity.filter((a) => a.date >= cutoffStr && a.xpEarned > 0).length;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function LevelJourney({ currentLevel, readinessPercent }: { currentLevel: string; readinessPercent: number }) {
   const levelIndex = getCurrentLevelIndex(currentLevel);
@@ -172,7 +168,6 @@ function LevelJourney({ currentLevel, readinessPercent }: { currentLevel: string
         })}
       </div>
 
-      {/* Readiness bar */}
       <div className={styles['readinessWrap']}>
         <div className={styles['readinessTrack']}>
           <div
@@ -287,7 +282,6 @@ function SkillBreakdown({ progress }: { progress: LevelProgressData }) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
 
 export default function ProgressPage() {
   const { t } = useTranslation();
@@ -344,7 +338,6 @@ export default function ProgressPage() {
         )}
       </header>
 
-      {/* ── Error banner ── */}
       {error !== null && (
         <div className={styles['errorBanner']}>
           <AlertCircle size={16} />
@@ -358,7 +351,6 @@ export default function ProgressPage() {
 
       {data !== null && (
         <>
-          {/* ── Top stats ── */}
           <div className={styles['statsRow']}>
             <div className={styles['statCard']}>
               <div className={`${styles['statIcon']} ${styles['purple']}`}>

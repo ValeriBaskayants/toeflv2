@@ -19,11 +19,9 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
     });
   }
 
-  
-  
   async validate(
-    _accessToken: string,   
-    _refreshToken: string,  
+    _accessToken: string,
+    _refreshToken: string,
     profile: Profile,
   ): Promise<AuthenticatedUser> {
     const email = profile.emails?.[0]?.value;
@@ -32,7 +30,6 @@ export class GoogleStrategy extends PassportStrategy(Strategy, 'google') {
       throw new UnauthorizedException('Google account must have a verified email');
     }
 
-    
     return this.usersService.findOrCreate({
       googleId: profile.id,
       email,

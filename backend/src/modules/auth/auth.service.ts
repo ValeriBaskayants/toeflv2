@@ -21,7 +21,7 @@ export class AuthService {
     private readonly usersService: UsersService,
     private readonly sessionsService: SessionsService,
     private readonly configService: ConfigService,
-  ) { }
+  ) {}
 
   private generateAccessToken(userId: string, role: Role): Promise<string> {
     const payload: JwtPayload = { sub: userId, role };
@@ -31,7 +31,6 @@ export class AuthService {
   private getRefreshExpiresInDays(): number {
     return this.configService.getOrThrow<number>('jwt.refreshDays');
   }
-
 
   async handleGoogleCallback(
     user: AuthenticatedUser,
@@ -55,11 +54,7 @@ export class AuthService {
     return { accessToken, refreshToken };
   }
 
-  async refresh(
-    rawRefreshToken: string,
-    userAgent: string,
-    ip: string,
-  ): Promise<TokenPair> {
+  async refresh(rawRefreshToken: string, userAgent: string, ip: string): Promise<TokenPair> {
     const session = await this.sessionsService.findByToken(rawRefreshToken);
 
     if (session === null) {
@@ -104,7 +99,6 @@ export class AuthService {
 
     return { accessToken: newAccessToken, refreshToken: newRefreshToken };
   }
-
 
   async logout(rawRefreshToken: string): Promise<void> {
     const session = await this.sessionsService.findByToken(rawRefreshToken);

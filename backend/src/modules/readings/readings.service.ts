@@ -1,8 +1,4 @@
-import {
-  BadRequestException,
-  Injectable,
-  NotFoundException,
-} from '@nestjs/common';
+import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
 import { Level, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
@@ -30,11 +26,13 @@ export class ReadingsService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly progress: ProgressService,
-  ) { }
+  ) {}
 
   async findMany(query: { level?: Level; topic?: string }) {
     const where: Prisma.ReadingMaterialWhereInput = {};
-    if (query.level !== undefined) { where.level = query.level; }
+    if (query.level !== undefined) {
+      where.level = query.level;
+    }
     if (query.topic !== undefined) {
       where.topic = { contains: query.topic, mode: 'insensitive' };
     }
@@ -71,12 +69,7 @@ export class ReadingsService {
     return result;
   }
 
-
-  async submitAnswers(
-    userId: string,
-    dto: SubmitReadingDto,
-    timezone?: string,
-  ) {
+  async submitAnswers(userId: string, dto: SubmitReadingDto, timezone?: string) {
     const material = await this.prisma.readingMaterial.findUnique({
       where: { id: dto.materialId },
     });
@@ -92,30 +85,30 @@ export class ReadingsService {
     };
     const questions = material.questions as QuestionShape[];
 
-    const results = dto.answers.map((a) => {
-      const question = questions[a.questionIdx];
-      if (question === undefined) { return null; }
+    const results = dto.answers
+      .map((a) => {
+        const question = questions[a.questionIdx];
+        if (question === undefined) {
+          return null;
+        }
 
-      const selectedOption = question.options[a.selectedOptionIdx];
-      const correctIdx = question.options.findIndex((o) => o.isCorrect);
-      const isCorrect = selectedOption?.isCorrect ?? false;
+        const selectedOption = question.options[a.selectedOptionIdx];
+        const correctIdx = question.options.findIndex((o) => o.isCorrect);
+        const isCorrect = selectedOption?.isCorrect ?? false;
 
-      return {
-        questionIdx: a.questionIdx,
-        isCorrect,
-        correctIdx,
-        explanation: question.explanation,
-      };
-    }).filter((r) => r !== null);
+        return {
+          questionIdx: a.questionIdx,
+          isCorrect,
+          correctIdx,
+          explanation: question.explanation,
+        };
+      })
+      .filter((r) => r !== null);
 
     const correctCount = results.filter((r) => r?.isCorrect).length;
-    const accuracy = results.length > 0
-      ? Math.round((correctCount / results.length) * 100)
-      : 0;
+    const accuracy = results.length > 0 ? Math.round((correctCount / results.length) * 100) : 0;
 
-    const xpEarned = Math.round(
-      XP_RULES.READING_COMPLETED * (accuracy / 100),
-    );
+    const xpEarned = Math.round(XP_RULES.READING_COMPLETED * (accuracy / 100));
 
     await this.progress.recordSkillCompletion({
       userId,
@@ -127,7 +120,6 @@ export class ReadingsService {
 
     return { results, accuracy, xpEarned };
   }
-
 
   async bulkCreate(readings: CreateReadingDto[]): Promise<{
     totalProcessed: number;

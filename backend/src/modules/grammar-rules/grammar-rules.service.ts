@@ -3,17 +3,15 @@ import { Level, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateGrammarRuleDto } from './dto/bulk-create-grammar-rule.dto';
 
-// List view: omit heavy embedded arrays (usages, sections, comparisons)
-// They're only needed on the detail page
 const LIST_SELECT = {
-  id:           true,
-  topic:        true,
-  slug:         true,
-  level:        true,
-  summary:      true,
-  signalWords:  true,
+  id: true,
+  topic: true,
+  slug: true,
+  level: true,
+  summary: true,
+  signalWords: true,
   relatedTopics: true,
-  createdAt:    true,
+  createdAt: true,
 } satisfies Prisma.GrammarRuleSelect;
 
 @Injectable()
@@ -22,8 +20,8 @@ export class GrammarRulesService {
 
   async findAll(level?: Level) {
     return this.prisma.grammarRule.findMany({
-      where:   level !== undefined ? { level } : undefined,
-      select:  LIST_SELECT,
+      where: level !== undefined ? { level } : undefined,
+      select: LIST_SELECT,
       orderBy: { topic: 'asc' },
     });
   }
@@ -44,13 +42,10 @@ export class GrammarRulesService {
     return rule;
   }
 
-  // ── bulkCreate ─────────────────────────────────────────────────────────────
-  // FIX: was returning `errors: 0` hardcoded — now returns accurate counts.
-  // FIX: was accepting `any[]` — now uses typed CreateGrammarRuleDto[].
   async bulkCreate(rules: CreateGrammarRuleDto[]): Promise<{
     totalProcessed: number;
-    inserted:       number;
-    skipped:        number;
+    inserted: number;
+    skipped: number;
   }> {
     if (rules.length === 0) {
       return { totalProcessed: 0, inserted: 0, skipped: 0 };
@@ -59,7 +54,7 @@ export class GrammarRulesService {
     const slugs = rules.map((r) => r.slug);
 
     const existing = await this.prisma.grammarRule.findMany({
-      where:  { slug: { in: slugs } },
+      where: { slug: { in: slugs } },
       select: { slug: true },
     });
 
@@ -68,14 +63,14 @@ export class GrammarRulesService {
 
     if (toInsert.length > 0) {
       await this.prisma.grammarRule.createMany({
-        data:           toInsert,
+        data: toInsert,
       });
     }
 
     return {
       totalProcessed: rules.length,
-      inserted:       toInsert.length,
-      skipped:        existing.length,
+      inserted: toInsert.length,
+      skipped: existing.length,
     };
   }
 }

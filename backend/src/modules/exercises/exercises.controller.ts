@@ -9,27 +9,27 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
- 
+
 class GetTopicsDto {
   @IsOptional()
   @IsEnum(Level)
   level?: Level;
 }
- 
+
 @Controller('exercises')
 export class ExercisesController {
   constructor(private readonly service: ExercisesService) {}
- 
+
   @Get()
   findAll(@Query() query: GetExercisesDto) {
     return this.service.findAll(query);
   }
- 
+
   @Get('topics')
   getTopics(@Query() query: GetTopicsDto) {
     return this.service.getTopics(query.level);
   }
- 
+
   @Post('submit')
   submitAnswer(
     @CurrentUser() user: JwtUserPayload,
@@ -38,7 +38,7 @@ export class ExercisesController {
   ) {
     return this.service.submitAnswer(user.id, dto, timezone);
   }
- 
+
   @Post('bulk')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')

@@ -7,6 +7,6 @@ export class ReviewWordDto {
 
   @IsInt()
   @Min(0)
-  @Max(5)  // ← было Max(3)
+  @Max(5)
   quality!: SM2Quality;
 }

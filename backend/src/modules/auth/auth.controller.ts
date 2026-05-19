@@ -47,8 +47,7 @@ export class AuthController {
   @Public()
   @Get('google')
   @UseGuards(GoogleAuthGuard)
-  googleAuth(): void {
-  }
+  googleAuth(): void {}
 
   @Public()
   @Get('google/callback')
@@ -99,10 +98,7 @@ export class AuthController {
 
   @Post('logout')
   @HttpCode(HttpStatus.NO_CONTENT)
-  async logout(
-    @Req() req: Request,
-    @Res({ passthrough: true }) res: Response,
-  ): Promise<void> {
+  async logout(@Req() req: Request, @Res({ passthrough: true }) res: Response): Promise<void> {
     const rawRefreshToken: string | undefined = req.cookies?.[REFRESH_TOKEN_COOKIE];
 
     if (rawRefreshToken) {

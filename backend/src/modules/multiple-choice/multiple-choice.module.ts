@@ -5,7 +5,7 @@ import { ProgressModule } from '../progress/progress.module';
 import PrismaModule from '../prisma/prisma.module';
 
 @Module({
-  imports:[ProgressModule,PrismaModule],
+  imports: [ProgressModule, PrismaModule],
   controllers: [MultipleChoiceController],
   providers: [MultipleChoiceService],
   exports: [MultipleChoiceService],

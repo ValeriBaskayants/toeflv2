@@ -1,9 +1,3 @@
-// ════════════════════════════════════════════════════════════════════════════
-// backend/prisma/schema/writing.prisma  — UPDATED
-// ════════════════════════════════════════════════════════════════════════════
-// CHANGE: added `vocabularyScore Float` to WritingAnalysis embedded type
-// to match what writing.processor.ts now saves.
-// Without this field Prisma silently drops it (MongoDB BSON → schema mismatch).
 
 enum WritingType {
   SENTENCE
@@ -25,13 +19,12 @@ type WritingError {
   replacements String[]
 }
 
-// ← vocabularyScore added: Guiraud-Index-based lexical diversity score (0-100)
 type WritingAnalysis {
   overallScore    Float
   grammarScore    Float
   taskScore       Float
   coherenceScore  Float
-  vocabularyScore Float   // NEW — was missing, caused `as any` cast workaround
+  vocabularyScore Float   
   wordCount       Int
   errorCount      Int
   feedback        String?
@@ -78,5 +71,5 @@ model WritingSubmission {
   updatedAt   DateTime          @updatedAt
 
   @@index([userId, promptId])
-  @@index([userId, status])   // useful for "show my pending submissions"
+  @@index([userId, status])   
 }

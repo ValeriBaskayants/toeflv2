@@ -1,7 +1,3 @@
-// ════════════════════════════════════════════════════════════════════════════
-// backend/src/modules/listening/dto/get-listening.dto.ts
-// ════════════════════════════════════════════════════════════════════════════
-
 import { IsEnum, IsOptional, IsString, MaxLength } from 'class-validator';
 import { Level, ListeningType } from '@prisma/client';
 

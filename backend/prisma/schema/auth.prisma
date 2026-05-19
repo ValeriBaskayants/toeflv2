@@ -36,8 +36,8 @@ model User {
   vocabularyProgress    UserVocabularyProgress[]
   writingSubmissions    WritingSubmission[]
   mistakes              UserMistake[]
-  listeningSession      ListeningSession[]   // ← ADD THIS
- 
+  listeningSession      ListeningSession[]  
+  placementTest PlacementTest?  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

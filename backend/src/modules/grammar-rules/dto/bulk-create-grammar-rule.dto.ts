@@ -1,11 +1,4 @@
-import {
-  IsArray,
-  IsEnum,
-  IsOptional,
-  IsString,
-  MaxLength,
-  ValidateNested,
-} from 'class-validator';
+import { IsArray, IsEnum, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Level } from '@prisma/client';
 

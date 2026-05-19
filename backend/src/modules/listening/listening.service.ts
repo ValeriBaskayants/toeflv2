@@ -1,5 +1,3 @@
-
-
 import {
   BadRequestException,
   ForbiddenException,
@@ -10,73 +8,63 @@ import { Level, ListeningMode, ListeningSessionStatus, Prisma } from '@prisma/cl
 import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
 import type { CreateListeningMaterialDto } from './dto/bulk-create-listening.dto';
-import type {
-  StartSessionDto,
-  SubmitAnswerDto,
-  SaveNotesDto,
-} from './dto/session.dto';
-import { MODE_SCORE_MULTIPLIER, MODE_BASE_XP, LIST_SELECT, LEVEL_SPEECH_RATE, MODE_MAX_PLAYS } from 'src/constants/listening-constants';
-
-
+import type { StartSessionDto, SubmitAnswerDto, SaveNotesDto } from './dto/session.dto';
+import {
+  MODE_SCORE_MULTIPLIER,
+  MODE_BASE_XP,
+  LIST_SELECT,
+  LEVEL_SPEECH_RATE,
+  MODE_MAX_PLAYS,
+} from 'src/constants/listening-constants';
 
 interface ScoringParams {
-  correctCount:  number;
-  totalCount:    number;
-  playCount:     number;
+  correctCount: number;
+  totalCount: number;
+  playCount: number;
   maxAllowedPlays: number;
-  mode:          ListeningMode;
+  mode: ListeningMode;
 }
 
 interface ScoringResult {
-  rawAccuracy:  number;
-  finalScore:   number;
-  xpEarned:     number;
+  rawAccuracy: number;
+  finalScore: number;
+  xpEarned: number;
 }
 
-
 function computeScore(p: ScoringParams): ScoringResult {
-  const rawAccuracy = p.totalCount > 0
-    ? Math.round((p.correctCount / p.totalCount) * 100)
-    : 0;
+  const rawAccuracy = p.totalCount > 0 ? Math.round((p.correctCount / p.totalCount) * 100) : 0;
 
   const multiplier = MODE_SCORE_MULTIPLIER[p.mode];
 
-  
   const replayEfficiency =
-    p.maxAllowedPlays <= 1
-      ? 1 
-      : 1 - (p.playCount - 1) / (p.maxAllowedPlays - 1);
+    p.maxAllowedPlays <= 1 ? 1 : 1 - (p.playCount - 1) / (p.maxAllowedPlays - 1);
 
-  
   const replayBonus = Math.round(replayEfficiency * 10);
 
-  const finalScore = Math.min(
-    100,
-    Math.max(0, Math.round(rawAccuracy * multiplier) + replayBonus),
-  );
+  const finalScore = Math.min(100, Math.max(0, Math.round(rawAccuracy * multiplier) + replayBonus));
 
-  const baseXP  = MODE_BASE_XP[p.mode];
+  const baseXP = MODE_BASE_XP[p.mode];
   const xpEarned = Math.max(1, Math.round(baseXP * (finalScore / 100)));
 
   return { rawAccuracy, finalScore, xpEarned };
 }
 
-
-
 @Injectable()
 export class ListeningService {
   constructor(
-    private readonly prisma:   PrismaService,
+    private readonly prisma: PrismaService,
     private readonly progress: ProgressService,
   ) {}
-
-  
 
   async findAll(query: { level?: Level; type?: string; search?: string }) {
     const where: Prisma.ListeningMaterialWhereInput = {};
 
-    if (query.level !== undefined) { where.level = query.level; }
-    if (query.type  !== undefined) { where.type  = query.type as Prisma.EnumListeningTypeFilter; }
+    if (query.level !== undefined) {
+      where.level = query.level;
+    }
+    if (query.type !== undefined) {
+      where.type = query.type as Prisma.EnumListeningTypeFilter;
+    }
     if (query.search !== undefined) {
       where.OR = [
         { title: { contains: query.search, mode: 'insensitive' } },
@@ -86,17 +74,15 @@ export class ListeningService {
 
     return this.prisma.listeningMaterial.findMany({
       where,
-      select:  LIST_SELECT,
+      select: LIST_SELECT,
       orderBy: { createdAt: 'desc' },
-      take:    100,
+      take: 100,
     });
   }
 
-  
-
   async findById(id: string, userId: string) {
     const material = await this.prisma.listeningMaterial.findUnique({
-      where:   { id },
+      where: { id },
       include: { questions: { orderBy: { orderIndex: 'asc' } } },
     });
 
@@ -104,31 +90,25 @@ export class ListeningService {
       throw new NotFoundException(`Listening material ${id} not found`);
     }
 
-    
     const openSession = await this.prisma.listeningSession.findFirst({
       where: { userId, materialId: id, status: 'IN_PROGRESS' },
       select: { id: true, mode: true, playCount: true, maxAllowedPlays: true },
     });
 
-    
-    
-    const canSeeTranscript =
-      openSession !== null && openSession.mode === 'EASY';
+    const canSeeTranscript = openSession !== null && openSession.mode === 'EASY';
 
     return {
       ...material,
-      fullText:  canSeeTranscript ? material.fullText : undefined,
+      fullText: canSeeTranscript ? material.fullText : undefined,
       openSession,
-      
+
       recommendedRate: LEVEL_SPEECH_RATE[material.level],
     };
   }
 
-  
-
   async startSession(userId: string, dto: StartSessionDto) {
     const material = await this.prisma.listeningMaterial.findUnique({
-      where:  { id: dto.materialId },
+      where: { id: dto.materialId },
       select: { id: true, allowedModes: true, level: true },
     });
 
@@ -137,37 +117,33 @@ export class ListeningService {
     }
 
     if (!material.allowedModes.includes(dto.mode)) {
-      throw new BadRequestException(
-        `Mode ${dto.mode} is not available for this material`,
-      );
+      throw new BadRequestException(`Mode ${dto.mode} is not available for this material`);
     }
 
-    
     await this.prisma.listeningSession.updateMany({
-      where:  { userId, materialId: dto.materialId, status: 'IN_PROGRESS' },
-      data:   { status: 'ABANDONED' },
+      where: { userId, materialId: dto.materialId, status: 'IN_PROGRESS' },
+      data: { status: 'ABANDONED' },
     });
 
     return this.prisma.listeningSession.create({
       data: {
         userId,
-        materialId:     dto.materialId,
-        mode:           dto.mode,
+        materialId: dto.materialId,
+        mode: dto.mode,
         maxAllowedPlays: MODE_MAX_PLAYS[dto.mode],
-        notes:          [],
-        answers:        [],
+        notes: [],
+        answers: [],
       },
       select: {
-        id:             true,
-        mode:           true,
+        id: true,
+        mode: true,
         maxAllowedPlays: true,
-        playCount:      true,
-        startedAt:      true,
+        playCount: true,
+        startedAt: true,
       },
     });
   }
 
-  
   async recordPlay(userId: string, sessionId: string) {
     const session = await this.getOwnedInProgressSession(userId, sessionId);
 
@@ -179,29 +155,26 @@ export class ListeningService {
 
     return this.prisma.listeningSession.update({
       where: { id: sessionId },
-      data:  { playCount: { increment: 1 } },
+      data: { playCount: { increment: 1 } },
       select: { playCount: true, maxAllowedPlays: true },
     });
   }
 
-  
   async saveNotes(userId: string, sessionId: string, dto: SaveNotesDto) {
     await this.getOwnedInProgressSession(userId, sessionId);
 
     return this.prisma.listeningSession.update({
-      where:  { id: sessionId },
-      data:   { notes: dto.notes },
+      where: { id: sessionId },
+      data: { notes: dto.notes },
       select: { id: true, notes: true },
     });
   }
 
-  
   async submitAnswer(userId: string, sessionId: string, dto: SubmitAnswerDto) {
     const session = await this.getOwnedInProgressSession(userId, sessionId);
 
-    
     const question = await this.prisma.listeningQuestion.findUnique({
-      where:  { id: dto.questionId },
+      where: { id: dto.questionId },
       select: { correctIndex: true, listeningMaterialId: true },
     });
 
@@ -209,9 +182,8 @@ export class ListeningService {
       throw new NotFoundException('Question not found');
     }
 
-    
     const material = await this.prisma.listeningSession.findUnique({
-      where:  { id: sessionId },
+      where: { id: sessionId },
       select: { materialId: true },
     });
 
@@ -221,14 +193,11 @@ export class ListeningService {
 
     const isCorrect = dto.selectedIndex === question.correctIndex;
 
-    
-    const existingAnswers =(session.answers as Prisma.ListeningAnswerRecordCreateInput[]) ?? [];
-    const filtered = existingAnswers.filter(
-      (a) => a.questionId !== dto.questionId,
-    );
+    const existingAnswers = (session.answers as Prisma.ListeningAnswerRecordCreateInput[]) ?? [];
+    const filtered = existingAnswers.filter((a) => a.questionId !== dto.questionId);
 
     const newAnswer = {
-      questionId:    dto.questionId,
+      questionId: dto.questionId,
       selectedIndex: dto.selectedIndex,
       isCorrect,
       answeredAtSec: dto.currentAudioSec ?? null,
@@ -236,13 +205,12 @@ export class ListeningService {
 
     await this.prisma.listeningSession.update({
       where: { id: sessionId },
-      data:  { answers: [...filtered, newAnswer] },
+      data: { answers: [...filtered, newAnswer] },
     });
 
     return { isCorrect, correctIndex: question.correctIndex };
   }
 
-  
   async completeSession(userId: string, sessionId: string) {
     const session = await this.getOwnedInProgressSession(userId, sessionId);
 
@@ -255,36 +223,33 @@ export class ListeningService {
 
     const { rawAccuracy, finalScore, xpEarned } = computeScore({
       correctCount,
-      totalCount:      questionCount,
-      playCount:       session.playCount,
+      totalCount: questionCount,
+      playCount: session.playCount,
       maxAllowedPlays: session.maxAllowedPlays,
-      mode:            session.mode,
+      mode: session.mode,
     });
 
-    
     const completed = await this.prisma.listeningSession.update({
       where: { id: sessionId },
-      data:  {
-        status:       'COMPLETED',
-        completedAt:  new Date(),
+      data: {
+        status: 'COMPLETED',
+        completedAt: new Date(),
         correctCount,
-        totalCount:   questionCount,
+        totalCount: questionCount,
         rawAccuracy,
         finalScore,
         xpEarned,
       },
     });
 
-    
     await this.progress.recordListeningCompletion({
       userId,
-      accuracy:   rawAccuracy,
+      accuracy: rawAccuracy,
       xpEarned,
     });
 
-    
     const material = await this.prisma.listeningMaterial.findUnique({
-      where:  { id: session.materialId },
+      where: { id: session.materialId },
       select: { fullText: true },
     });
 
@@ -294,38 +259,36 @@ export class ListeningService {
     };
   }
 
-  
-
   async getUserSessions(userId: string, materialId?: string) {
     const where: Prisma.ListeningSessionWhereInput = { userId };
-    if (materialId !== undefined) { where.materialId = materialId; }
+    if (materialId !== undefined) {
+      where.materialId = materialId;
+    }
 
     return this.prisma.listeningSession.findMany({
       where,
       select: {
-        id:          true,
-        mode:        true,
-        status:      true,
-        playCount:   true,
-        finalScore:  true,
-        xpEarned:    true,
-        startedAt:   true,
+        id: true,
+        mode: true,
+        status: true,
+        playCount: true,
+        finalScore: true,
+        xpEarned: true,
+        startedAt: true,
         completedAt: true,
         material: {
           select: { id: true, title: true, level: true, type: true },
         },
       },
       orderBy: { startedAt: 'desc' },
-      take:    50,
+      take: 50,
     });
   }
 
-  
-
   async bulkCreate(items: CreateListeningMaterialDto[]): Promise<{
     totalProcessed: number;
-    inserted:       number;
-    skipped:        number;
+    inserted: number;
+    skipped: number;
   }> {
     if (items.length === 0) {
       return { totalProcessed: 0, inserted: 0, skipped: 0 };
@@ -334,7 +297,7 @@ export class ListeningService {
     const titles = items.map((i) => i.title);
 
     const existing = await this.prisma.listeningMaterial.findMany({
-      where:  { title: { in: titles } },
+      where: { title: { in: titles } },
       select: { title: true },
     });
 
@@ -342,8 +305,6 @@ export class ListeningService {
     const toInsert = items.filter((i) => !existingSet.has(i.title));
 
     if (toInsert.length > 0) {
-      
-      
       for (const item of toInsert) {
         const { questions, segments, ...materialData } = item;
         await this.prisma.listeningMaterial.create({
@@ -364,12 +325,10 @@ export class ListeningService {
 
     return {
       totalProcessed: items.length,
-      inserted:       toInsert.length,
-      skipped:        existing.length,
+      inserted: toInsert.length,
+      skipped: existing.length,
     };
   }
-
-  
 
   private async getOwnedInProgressSession(userId: string, sessionId: string) {
     const session = await this.prisma.listeningSession.findUnique({
@@ -383,9 +342,7 @@ export class ListeningService {
       throw new ForbiddenException('Access denied');
     }
     if (session.status !== 'IN_PROGRESS') {
-      throw new BadRequestException(
-        `Session is already ${session.status.toLowerCase()}`,
-      );
+      throw new BadRequestException(`Session is already ${session.status.toLowerCase()}`);
     }
 
     return session;

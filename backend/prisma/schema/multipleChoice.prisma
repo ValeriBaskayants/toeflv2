@@ -10,9 +10,14 @@ model MultipleChoice {
   level        Level     
   difficulty   Difficulty @default(EASY)
 
+  category                String  @default("VOCABULARY") 
+  isAvailableForPlacement Boolean @default(false)        
+  difficultyRating        Float?                         
+  discriminationRating    Float?    
+  
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
 
-  @@index([level, difficulty])
+  @@index([level, difficulty,isAvailableForPlacement])
   @@index([topic])
 }

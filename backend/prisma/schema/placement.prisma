@@ -1,0 +1,39 @@
+enum PlacementStatus {
+  PENDING
+  IN_PROGRESS
+  COMPLETED
+  SKIPPED
+  REMIND_LATER
+}
+
+model PlacementTest {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  userId  String @db.ObjectId @unique
+
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  status PlacementStatus @default(PENDING)
+
+  theta         Json @default("{\"grammar\":0,\"vocabulary\":0,\"reading\":0}")
+
+  standardError Json @default("{\"grammar\":2,\"vocabulary\":2,\"reading\":2}")
+
+  questions Json @default("[]")
+
+  answers   Json @default("[]")
+
+  remindAfter DateTime?
+
+  startedAt   DateTime?
+
+  completedAt     DateTime?
+  lastCompletedAt DateTime?
+
+  detectedLevel   Level?
+  confidenceScore Int?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([status])
+}

@@ -58,10 +58,13 @@ function applySM2(card: SM2Card, quality: SM2Quality): SM2Result {
   );
 
   const status: WordLearningStatus =
-    repetitions === 0 ? 'NEW' :
-      repetitions < 4 ? 'LEARNING' :
-        easinessFactor < 2.0 ? 'REVIEW' :
-          'MASTERED';
+    repetitions === 0
+      ? 'NEW'
+      : repetitions < 4
+        ? 'LEARNING'
+        : easinessFactor < 2.0
+          ? 'REVIEW'
+          : 'MASTERED';
 
   return {
     easinessFactor,
@@ -77,8 +80,8 @@ function applySM2(card: SM2Card, quality: SM2Quality): SM2Result {
 export class VocabularyService {
   constructor(
     private readonly prisma: PrismaService,
-    private readonly progress: ProgressService
-  ) { }
+    private readonly progress: ProgressService,
+  ) {}
 
   async findAll(query: GetVocabularyDto) {
     const where: Prisma.VocabularyWhereInput = {};
@@ -122,12 +125,7 @@ export class VocabularyService {
     return { total, learned, mastered, dueToday };
   }
 
-  async reviewWord(
-    userId: string,
-    wordId: string,
-    quality: SM2Quality,
-    timezone?: string,
-  ) {
+  async reviewWord(userId: string, wordId: string, quality: SM2Quality, timezone?: string) {
     const existing = await this.prisma.userVocabularyProgress.findUnique({
       where: { userId_wordId: { userId, wordId } },
     });
@@ -150,8 +148,7 @@ export class VocabularyService {
       update: updated,
     });
 
-    const justMastered =
-      previousStatus !== 'MASTERED' && saved.status === 'MASTERED';
+    const justMastered = previousStatus !== 'MASTERED' && saved.status === 'MASTERED';
 
     if (justMastered) {
       await this.progress.recordVocabularyLearned({

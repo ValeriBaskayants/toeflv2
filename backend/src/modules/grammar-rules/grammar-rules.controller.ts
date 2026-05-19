@@ -4,21 +4,21 @@ import { GetGrammarRulesDto } from './dto/get-grammar-rules.dto';
 import { BulkCreateGrammarRulesDto } from './dto/bulk-create-grammar-rule.dto';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
- 
+
 @Controller('grammar-rules')
 export class GrammarRulesController {
   constructor(private readonly service: GrammarRulesService) {}
- 
+
   @Get()
   findAll(@Query() query: GetGrammarRulesDto) {
     return this.service.findAll(query.level);
   }
- 
+
   @Get(':slug')
   findBySlug(@Param('slug') slug: string) {
     return this.service.findBySlug(slug);
   }
- 
+
   @Post('bulk')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')

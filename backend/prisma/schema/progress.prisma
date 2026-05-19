@@ -1,13 +1,13 @@
 type ProgressStats {
   required  Int   @default(0)
   completed Int   @default(0)
-  accuracy  Float @default(0)   // ← was Int
+  accuracy  Float @default(0)   
 }
  
 type WritingStats {
   required  Int   @default(0)
   completed Int   @default(0)
-  avgScore  Float @default(0)   // ← was Int
+  avgScore  Float @default(0)   
 }
  
 type VocabularyStats {

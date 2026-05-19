@@ -1,7 +1,3 @@
-// ════════════════════════════════════════════════════════════════════════════
-// backend/src/modules/listening/dto/bulk-create-listening.dto.ts
-// ════════════════════════════════════════════════════════════════════════════
-
 import {
   IsArray,
   IsEnum,
@@ -93,7 +89,6 @@ export class CreateListeningMaterialDto {
   @Type(() => ListeningSegmentDto)
   segments!: ListeningSegmentDto[];
 
-  // Optional overrides — defaults are derived from level in the service
   @IsOptional()
   @IsNumber()
   @Min(0.1)

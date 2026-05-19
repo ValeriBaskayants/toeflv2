@@ -20,7 +20,7 @@ class MCSessionQueryDto {
 }
 @Controller('multiple-choice')
 export class MultipleChoiceController {
-  constructor(private readonly service: MultipleChoiceService) { }
+  constructor(private readonly service: MultipleChoiceService) {}
 
   @Get()
   findAll(@Query() query: GetMultipleChoiceDto) {
@@ -33,12 +33,7 @@ export class MultipleChoiceController {
     @Body() dto: SubmitMCSessionDto,
     @Query() query: MCSessionQueryDto,
   ) {
-    return this.service.submitSession(
-      user.id,
-      dto,
-      query.level as Level,
-      query.timezone,
-    );
+    return this.service.submitSession(user.id, dto, query.level as Level, query.timezone);
   }
   @Post('bulk')
   @UseGuards(RolesGuard)

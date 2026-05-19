@@ -30,26 +30,17 @@ export class WritingController {
   }
 
   @Post('submit')
-  submit(
-    @CurrentUser() user: JwtUserPayload,
-    @Body() dto: SubmitWritingDto,
-  ) {
+  submit(@CurrentUser() user: JwtUserPayload, @Body() dto: SubmitWritingDto) {
     return this.service.submit(user.id, dto.promptId, dto.text);
   }
 
   @Get('submissions')
-  getSubmissions(
-    @CurrentUser() user: JwtUserPayload,
-    @Query() query: GetSubmissionsDto,
-  ) {
+  getSubmissions(@CurrentUser() user: JwtUserPayload, @Query() query: GetSubmissionsDto) {
     return this.service.getSubmissions(user.id, query.promptId);
   }
 
   @Get('submissions/:id')
-  getSubmission(
-    @CurrentUser() user: JwtUserPayload,
-    @Param('id') id: string,
-  ) {
+  getSubmission(@CurrentUser() user: JwtUserPayload, @Param('id') id: string) {
     return this.service.getSubmission(id, user.id);
   }
 

@@ -18,10 +18,7 @@ export class VocabularyController {
   }
 
   @Get('flashcards')
-  getFlashcards(
-    @CurrentUser() user: JwtUserPayload,
-    @Query() query: GetFlashcardsDto,
-  ) {
+  getFlashcards(@CurrentUser() user: JwtUserPayload, @Query() query: GetFlashcardsDto) {
     return this.service.getFlashcards(user.id, query);
   }
 
@@ -31,10 +28,7 @@ export class VocabularyController {
   }
 
   @Post('review')
-  review(
-    @CurrentUser() user: JwtUserPayload,
-    @Body() dto: ReviewWordDto,
-  ) {
+  review(@CurrentUser() user: JwtUserPayload, @Body() dto: ReviewWordDto) {
     return this.service.reviewWord(user.id, dto.wordId, dto.quality);
   }
 

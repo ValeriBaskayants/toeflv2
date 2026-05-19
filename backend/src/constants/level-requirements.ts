@@ -1,6 +1,5 @@
 import type { Level } from '@prisma/client';
 
-
 export const LEVEL_DISPLAY: Readonly<Record<Level, string>> = {
   A1: 'A1',
   A1_PLUS: 'A1+',
@@ -15,9 +14,16 @@ export const LEVEL_DISPLAY: Readonly<Record<Level, string>> = {
 } as const;
 
 export const LEVEL_ORDER: Level[] = [
-  'A1', 'A1_PLUS', 'A2', 'A2_PLUS',
-  'B1', 'B1_PLUS', 'B2', 'B2_PLUS',
-  'C1', 'C2',
+  'A1',
+  'A1_PLUS',
+  'A2',
+  'A2_PLUS',
+  'B1',
+  'B1_PLUS',
+  'B2',
+  'B2_PLUS',
+  'C1',
+  'C2',
 ];
 
 export const ACCURACY_EMA_ALPHA = 0.3;
@@ -27,7 +33,6 @@ export const WEAKNESS_GATE_CAP = 70;
 
 export const SMS_QUANTITY_WEIGHT = 0.5;
 export const SMS_QUALITY_WEIGHT = 0.5;
-
 
 export interface LevelRequirement {
   grammar: { required: number; accuracyMin: number };
@@ -41,7 +46,7 @@ export interface LevelRequirement {
 export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
   A1: {
     grammar: { required: 40, accuracyMin: 60 },
-    vocabulary: { required: 120 },             
+    vocabulary: { required: 120 },
     reading: { required: 5, accuracyMin: 60 },
     writing: { required: 2, avgScoreMin: 55 },
     listening: { required: 4, accuracyMin: 55 },
@@ -121,10 +126,9 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
   },
 } as const;
 
-
 export const XP_RULES = {
   EXERCISE_CORRECT: 8,
-  EXERCISE_WRONG: 2,   
+  EXERCISE_WRONG: 2,
   READING_COMPLETED: 25,
   VOCABULARY_MASTERED: 12,
   WRITING_BASE: 18,
@@ -132,13 +136,14 @@ export const XP_RULES = {
   LISTENING_BASE_EASY: 20,
   LISTENING_BASE_MEDIUM: 35,
   LISTENING_BASE_HARD: 55,
-  QUIZ_CORRECT: 5,  
+  QUIZ_CORRECT: 5,
 } as const;
-
 
 export function getNextLevel(current: Level): Level | null {
   const idx = LEVEL_ORDER.indexOf(current);
-  if (idx === -1 || idx === LEVEL_ORDER.length - 1) { return null; }
+  if (idx === -1 || idx === LEVEL_ORDER.length - 1) {
+    return null;
+  }
   return LEVEL_ORDER[idx + 1] ?? null;
 }
 
@@ -159,7 +164,9 @@ export function emaAccuracy(
   historicalAccuracy: number,
   newAccuracy: number,
 ): number {
-  if (currentCompleted === 0) { return newAccuracy; }
+  if (currentCompleted === 0) {
+    return newAccuracy;
+  }
   const alpha = ACCURACY_EMA_ALPHA;
   return Math.round(alpha * newAccuracy + (1 - alpha) * historicalAccuracy);
 }
@@ -170,17 +177,14 @@ export function computeSkillSMS(
   accuracy: number,
   accuracyMin: number,
 ): number {
-  if (required === 0) { return 100; }
+  if (required === 0) {
+    return 100;
+  }
 
   const quantityPct = Math.min(100, (completed / required) * 100);
-  const qualityPct = accuracyMin > 0
-    ? Math.min(100, (accuracy / accuracyMin) * 100)
-    : 100;
+  const qualityPct = accuracyMin > 0 ? Math.min(100, (accuracy / accuracyMin) * 100) : 100;
 
-  return Math.round(
-    quantityPct * SMS_QUANTITY_WEIGHT +
-    qualityPct * SMS_QUALITY_WEIGHT,
-  );
+  return Math.round(quantityPct * SMS_QUANTITY_WEIGHT + qualityPct * SMS_QUALITY_WEIGHT);
 }
 
 export function computeWritingSMS(
@@ -189,15 +193,12 @@ export function computeWritingSMS(
   avgScore: number,
   avgScoreMin: number,
 ): number {
-  if (required === 0) { return 100; }
+  if (required === 0) {
+    return 100;
+  }
 
   const quantityPct = Math.min(100, (completed / required) * 100);
-  const qualityPct = avgScoreMin > 0
-    ? Math.min(100, (avgScore / avgScoreMin) * 100)
-    : 100;
+  const qualityPct = avgScoreMin > 0 ? Math.min(100, (avgScore / avgScoreMin) * 100) : 100;
 
-  return Math.round(
-    quantityPct * SMS_QUANTITY_WEIGHT +
-    qualityPct * SMS_QUALITY_WEIGHT,
-  );
+  return Math.round(quantityPct * SMS_QUANTITY_WEIGHT + qualityPct * SMS_QUALITY_WEIGHT);
 }

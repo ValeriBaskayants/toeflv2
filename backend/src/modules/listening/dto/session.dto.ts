@@ -1,7 +1,3 @@
-// ════════════════════════════════════════════════════════════════════════════
-// backend/src/modules/listening/dto/session.dto.ts
-// ════════════════════════════════════════════════════════════════════════════
-
 import {
   IsArray,
   IsEnum,
@@ -19,8 +15,6 @@ import {
 import { Type } from 'class-transformer';
 import { ListeningMode } from '@prisma/client';
 
-// ── Start session ──────────────────────────────────────────────────────────
-
 export class StartSessionDto {
   @IsMongoId()
   materialId!: string;
@@ -29,15 +23,10 @@ export class StartSessionDto {
   mode!: ListeningMode;
 }
 
-// ── Record a play ──────────────────────────────────────────────────────────
-// No body — sessionId comes from the URL param.
-
-// ── Notes ─────────────────────────────────────────────────────────────────
-
 export class ListeningNoteDto {
   @IsString()
   @IsNotEmpty()
-  id!: string; // client-generated uuid
+  id!: string;
 
   @IsString()
   @IsNotEmpty()
@@ -51,7 +40,7 @@ export class ListeningNoteDto {
 
   @IsString()
   @IsNotEmpty()
-  createdAt!: string; // ISO string
+  createdAt!: string;
 }
 
 export class SaveNotesDto {
@@ -60,8 +49,6 @@ export class SaveNotesDto {
   @Type(() => ListeningNoteDto)
   notes!: ListeningNoteDto[];
 }
-
-// ── Submit answer ──────────────────────────────────────────────────────────
 
 export class SubmitAnswerDto {
   @IsMongoId()

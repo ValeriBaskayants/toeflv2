@@ -8,7 +8,7 @@ import { AdminService } from './admin.service';
 @UseGuards(JwtAuthGuard, RolesGuard)
 @Roles('ADMIN')
 export class AdminController {
-  constructor(private readonly service: AdminService) { }
+  constructor(private readonly service: AdminService) {}
 
   @Get('stats')
   getStats(@Request() req: any) {

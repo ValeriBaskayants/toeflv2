@@ -15,13 +15,17 @@ export class MultipleChoiceService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly progress: ProgressService,
-  ) { }
+  ) {}
 
   async findAll(query: GetMultipleChoiceDto) {
     const where: Prisma.MultipleChoiceWhereInput = {};
 
-    if (query.level !== undefined) { where.level = query.level; }
-    if (query.difficulty !== undefined) { where.difficulty = query.difficulty; }
+    if (query.level !== undefined) {
+      where.level = query.level;
+    }
+    if (query.difficulty !== undefined) {
+      where.difficulty = query.difficulty;
+    }
     if (query.topic !== undefined) {
       where.topic = { contains: query.topic, mode: 'insensitive' };
     }
@@ -37,10 +41,7 @@ export class MultipleChoiceService {
 
   async findRandom(level: Level, count: number) {
     const raw = await this.prisma.multipleChoice.aggregateRaw({
-      pipeline: [
-        { $match: { level } },
-        { $sample: { size: count } },
-      ],
+      pipeline: [{ $match: { level } }, { $sample: { size: count } }],
     });
 
     return (raw as unknown as Array<Record<string, unknown>>).map((item) => {
@@ -48,19 +49,12 @@ export class MultipleChoiceService {
       const oid = _id as { $oid?: string } | string | null;
       return {
         ...rest,
-        id: typeof oid === 'object' && oid !== null && '$oid' in oid
-          ? oid.$oid
-          : String(oid),
+        id: typeof oid === 'object' && oid !== null && '$oid' in oid ? oid.$oid : String(oid),
       };
     });
   }
 
-  async submitSession(
-    userId: string,
-    dto: SubmitMCSessionDto,
-    level: Level,  
-    timezone?: string,
-  ) {
+  async submitSession(userId: string, dto: SubmitMCSessionDto, level: Level, timezone?: string) {
     const questionIds = dto.answers.map((a) => a.questionId);
 
     const questions = await this.prisma.multipleChoice.findMany({
@@ -72,58 +66,62 @@ export class MultipleChoiceService {
     let correctCount = 0;
     const mistakeOps: Promise<unknown>[] = [];
 
-    const results = dto.answers.map((a) => {
-      const question = qMap.get(a.questionId);
-      if (question === undefined) { return null; }
+    const results = dto.answers
+      .map((a) => {
+        const question = qMap.get(a.questionId);
+        if (question === undefined) {
+          return null;
+        }
 
-      const isCorrect = a.selectedIndex === question.correctIndex;
-      if (isCorrect) {
-        correctCount++;
-      } else {
-        mistakeOps.push(
-          this.prisma.userMistake.upsert({
-            where: { userId_targetId: { userId, targetId: a.questionId } },
-            create: {
-              userId,
-              targetId: a.questionId,
-              source: 'QUIZ',
-              topic: question.topic,
-              category: 'GRAMMAR',
-              level,
-              wrongCount: 1,
-              correctCount: 0,
-              status: 'LEARNING',
-              nextReview: new Date(Date.now() + 24 * 60 * 60 * 1000),
-              easeFactor: 2.5,
-              attempts: {
-                create: {
-                  userAnswer: String(a.selectedIndex),
-                  correctAnswer: String(question.correctIndex),
-                  isCorrect: false,
+        const isCorrect = a.selectedIndex === question.correctIndex;
+        if (isCorrect) {
+          correctCount++;
+        } else {
+          mistakeOps.push(
+            this.prisma.userMistake.upsert({
+              where: { userId_targetId: { userId, targetId: a.questionId } },
+              create: {
+                userId,
+                targetId: a.questionId,
+                source: 'QUIZ',
+                topic: question.topic,
+                category: 'GRAMMAR',
+                level,
+                wrongCount: 1,
+                correctCount: 0,
+                status: 'LEARNING',
+                nextReview: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                easeFactor: 2.5,
+                attempts: {
+                  create: {
+                    userAnswer: String(a.selectedIndex),
+                    correctAnswer: String(question.correctIndex),
+                    isCorrect: false,
+                  },
                 },
               },
-            },
-            update: {
-              wrongCount: { increment: 1 },
-              attempts: {
-                create: {
-                  userAnswer: String(a.selectedIndex),
-                  correctAnswer: String(question.correctIndex),
-                  isCorrect: false,
+              update: {
+                wrongCount: { increment: 1 },
+                attempts: {
+                  create: {
+                    userAnswer: String(a.selectedIndex),
+                    correctAnswer: String(question.correctIndex),
+                    isCorrect: false,
+                  },
                 },
               },
-            },
-          }),
-        );
-      }
+            }),
+          );
+        }
 
-      return {
-        questionId: a.questionId,
-        isCorrect,
-        correctIndex: question.correctIndex,
-        explanation: question.explanation,
-      };
-    }).filter((r) => r !== null);
+        return {
+          questionId: a.questionId,
+          isCorrect,
+          correctIndex: question.correctIndex,
+          explanation: question.explanation,
+        };
+      })
+      .filter((r) => r !== null);
 
     await Promise.all(mistakeOps);
 
@@ -144,7 +142,6 @@ export class MultipleChoiceService {
       xpEarned,
     };
   }
-
 
   async bulkCreate(items: CreateMultipleChoiceDto[]): Promise<{
     totalProcessed: number;

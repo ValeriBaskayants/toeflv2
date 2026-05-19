@@ -21,6 +21,11 @@ model Exercise {
   explanation String   @default("")
   tags        String[]
 
+  isAvailableForPlacement Boolean @default(false)  
+  difficultyRating        Float?                  
+  discriminationRating    Float?                 
+
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 

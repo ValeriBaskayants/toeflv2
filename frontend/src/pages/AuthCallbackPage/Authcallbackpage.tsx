@@ -31,7 +31,6 @@ export function AuthCallbackPage() {
         return;
       }
 
-      // Remove token from URL immediately — never leave it in browser history
       window.history.replaceState({}, document.title, '/auth/callback');
 
       try {
@@ -48,7 +47,7 @@ export function AuthCallbackPage() {
     };
 
     void handleCallback();
-  }, []); // intentionally empty — run exactly once
+  }, []);
 
   return (
     <div className={styles['root']}>

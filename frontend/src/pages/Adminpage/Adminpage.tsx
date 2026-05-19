@@ -1,8 +1,24 @@
 import { useState, useEffect, useCallback, useId } from 'react';
 import {
-  ShieldAlert, Users, Upload, CheckCircle2, XCircle, Loader2,
-  BookOpen, CheckCheck, Layers, PenLine, Headphones, Target,
-  FileText, Trash2, Copy, Check, AlertCircle, BarChart2, TerminalSquare,
+  ShieldAlert,
+  Users,
+  Upload,
+  CheckCircle2,
+  XCircle,
+  Loader2,
+  BookOpen,
+  CheckCheck,
+  Layers,
+  PenLine,
+  Headphones,
+  Target,
+  FileText,
+  Trash2,
+  Copy,
+  Check,
+  AlertCircle,
+  BarChart2,
+  TerminalSquare,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/store';
 import { selectUser } from '@/store/Slices/AuthSlice';
@@ -22,8 +38,6 @@ import type { ContentType } from '@/types/admin/Admin.types';
 import { EXAMPLES } from '@/constants/example';
 import styles from './AdminPage.module.css';
 
-// ─── Config ───────────────────────────────────────────────────────────────────
-
 interface ContentConfig {
   key: ContentType;
   label: string;
@@ -33,22 +47,22 @@ interface ContentConfig {
 }
 
 const CONTENT_CONFIGS: ContentConfig[] = [
-  { key: 'exercises',      label: 'Exercises',       short: 'EX',  Icon: CheckCheck, color: '#14b8a6' },
-  { key: 'grammarRules',   label: 'Grammar Rules',   short: 'GR',  Icon: BookOpen,   color: '#22c55e' },
-  { key: 'vocabulary',     label: 'Vocabulary',      short: 'VOC', Icon: Layers,     color: '#8b5cf6' },
-  { key: 'readings',       label: 'Readings',        short: 'RD',  Icon: FileText,   color: '#f59e0b' },
-  { key: 'multipleChoice', label: 'Multiple Choice', short: 'MC',  Icon: Target,     color: '#6366f1' },
-  { key: 'writingPrompts', label: 'Writing Prompts', short: 'WR',  Icon: PenLine,    color: '#ec4899' },
-  { key: 'listening',      label: 'Listening',       short: 'LS',  Icon: Headphones, color: '#f43f5e' },
+  { key: 'exercises', label: 'Exercises', short: 'EX', Icon: CheckCheck, color: '#14b8a6' },
+  { key: 'grammarRules', label: 'Grammar Rules', short: 'GR', Icon: BookOpen, color: '#22c55e' },
+  { key: 'vocabulary', label: 'Vocabulary', short: 'VOC', Icon: Layers, color: '#8b5cf6' },
+  { key: 'readings', label: 'Readings', short: 'RD', Icon: FileText, color: '#f59e0b' },
+  { key: 'multipleChoice', label: 'Multiple Choice', short: 'MC', Icon: Target, color: '#6366f1' },
+  { key: 'writingPrompts', label: 'Writing Prompts', short: 'WR', Icon: PenLine, color: '#ec4899' },
+  { key: 'listening', label: 'Listening', short: 'LS', Icon: Headphones, color: '#f43f5e' },
 ];
 
 function formatTime(iso: string): string {
   return new Date(iso).toLocaleTimeString('en-US', {
-    hour: '2-digit', minute: '2-digit', second: '2-digit',
+    hour: '2-digit',
+    minute: '2-digit',
+    second: '2-digit',
   });
 }
-
-// ─── ImportTerminal ───────────────────────────────────────────────────────────
 
 function ImportTerminal() {
   const textareaId = useId();
@@ -68,13 +82,16 @@ function ImportTerminal() {
     setParseError(null);
   }, []);
 
-  const handleJsonChange = useCallback((val: string) => {
-    setJson(val);
-    setParseError(null);
-    if (slot.status !== 'idle') {
-      dispatch(resetImportState(activeType));
-    }
-  }, [slot.status, dispatch, activeType]);
+  const handleJsonChange = useCallback(
+    (val: string) => {
+      setJson(val);
+      setParseError(null);
+      if (slot.status !== 'idle') {
+        dispatch(resetImportState(activeType));
+      }
+    },
+    [slot.status, dispatch, activeType],
+  );
 
   const handleCopyExample = useCallback(async () => {
     await navigator.clipboard.writeText(EXAMPLES[activeType]);
@@ -90,7 +107,9 @@ function ImportTerminal() {
 
   const handleImport = useCallback(async () => {
     const trimmed = json.trim();
-    if (trimmed.length === 0) { return; }
+    if (trimmed.length === 0) {
+      return;
+    }
     setParseError(null);
 
     let parsed: unknown[];
@@ -121,7 +140,6 @@ function ImportTerminal() {
 
   return (
     <div className={styles['terminal']}>
-      {/* ── Chrome bar ── */}
       <div className={styles['termBar']}>
         <div className={styles['termBrand']}>
           <TerminalSquare size={14} className={styles['termIcon']} />
@@ -132,7 +150,6 @@ function ImportTerminal() {
         <span className={styles['termBadge']}>ADMIN ACCESS</span>
       </div>
 
-      {/* ── Tab strip ── */}
       <div className={styles['tabStrip']} role="tablist">
         {CONTENT_CONFIGS.map((c) => (
           <button
@@ -151,10 +168,7 @@ function ImportTerminal() {
         ))}
       </div>
 
-      {/* ── Split panes ── */}
       <div className={styles['splitPane']}>
-
-        {/* Example pane — read only */}
         <div className={styles['pane']}>
           <div className={styles['paneHead']}>
             <span className={styles['panePrompt']}>
@@ -167,7 +181,13 @@ function ImportTerminal() {
               <button type="button" className={styles['paneBtn']} onClick={handleLoadExample}>
                 <Upload size={12} /> Load
               </button>
-              <button type="button" className={styles['paneBtn']} onClick={() => { void handleCopyExample(); }}>
+              <button
+                type="button"
+                className={styles['paneBtn']}
+                onClick={() => {
+                  void handleCopyExample();
+                }}
+              >
                 {copied ? <Check size={12} /> : <Copy size={12} />}
                 {copied ? 'Copied' : 'Copy'}
               </button>
@@ -180,15 +200,12 @@ function ImportTerminal() {
 
         <div className={styles['splitDivider']} />
 
-        {/* Input pane — editable */}
         <div className={styles['pane']}>
           <div className={styles['paneHead']}>
             <span className={styles['panePrompt']}>
               <span className={styles['dollar']}>~</span> payload.json
             </span>
-            {json.length > 0 && (
-              <span className={styles['charCount']}>{json.length} chars</span>
-            )}
+            {json.length > 0 && <span className={styles['charCount']}>{json.length} chars</span>}
           </div>
           <div className={styles['editorWrapper']}>
             <label htmlFor={textareaId} className={styles['srOnly']}>
@@ -207,7 +224,6 @@ function ImportTerminal() {
         </div>
       </div>
 
-      {/* ── Status + actions footer ── */}
       <div className={styles['termFooter']}>
         <div className={styles['footerLeft']}>
           {parseError !== null && (
@@ -222,8 +238,7 @@ function ImportTerminal() {
           )}
           {slot.status === 'success' && slot.result !== null && (
             <span className={styles['fOk']}>
-              <CheckCircle2 size={14} /> 
-              +{slot.result.inserted} inserted
+              <CheckCircle2 size={14} />+{slot.result.inserted} inserted
               {slot.result.skipped > 0 && ` (${slot.result.skipped} skipped)`}
             </span>
           )}
@@ -252,13 +267,12 @@ function ImportTerminal() {
             type="button"
             className={styles['importBtn']}
             style={{ '--bc': cfg.color } as React.CSSProperties}
-            onClick={() => { void handleImport(); }}
+            onClick={() => {
+              void handleImport();
+            }}
             disabled={isLoading || json.trim().length === 0}
           >
-            {isLoading
-              ? <Loader2 size={14} className={styles['spin']} />
-              : <Upload size={14} />
-            }
+            {isLoading ? <Loader2 size={14} className={styles['spin']} /> : <Upload size={14} />}
             {isLoading ? 'Importing…' : `Import ${cfg.label}`}
           </button>
         </div>
@@ -266,8 +280,6 @@ function ImportTerminal() {
     </div>
   );
 }
-
-// ─── AdminPage (остался без изменений, только импорт TerminalSquare) ─────────
 
 export default function AdminPage() {
   const user = useAppSelector(selectUser);
@@ -279,7 +291,9 @@ export default function AdminPage() {
   const totalInserted = useAppSelector(selectTotalInserted);
   const errorCount = useAppSelector(selectErrorCount);
 
-  if (user === null || user.role !== 'ADMIN') { return null; }
+  if (user === null || user.role !== 'ADMIN') {
+    return null;
+  }
 
   useEffect(() => {
     if (statsStatus === 'idle') {
@@ -289,10 +303,11 @@ export default function AdminPage() {
 
   return (
     <div className={styles['page']}>
-      {/* Header */}
       <header className={styles['header']}>
         <div className={styles['headerLeft']}>
-          <div className={styles['adminIcon']}><ShieldAlert size={20} /></div>
+          <div className={styles['adminIcon']}>
+            <ShieldAlert size={20} />
+          </div>
           <div>
             <h1 className={styles['pageTitle']}>Admin Panel</h1>
             <p className={styles['pageSubtitle']}>{user.email}</p>
@@ -300,10 +315,11 @@ export default function AdminPage() {
         </div>
       </header>
 
-      {/* Stats */}
       <div className={styles['statsRow']}>
         <div className={styles['statCard']}>
-          <div className={`${styles['statIcon']} ${styles['purple']}`}><Users size={16} /></div>
+          <div className={`${styles['statIcon']} ${styles['purple']}`}>
+            <Users size={16} />
+          </div>
           <div>
             <div className={styles['statVal']}>
               {statsStatus === 'loading' ? '…' : (stats?.platformStats.totalUsers ?? '—')}
@@ -313,15 +329,21 @@ export default function AdminPage() {
         </div>
 
         <div className={styles['statCard']}>
-          <div className={`${styles['statIcon']} ${styles['green']}`}><CheckCircle2 size={16} /></div>
+          <div className={`${styles['statIcon']} ${styles['green']}`}>
+            <CheckCircle2 size={16} />
+          </div>
           <div>
-            <div className={styles['statVal']}>{log.filter((l) => l.status === 'success').length}</div>
+            <div className={styles['statVal']}>
+              {log.filter((l) => l.status === 'success').length}
+            </div>
             <div className={styles['statLbl']}>Imports this session</div>
           </div>
         </div>
 
         <div className={styles['statCard']}>
-          <div className={`${styles['statIcon']} ${styles['teal']}`}><BarChart2 size={16} /></div>
+          <div className={`${styles['statIcon']} ${styles['teal']}`}>
+            <BarChart2 size={16} />
+          </div>
           <div>
             <div className={styles['statVal']}>{totalInserted}</div>
             <div className={styles['statLbl']}>Items inserted</div>
@@ -329,7 +351,9 @@ export default function AdminPage() {
         </div>
 
         <div className={styles['statCard']}>
-          <div className={`${styles['statIcon']} ${styles['red']}`}><XCircle size={16} /></div>
+          <div className={`${styles['statIcon']} ${styles['red']}`}>
+            <XCircle size={16} />
+          </div>
           <div>
             <div className={styles['statVal']}>{errorCount}</div>
             <div className={styles['statLbl']}>Errors</div>
@@ -337,11 +361,11 @@ export default function AdminPage() {
         </div>
       </div>
 
-      {/* Main layout */}
       <div className={styles['layout']}>
-        <section><ImportTerminal /></section>
+        <section>
+          <ImportTerminal />
+        </section>
 
-        {/* Log sidebar */}
         <aside className={styles['logSidebar']}>
           <div className={styles['logHead']}>
             <h2 className={styles['logTitle']}>Import Log</h2>
@@ -357,9 +381,7 @@ export default function AdminPage() {
           </div>
 
           <div className={styles['logList']}>
-            {log.length === 0 && (
-              <p className={styles['logEmpty']}>No imports yet.</p>
-            )}
+            {log.length === 0 && <p className={styles['logEmpty']}>No imports yet.</p>}
             {log.map((entry) => {
               const c = CONTENT_CONFIGS.find((x) => x.key === entry.type);
               return (
@@ -368,17 +390,21 @@ export default function AdminPage() {
                   className={`${styles['logEntry']} ${entry.status === 'error' ? styles['lErr'] : styles['lOk']}`}
                 >
                   <div className={styles['logEntryLeft']}>
-                    {entry.status === 'success'
-                      ? <CheckCircle2 size={12} className={styles['iconGreen']} />
-                      : <XCircle     size={12} className={styles['iconRed']} />
-                    }
+                    {entry.status === 'success' ? (
+                      <CheckCircle2 size={12} className={styles['iconGreen']} />
+                    ) : (
+                      <XCircle size={12} className={styles['iconRed']} />
+                    )}
                     <div>
                       <div className={styles['logType']}>{c?.label ?? entry.type}</div>
                       {entry.status === 'success' && (
                         <div className={styles['logMeta']}>
                           <span className={styles['logIns']}>+{entry.result.inserted}</span>
                           {entry.result.skipped > 0 && (
-                            <span className={styles['logSkip']}> · {entry.result.skipped} skip</span>
+                            <span className={styles['logSkip']}>
+                              {' '}
+                              · {entry.result.skipped} skip
+                            </span>
                           )}
                         </div>
                       )}

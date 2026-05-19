@@ -4,7 +4,6 @@ import { Menu } from 'lucide-react';
 import { Sidebar } from '@/components/layout/SlideBar/Sidebar';
 import styles from './AppShell.module.css';
 
-
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
 
@@ -16,11 +15,7 @@ export function AppShell() {
       <Sidebar isOpen={sidebarOpen} onClose={closeSidebar} />
 
       {sidebarOpen && (
-        <div
-          className={styles['overlay']}
-          onClick={closeSidebar}
-          aria-hidden="true"
-        />
+        <div className={styles['overlay']} onClick={closeSidebar} aria-hidden="true" />
       )}
 
       <main className={styles['main']}>
@@ -36,7 +31,6 @@ export function AppShell() {
           <span className={styles['mobileTitle']}>TOEFL Prep</span>
         </header>
 
-        {/* Page content */}
         <div className={styles['content']}>
           <Outlet />
         </div>

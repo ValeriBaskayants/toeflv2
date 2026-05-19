@@ -1,61 +1,55 @@
-import {
-    type ID,
-    Level,
-    WritingType,
-    SubmissionStatus,
-    type ISODateString,
-} from '../globalTypes';
+import { type ID, Level, WritingType, SubmissionStatus, type ISODateString } from '../globalTypes';
 
 export interface WritingError {
-    message: string;
-    context: string;
-    offset: number;
-    length: number;
-    replacements: string[];
+  message: string;
+  context: string;
+  offset: number;
+  length: number;
+  replacements: string[];
 }
 
 export interface WritingAnalysis {
-    overallScore: number;
-    grammarScore: number;
-    taskScore: number;
-    coherenceScore: number;
-    vocabularyScore: number;
-    wordCount: number;
-    errorCount: number;
-    feedback?: string;
-    detectedTone?: string;
-    errors: WritingError[];
+  overallScore: number;
+  grammarScore: number;
+  taskScore: number;
+  coherenceScore: number;
+  vocabularyScore: number;
+  wordCount: number;
+  errorCount: number;
+  feedback?: string;
+  detectedTone?: string;
+  errors: WritingError[];
 }
 
 export interface WritingPrompt {
-    id: ID;
+  id: ID;
 
-    prompt: string;
-    level: Level;
-    type: WritingType;
+  prompt: string;
+  level: Level;
+  type: WritingType;
 
-    minWords: number;
-    maxWords: number;
+  minWords: number;
+  maxWords: number;
 
-    topic: string;
-    instructions: string;
+  topic: string;
+  instructions: string;
 
-    createdAt: ISODateString;
-    updatedAt: ISODateString;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
 }
 
 export interface WritingSubmission {
-    id: ID;
+  id: ID;
 
-    userId: ID;
-    promptId: ID;
+  userId: ID;
+  promptId: ID;
 
-    text: string;
-    analysis?: WritingAnalysis;
+  text: string;
+  analysis?: WritingAnalysis;
 
-    status: SubmissionStatus;
+  status: SubmissionStatus;
 
-    submittedAt: ISODateString;
-    createdAt: ISODateString;
-    updatedAt: ISODateString;
+  submittedAt: ISODateString;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
 }

@@ -28,8 +28,6 @@ import type { DailyActivity, LevelProgressData } from '@/types/progress/Progress
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './DashboardPage.module.css';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
-
 interface SkillProgress {
   pct: number;
   label: string;
@@ -83,25 +81,56 @@ function buildWeekDots(recentActivity: DailyActivity[]) {
   });
 }
 
-
 const SKILL_CONFIGS = [
-  { key: 'grammar', Icon: CheckCheck, labelKey: 'dashboard.features.grammar', color: '#14b8a6', comingSoon: false },
-  { key: 'reading', Icon: BookOpen, labelKey: 'dashboard.features.reading', color: '#22c55e', comingSoon: false },
-  { key: 'listening', Icon: Headphones, labelKey: 'dashboard.features.listening', color: '#f59e0b', comingSoon: false },
-  { key: 'vocabulary', Icon: Layers, labelKey: 'dashboard.features.vocabulary', color: '#8b5cf6', comingSoon: false },
-  { key: 'writing', Icon: PenLine, labelKey: 'dashboard.features.writing', color: '#ec4899', comingSoon: false },
-  { key: 'speaking', Icon: Mic, labelKey: 'dashboard.features.speaking', color: '#6366f1', comingSoon: true },
+  {
+    key: 'grammar',
+    Icon: CheckCheck,
+    labelKey: 'dashboard.features.grammar',
+    color: '#14b8a6',
+    comingSoon: false,
+  },
+  {
+    key: 'reading',
+    Icon: BookOpen,
+    labelKey: 'dashboard.features.reading',
+    color: '#22c55e',
+    comingSoon: false,
+  },
+  {
+    key: 'listening',
+    Icon: Headphones,
+    labelKey: 'dashboard.features.listening',
+    color: '#f59e0b',
+    comingSoon: false,
+  },
+  {
+    key: 'vocabulary',
+    Icon: Layers,
+    labelKey: 'dashboard.features.vocabulary',
+    color: '#8b5cf6',
+    comingSoon: false,
+  },
+  {
+    key: 'writing',
+    Icon: PenLine,
+    labelKey: 'dashboard.features.writing',
+    color: '#ec4899',
+    comingSoon: false,
+  },
+  {
+    key: 'speaking',
+    Icon: Mic,
+    labelKey: 'dashboard.features.speaking',
+    color: '#6366f1',
+    comingSoon: true,
+  },
 ] as const;
-
-// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function GreetingMessage({ name }: { name: string }) {
   const { t } = useTranslation();
   const hour = new Date().getHours();
   const periodKey =
-    hour < 12 ? 'dashboard.morning' :
-      hour < 18 ? 'dashboard.afternoon' :
-        'dashboard.evening';
+    hour < 12 ? 'dashboard.morning' : hour < 18 ? 'dashboard.afternoon' : 'dashboard.evening';
 
   return (
     <div className={styles['greetingBlock']}>
@@ -113,8 +142,6 @@ function GreetingMessage({ name }: { name: string }) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
 export function DashboardPage() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -123,7 +150,6 @@ export function DashboardPage() {
   const isLoading = useAppSelector(selectProgressIsLoading);
   const error = useAppSelector(selectProgressError);
   const isLevelingUp = useAppSelector(selectIsLevelingUp);
-
 
   useEffect(() => {
     if (data === null && !isLoading && error === null) {
@@ -138,11 +164,9 @@ export function DashboardPage() {
   const handleLevelUp = useCallback(async () => {
     const result = await dispatch(requestLevelUp());
     if (requestLevelUp.fulfilled.match(result)) {
-      // data was cleared in slice reducer — the useEffect above will re-fetch
     }
   }, [dispatch]);
 
-  // Guaranteed by ProtectedRoute
   if (user === null) {
     return null;
   }
@@ -153,7 +177,6 @@ export function DashboardPage() {
 
   return (
     <div className={styles['page']}>
-      {/* ── Header ── */}
       <header className={styles['header']}>
         <GreetingMessage name={user.name} />
         {user.role === 'ADMIN' && (
@@ -161,7 +184,6 @@ export function DashboardPage() {
         )}
       </header>
 
-      {/* ── Error banner ── */}
       {error !== null && (
         <div className={styles['errorBanner']}>
           <AlertCircle size={16} />
@@ -175,7 +197,6 @@ export function DashboardPage() {
 
       {data !== null && (
         <>
-          {/* ── Quick stats ── */}
           <div className={styles['statsGrid']}>
             <div className={styles['statCard']}>
               <div className={`${styles['statIcon']} ${styles['purple']}`}>
@@ -208,7 +229,6 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Level readiness ── */}
           <section className={styles['readinessSection']}>
             <div className={styles['sectionHeader']}>
               <h2 className={styles['sectionTitle']}>Readiness for next level</h2>
@@ -224,7 +244,9 @@ export function DashboardPage() {
               <button
                 type="button"
                 className={styles['levelUpBtn']}
-                onClick={() => { void handleLevelUp(); }}
+                onClick={() => {
+                  void handleLevelUp();
+                }}
                 disabled={isLevelingUp}
               >
                 <Trophy size={16} />
@@ -233,17 +255,21 @@ export function DashboardPage() {
             )}
           </section>
 
-          {/* ── Weekly activity ── */}
           <section className={styles['progressSection']}>
             <div className={styles['sectionHeader']}>
               <h2 className={styles['sectionTitle']}>{t('dashboard.weeklyGoal')}</h2>
               <span className={styles['sectionMeta']}>
                 {data.recentActivity.length > 0
-                  ? `${Math.min(data.recentActivity.filter((a) => {
-                    const d = new Date();
-                    const cutoff = new Date(d.setDate(d.getDate() - 7)).toISOString().slice(0, 10);
-                    return a.date >= cutoff;
-                  }).length, 7)} / 7 ${t('dashboard.days')}`
+                  ? `${Math.min(
+                      data.recentActivity.filter((a) => {
+                        const d = new Date();
+                        const cutoff = new Date(d.setDate(d.getDate() - 7))
+                          .toISOString()
+                          .slice(0, 10);
+                        return a.date >= cutoff;
+                      }).length,
+                      7,
+                    )} / 7 ${t('dashboard.days')}`
                   : `0 / 7 ${t('dashboard.days')}`}
               </span>
             </div>
@@ -257,7 +283,6 @@ export function DashboardPage() {
             </div>
           </section>
 
-          {/* ── Skills grid ── */}
           <section>
             <div className={styles['sectionHeader']}>
               <h2 className={styles['sectionTitle']}>{t('dashboard.practiceAreas')}</h2>
@@ -286,7 +311,10 @@ export function DashboardPage() {
                       <div className={styles['sectionProgressTrack']}>
                         <div
                           className={styles['sectionProgressFill']}
-                          style={{ width: `${skillProgress.pct}%`, backgroundColor: comingSoon ? undefined : color }}
+                          style={{
+                            width: `${skillProgress.pct}%`,
+                            backgroundColor: comingSoon ? undefined : color,
+                          }}
                         />
                       </div>
                       <span className={styles['sectionProgressLabel']}>{skillProgress.pct}%</span>

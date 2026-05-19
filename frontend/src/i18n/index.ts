@@ -13,8 +13,7 @@ const resources = {
           'Adaptive exercises, spaced repetition, and real-time feedback tailored to your level.',
         cardSubtitle: 'Sign in to track your progress and start practising.',
         freeBadge: 'Free · No credit card',
-        disclaimer:
-          'By continuing you agree to our Terms of Service and Privacy Policy.',
+        disclaimer: 'By continuing you agree to our Terms of Service and Privacy Policy.',
         sessionRestored: 'Restoring your session…',
         redirecting: 'Signing you in…',
         statLevels: 'Levels',

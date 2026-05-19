@@ -1,9 +1,9 @@
-import type { MultipleChoice } from "../multipleChoice/MultipleChoice.types";
+import type { MultipleChoice } from '../multipleChoice/MultipleChoice.types';
 
 export interface ProgressStats {
   required: number;
   completed: number;
-  accuracy: number; 
+  accuracy: number;
 }
 
 export interface VocabularyStats {
@@ -14,7 +14,7 @@ export interface VocabularyStats {
 export interface WritingStats {
   required: number;
   completed: number;
-  avgScore: number; 
+  avgScore: number;
 }
 
 export interface LevelProgressData {
@@ -26,7 +26,7 @@ export interface LevelProgressData {
   writing: WritingStats;
   listening: ProgressStats;
   quiz: ProgressStats;
-  multipleChoice:MultipleChoice
+  multipleChoice: MultipleChoice;
   isReadyForTest: boolean;
   testUnlockedAt: string | null;
   createdAt: string;

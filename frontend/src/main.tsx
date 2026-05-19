@@ -5,9 +5,7 @@ import { App } from './App';
 const rootElement = document.getElementById('root');
 
 if (rootElement === null) {
-  throw new Error(
-    '[main] Root element #root not found. Check public/index.html.',
-  );
+  throw new Error('[main] Root element #root not found. Check public/index.html.');
 }
 
 ReactDOM.createRoot(rootElement).render(

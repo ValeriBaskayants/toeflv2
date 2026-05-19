@@ -2,7 +2,6 @@ import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
 import type { DashboardData, LevelUpResult } from '@/types/progress/Progress.types';
 import { progressApi } from '@/api/services/progress';
 
-
 interface ProgressState {
   data: DashboardData | null;
   isLoading: boolean;
@@ -19,43 +18,29 @@ const initialState: ProgressState = {
   levelUpError: null,
 };
 
-
-export const fetchDashboard = createAsyncThunk<
-  DashboardData,
-  void,
-  { rejectValue: string }
->(
+export const fetchDashboard = createAsyncThunk<DashboardData, void, { rejectValue: string }>(
   'progress/fetchDashboard',
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await progressApi.getDashboard();
       return data;
     } catch (error: unknown) {
-      return rejectWithValue(
-        error instanceof Error ? error.message : 'Failed to fetch dashboard',
-      );
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to fetch dashboard');
     }
   },
 );
 
-export const requestLevelUp = createAsyncThunk<
-  LevelUpResult | null,
-  void,
-  { rejectValue: string }
->(
+export const requestLevelUp = createAsyncThunk<LevelUpResult | null, void, { rejectValue: string }>(
   'progress/levelUp',
   async (_, { rejectWithValue }) => {
     try {
       const { data } = await progressApi.levelUp();
       return data;
     } catch (error: unknown) {
-      return rejectWithValue(
-        error instanceof Error ? error.message : 'Failed to level up',
-      );
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to level up');
     }
   },
 );
-
 
 export const progressSlice = createSlice({
   name: 'progress',
@@ -97,7 +82,6 @@ export const progressSlice = createSlice({
 });
 
 export const { clearProgress } = progressSlice.actions;
-
 
 export interface ProgressRootState {
   progress: ProgressState;

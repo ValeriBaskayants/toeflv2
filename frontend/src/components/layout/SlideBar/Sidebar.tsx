@@ -39,18 +39,18 @@ const NAV_SECTIONS = [
     label: 'navigation.overview',
     items: [
       { to: '/dashboard', icon: LayoutDashboard, label: 'navigation.dashboard' },
-      { to: '/progress',  icon: BarChart3,       label: 'navigation.progress' },
+      { to: '/progress', icon: BarChart3, label: 'navigation.progress' },
     ],
   },
   {
     label: 'navigation.practiceTitle',
     items: [
-      { to: '/writing',    icon: PenLine,    label: 'navigation.writing' },
-      { to: '/reading',    icon: BookOpen,   label: 'navigation.reading' },
-      { to: '/listening',  icon: Headphones, label: 'navigation.listening' },
-      { to: '/speaking',   icon: Mic,        label: 'navigation.speaking' },
-      { to: '/grammar',    icon: CheckCheck, label: 'navigation.grammar' },
-      { to: '/vocabulary', icon: Layers,     label: 'navigation.vocabulary' },
+      { to: '/writing', icon: PenLine, label: 'navigation.writing' },
+      { to: '/reading', icon: BookOpen, label: 'navigation.reading' },
+      { to: '/listening', icon: Headphones, label: 'navigation.listening' },
+      { to: '/speaking', icon: Mic, label: 'navigation.speaking' },
+      { to: '/grammar', icon: CheckCheck, label: 'navigation.grammar' },
+      { to: '/vocabulary', icon: Layers, label: 'navigation.vocabulary' },
     ],
   },
 ] as const;
@@ -58,12 +58,7 @@ const NAV_SECTIONS = [
 function UserAvatar({ name, avatar }: { name: string; avatar: string | null }) {
   if (avatar !== null) {
     return (
-      <img
-        src={avatar}
-        alt={name}
-        className={styles['avatarImg']}
-        referrerPolicy="no-referrer"
-      />
+      <img src={avatar} alt={name} className={styles['avatarImg']} referrerPolicy="no-referrer" />
     );
   }
   const initials = name
@@ -151,7 +146,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         )}
       </nav>
 
-      {/* Bottom controls */}
       <div className={styles['bottom']}>
         <div className={styles['langRow']}>
           <Globe size={14} className={styles['controlIcon']} />
@@ -191,7 +185,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <button
               className={styles['logoutBtn']}
-              onClick={() => { void handleLogout(); }}
+              onClick={() => {
+                void handleLogout();
+              }}
               type="button"
               aria-label={t('auth.signOut')}
               title={t('auth.signOut')}

@@ -1,7 +1,6 @@
 import type { User, RefreshResponse } from '@/types/auth/Auth.types';
 import { api } from './../client';
 
-
 export const authApi = {
   getMe: () => api.get<User>('/auth/me'),
 

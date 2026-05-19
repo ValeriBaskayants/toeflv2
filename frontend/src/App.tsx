@@ -13,7 +13,6 @@ import '@/styles/globals.css';
 
 const BASE_URL = import.meta.env['VITE_API_BASE_URL'] as string;
 
-
 initTheme();
 
 async function initSession(): Promise<void> {

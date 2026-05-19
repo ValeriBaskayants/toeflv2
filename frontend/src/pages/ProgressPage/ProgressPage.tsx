@@ -32,18 +32,16 @@ import type { DailyActivity, LevelProgressData } from '@/types/progress/Progress
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './ProgressPage.module.css';
 
-
 const LEVEL_ORDER = ['A1', 'A1+', 'A2', 'A2+', 'B1', 'B1+', 'B2', 'B2+', 'C1', 'C2'] as const;
 
 const SKILL_CONFIGS = [
-  { key: 'grammar',    Icon: CheckCheck, label: 'Grammar',    color: '#14b8a6' },
-  { key: 'reading',    Icon: BookOpen,   label: 'Reading',    color: '#22c55e' },
-  { key: 'listening',  Icon: Headphones, label: 'Listening',  color: '#f59e0b' },
-  { key: 'vocabulary', Icon: Layers,     label: 'Vocabulary', color: '#8b5cf6' },
-  { key: 'writing',    Icon: PenLine,    label: 'Writing',    color: '#ec4899' },
-  { key: 'quiz',       Icon: Target,     label: 'Quiz',       color: '#6366f1' },
+  { key: 'grammar', Icon: CheckCheck, label: 'Grammar', color: '#14b8a6' },
+  { key: 'reading', Icon: BookOpen, label: 'Reading', color: '#22c55e' },
+  { key: 'listening', Icon: Headphones, label: 'Listening', color: '#f59e0b' },
+  { key: 'vocabulary', Icon: Layers, label: 'Vocabulary', color: '#8b5cf6' },
+  { key: 'writing', Icon: PenLine, label: 'Writing', color: '#ec4899' },
+  { key: 'quiz', Icon: Target, label: 'Quiz', color: '#6366f1' },
 ] as const;
-
 
 interface SkillStats {
   pct: number;
@@ -96,7 +94,8 @@ function buildActivityGrid(recentActivity: DailyActivity[]) {
     activityMap.set(a.date, a);
   }
 
-  const cells: Array<{ date: string; xp: number; sessions: number; intensity: 0 | 1 | 2 | 3 | 4 }> = [];
+  const cells: Array<{ date: string; xp: number; sessions: number; intensity: 0 | 1 | 2 | 3 | 4 }> =
+    [];
   for (let i = 34; i >= 0; i--) {
     const d = new Date();
     d.setDate(d.getDate() - i);
@@ -106,10 +105,15 @@ function buildActivityGrid(recentActivity: DailyActivity[]) {
     const sessions = activity?.sessionsCount ?? 0;
     let intensity: 0 | 1 | 2 | 3 | 4 = 0;
     if (xp > 0) {
-      if (xp < 30) { intensity = 1; }
-      else if (xp < 80) { intensity = 2; }
-      else if (xp < 150) { intensity = 3; }
-      else { intensity = 4; }
+      if (xp < 30) {
+        intensity = 1;
+      } else if (xp < 80) {
+        intensity = 2;
+      } else if (xp < 150) {
+        intensity = 3;
+      } else {
+        intensity = 4;
+      }
     }
     cells.push({ date, xp, sessions, intensity });
   }
@@ -118,7 +122,7 @@ function buildActivityGrid(recentActivity: DailyActivity[]) {
 
 function getCurrentLevelIndex(level: string): number {
   const normalized = level.replace('_PLUS', '+');
-  return LEVEL_ORDER.indexOf(normalized as typeof LEVEL_ORDER[number]);
+  return LEVEL_ORDER.indexOf(normalized as (typeof LEVEL_ORDER)[number]);
 }
 
 function computeTotalMinutes(recentActivity: DailyActivity[]): number {
@@ -132,8 +136,13 @@ function computeActiveDays(recentActivity: DailyActivity[]): number {
   return recentActivity.filter((a) => a.date >= cutoffStr && a.xpEarned > 0).length;
 }
 
-
-function LevelJourney({ currentLevel, readinessPercent }: { currentLevel: string; readinessPercent: number }) {
+function LevelJourney({
+  currentLevel,
+  readinessPercent,
+}: {
+  currentLevel: string;
+  readinessPercent: number;
+}) {
   const levelIndex = getCurrentLevelIndex(currentLevel);
 
   return (
@@ -143,7 +152,9 @@ function LevelJourney({ currentLevel, readinessPercent }: { currentLevel: string
           <TrendingUp size={16} />
           Level Journey
         </h2>
-        <span className={styles['sectionMeta']}>{currentLevel} · {readinessPercent}% to next</span>
+        <span className={styles['sectionMeta']}>
+          {currentLevel} · {readinessPercent}% to next
+        </span>
       </div>
 
       <div className={styles['levelTrack']}>
@@ -159,9 +170,15 @@ function LevelJourney({ currentLevel, readinessPercent }: { currentLevel: string
                 {isPast && <span className={styles['levelCheck']}>✓</span>}
                 {isCurrent && <span className={styles['levelPulse']} />}
               </div>
-              <span className={`${styles['levelLabel']} ${isCurrent ? styles['levelLabelCurrent'] : ''}`}>{lvl}</span>
+              <span
+                className={`${styles['levelLabel']} ${isCurrent ? styles['levelLabelCurrent'] : ''}`}
+              >
+                {lvl}
+              </span>
               {idx < LEVEL_ORDER.length - 1 && (
-                <div className={`${styles['levelConnector']} ${isPast ? styles['levelConnectorPast'] : ''}`} />
+                <div
+                  className={`${styles['levelConnector']} ${isPast ? styles['levelConnectorPast'] : ''}`}
+                />
               )}
             </div>
           );
@@ -170,11 +187,11 @@ function LevelJourney({ currentLevel, readinessPercent }: { currentLevel: string
 
       <div className={styles['readinessWrap']}>
         <div className={styles['readinessTrack']}>
-          <div
-            className={styles['readinessFill']}
-            style={{ width: `${readinessPercent}%` }}
-          />
-          <span className={styles['readinessPct']} style={{ left: `${Math.min(readinessPercent, 95)}%` }}>
+          <div className={styles['readinessFill']} style={{ width: `${readinessPercent}%` }} />
+          <span
+            className={styles['readinessPct']}
+            style={{ left: `${Math.min(readinessPercent, 95)}%` }}
+          >
             {readinessPercent}%
           </span>
         </div>
@@ -190,8 +207,7 @@ function ActivityHeatmap({ recentActivity }: { recentActivity: DailyActivity[] }
   const cells = buildActivityGrid(recentActivity);
   const DAY_LABELS = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
 
-  // group into weeks (columns)
-  const weeks: typeof cells[] = [];
+  const weeks: (typeof cells)[] = [];
   for (let w = 0; w < 5; w++) {
     weeks.push(cells.slice(w * 7, w * 7 + 7));
   }
@@ -207,7 +223,9 @@ function ActivityHeatmap({ recentActivity }: { recentActivity: DailyActivity[] }
       <div className={styles['heatmapGrid']}>
         <div className={styles['heatmapDayLabels']}>
           {DAY_LABELS.map((d) => (
-            <span key={d} className={styles['heatmapDayLabel']}>{d[0]}</span>
+            <span key={d} className={styles['heatmapDayLabel']}>
+              {d[0]}
+            </span>
           ))}
         </div>
         <div className={styles['heatmapCols']}>
@@ -217,7 +235,11 @@ function ActivityHeatmap({ recentActivity }: { recentActivity: DailyActivity[] }
                 <div
                   key={cell.date}
                   className={`${styles['heatmapCell']} ${styles[`heatmapIntensity${cell.intensity}`]}`}
-                  title={cell.xp > 0 ? `${cell.date}: ${cell.xp} XP · ${cell.sessions} sessions` : cell.date}
+                  title={
+                    cell.xp > 0
+                      ? `${cell.date}: ${cell.xp} XP · ${cell.sessions} sessions`
+                      : cell.date
+                  }
                 />
               ))}
             </div>
@@ -248,7 +270,11 @@ function SkillBreakdown({ progress }: { progress: LevelProgressData }) {
         {SKILL_CONFIGS.map(({ key, Icon, label, color }) => {
           const stats = getSkillStats(key, progress);
           return (
-            <div key={key} className={styles['skillCard']} style={{ '--skill-color': color } as React.CSSProperties}>
+            <div
+              key={key}
+              className={styles['skillCard']}
+              style={{ '--skill-color': color } as React.CSSProperties}
+            >
               <div className={styles['skillCardHead']}>
                 <div className={styles['skillIcon']}>
                   <Icon size={16} />
@@ -266,7 +292,9 @@ function SkillBreakdown({ progress }: { progress: LevelProgressData }) {
                 />
               </div>
               <div className={styles['skillFooter']}>
-                <span className={styles['skillCount']}>{stats.completed} / {stats.required}</span>
+                <span className={styles['skillCount']}>
+                  {stats.completed} / {stats.required}
+                </span>
                 <div className={styles['skillAccuracyPip']}>
                   <div
                     className={styles['skillAccuracyFill']}
@@ -281,7 +309,6 @@ function SkillBreakdown({ progress }: { progress: LevelProgressData }) {
     </section>
   );
 }
-
 
 export default function ProgressPage() {
   const { t } = useTranslation();
@@ -319,7 +346,6 @@ export default function ProgressPage() {
 
   return (
     <div className={styles['page']}>
-      {/* ── Page header ── */}
       <header className={styles['header']}>
         <div>
           <h1 className={styles['pageTitle']}>Progress</h1>
@@ -329,7 +355,9 @@ export default function ProgressPage() {
           <button
             type="button"
             className={styles['levelUpBtn']}
-            onClick={() => { void handleLevelUp(); }}
+            onClick={() => {
+              void handleLevelUp();
+            }}
             disabled={isLevelingUp}
           >
             <Trophy size={16} />
@@ -403,19 +431,12 @@ export default function ProgressPage() {
             </div>
           </div>
 
-          {/* ── Level journey ── */}
-          <LevelJourney
-            currentLevel={data.currentLevel}
-            readinessPercent={data.readinessPercent}
-          />
+          <LevelJourney currentLevel={data.currentLevel} readinessPercent={data.readinessPercent} />
 
-          {/* ── Skill breakdown ── */}
           <SkillBreakdown progress={data.progress} />
 
-          {/* ── Activity heatmap ── */}
           <ActivityHeatmap recentActivity={data.recentActivity} />
 
-          {/* ── Readiness gate notice ── */}
           {data.progress.isReadyForTest && (
             <div className={styles['readyBanner']}>
               <Trophy size={20} />
@@ -426,7 +447,9 @@ export default function ProgressPage() {
               <button
                 type="button"
                 className={styles['levelUpBtnInline']}
-                onClick={() => { void handleLevelUp(); }}
+                onClick={() => {
+                  void handleLevelUp();
+                }}
                 disabled={isLevelingUp}
               >
                 {isLevelingUp ? 'Processing…' : 'Level Up →'}

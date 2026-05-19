@@ -7,14 +7,14 @@ import { readingsSlice } from './Slices/ReadingsSlice';
 
 export const store = configureStore({
   reducer: {
-    auth:     authSlice.reducer,
+    auth: authSlice.reducer,
     progress: progressSlice.reducer,
-    admin:    adminSlice.reducer,
-    readings: readingsSlice.reducer
+    admin: adminSlice.reducer,
+    readings: readingsSlice.reducer,
   },
 });
 
-export type RootState   = ReturnType<typeof store.getState>;
+export type RootState = ReturnType<typeof store.getState>;
 export type AppDispatch = typeof store.dispatch;
 
 export const useAppDispatch: () => AppDispatch = useDispatch;

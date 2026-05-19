@@ -1,5 +1,5 @@
 import { createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type { User  } from '@/types/auth/Auth.types';
+import type { User } from '@/types/auth/Auth.types';
 
 interface AuthState {
   accessToken: string | null;
@@ -41,24 +41,17 @@ export const authSlice = createSlice({
   },
 });
 
-export const { setAuth, setAccessToken, setUser, clearAuth, setInitializing } =
-  authSlice.actions;
-
-// ─── Selectors ────────────────────────────────────────────────────────────────
+export const { setAuth, setAccessToken, setUser, clearAuth, setInitializing } = authSlice.actions;
 
 export interface AuthRootState {
   auth: AuthState;
 }
 
-export const selectAccessToken = (state: AuthRootState): string | null =>
-  state.auth.accessToken;
+export const selectAccessToken = (state: AuthRootState): string | null => state.auth.accessToken;
 
-export const selectUser = (state: AuthRootState): User | null =>
-  state.auth.user;
+export const selectUser = (state: AuthRootState): User | null => state.auth.user;
 
-export const selectIsInitializing = (state: AuthRootState): boolean =>
-  state.auth.isInitializing;
+export const selectIsInitializing = (state: AuthRootState): boolean => state.auth.isInitializing;
 
-// Both token AND user must exist for the session to be valid
 export const selectIsAuthenticated = (state: AuthRootState): boolean =>
   state.auth.accessToken !== null && state.auth.user !== null;

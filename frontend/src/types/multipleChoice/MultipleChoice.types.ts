@@ -1,4 +1,4 @@
-import { type ID, Level, Difficulty,type ISODateString } from '../globalTypes';
+import { type ID, Level, Difficulty, type ISODateString } from '../globalTypes';
 
 export interface MultipleChoice {
   id: ID;

@@ -1,91 +1,91 @@
 import {
-    type ID,
-    Level,
-    ListeningType,
-    ListeningMode,
-    ListeningSessionStatus,
-    type ISODateString,
+  type ID,
+  Level,
+  ListeningType,
+  ListeningMode,
+  ListeningSessionStatus,
+  type ISODateString,
 } from '../globalTypes';
 
 export interface ListeningSegment {
-    index: number;
-    text: string;
-    startSec: number;
-    endSec: number;
-    speaker?: string;
+  index: number;
+  text: string;
+  startSec: number;
+  endSec: number;
+  speaker?: string;
 }
 
 export interface ListeningAnswerRecord {
-    questionId: ID;
-    selectedIndex: number;
-    isCorrect: boolean;
-    answeredAtSec?: number;
+  questionId: ID;
+  selectedIndex: number;
+  isCorrect: boolean;
+  answeredAtSec?: number;
 }
 
 export interface ListeningNote {
-    id: ID;
-    text: string;
-    anchorSec?: number;
-    createdAt: ISODateString;
+  id: ID;
+  text: string;
+  anchorSec?: number;
+  createdAt: ISODateString;
 }
 
 export interface ListeningQuestion {
-    id: ID;
-    question: string;
-    options: string[];
-    correctIndex: number;
-    explanation?: string;
+  id: ID;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation?: string;
 
-    referenceStartSec?: number;
-    referenceEndSec?: number;
+  referenceStartSec?: number;
+  referenceEndSec?: number;
 
-    orderIndex: number;
+  orderIndex: number;
 }
 
 export interface ListeningMaterial {
-    id: ID;
+  id: ID;
 
-    title: string;
-    topic: string;
-    level: Level;
-    type: ListeningType;
+  title: string;
+  topic: string;
+  level: Level;
+  type: ListeningType;
 
-    fullText: string;
-    segments: ListeningSegment[];
+  fullText: string;
+  segments: ListeningSegment[];
 
-    speakerRate: number;
-    speakerLang: string;
-    speakerPitch: number;
+  speakerRate: number;
+  speakerLang: string;
+  speakerPitch: number;
 
-    allowedModes: ListeningMode[];
+  allowedModes: ListeningMode[];
 
-    questions: ListeningQuestion[];
+  questions: ListeningQuestion[];
 
-    createdAt: ISODateString;
-    updatedAt: ISODateString;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
 }
 
 export interface ListeningSession {
-    id: ID;
+  id: ID;
 
-    userId: ID;
-    materialId: ID;
+  userId: ID;
+  materialId: ID;
 
-    mode: ListeningMode;
-    status: ListeningSessionStatus;
+  mode: ListeningMode;
+  status: ListeningSessionStatus;
 
-    playCount: number;
-    maxAllowedPlays: number;
+  playCount: number;
+  maxAllowedPlays: number;
 
-    notes: ListeningNote[];
-    answers: ListeningAnswerRecord[];
+  notes: ListeningNote[];
+  answers: ListeningAnswerRecord[];
 
-    correctCount?: number;
-    totalCount?: number;
-    rawAccuracy?: number;
-    finalScore?: number;
-    xpEarned?: number;
+  correctCount?: number;
+  totalCount?: number;
+  rawAccuracy?: number;
+  finalScore?: number;
+  xpEarned?: number;
 
-    startedAt: ISODateString;
-    completedAt?: ISODateString;
+  startedAt: ISODateString;
+  completedAt?: ISODateString;
 }

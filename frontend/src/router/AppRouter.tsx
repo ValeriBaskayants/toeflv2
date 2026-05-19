@@ -1,4 +1,3 @@
-// C:\Users\valer\OneDrive\Рабочий стол\React Projects\testingAnyFrameworkOrPet\toefl\frontend\src\router\AppRouter.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/pages/LoginPage/Loginpage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage/Authcallbackpage';
@@ -8,7 +7,7 @@ import { ProtectedRoute } from '@/components/layout/ProtectedRoute/Protectedrout
 import AdminPage from '@/pages/Adminpage/Adminpage';
 import ProgressPage from '@/pages/ProgressPage/ProgressPage';
 import ReadingListPage from '@/pages/ReadingListPage/ReadingListPage';
-import ReadingReaderPage from '@/pages/ReadingReaderPage/ReadingReaderPage'; // Добавили импорт страницы чтения
+import ReadingReaderPage from '@/pages/ReadingReaderPage/ReadingReaderPage';
 
 function ComingSoonPage({ title }: { title: string }) {
   return (
@@ -16,9 +15,7 @@ function ComingSoonPage({ title }: { title: string }) {
       <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: '1.75rem', marginBottom: '0.5rem' }}>
         {title}
       </h1>
-      <p style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>
-        This section is coming soon.
-      </p>
+      <p style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>This section is coming soon.</p>
     </div>
   );
 }
@@ -40,7 +37,7 @@ export function AppRouter() {
         <Route path="/writing" element={<ComingSoonPage title="Writing" />} />
         <Route path="/reading" element={<ReadingListPage />} />
         <Route path="/reading/:slug" element={<ReadingReaderPage />} />
-        
+
         <Route path="/listening" element={<ComingSoonPage title="Listening" />} />
         <Route path="/speaking" element={<ComingSoonPage title="Speaking" />} />
         <Route path="/grammar" element={<ComingSoonPage title="Grammar" />} />

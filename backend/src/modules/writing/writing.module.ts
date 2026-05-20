@@ -1,5 +1,5 @@
 import { Module } from '@nestjs/common';
-import { BullModule } from '@nestjs/bull';
+import { BullModule } from '@nestjs/bullmq';
 import { WritingService } from './writing.service';
 import { WritingProcessor } from './processors/writing.processor';
 import PrismaModule from './../prisma/prisma.module';

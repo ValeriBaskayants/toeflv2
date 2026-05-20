@@ -7,8 +7,8 @@ import {
 } from '@nestjs/common';
 import { Level, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
-import { InjectQueue } from '@nestjs/bull';
-import type { Queue } from 'bull';
+import { InjectQueue } from '@nestjs/bullmq';
+import type { Queue } from 'bullmq';
 import nlp from 'compromise';
 import { CreateWritingPromptDto } from './dto/bulk-create-prompts.dto';
 

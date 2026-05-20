@@ -52,6 +52,10 @@ model ListeningMaterial {
 
   allowedModes ListeningMode[]
 
+  isAvailableForPlacement Boolean @default(false)
+  difficultyRating Float @default(0)
+  discriminationRating Float @default(1)
+
   questions ListeningQuestion[]
   sessions  ListeningSession[]
 
@@ -60,6 +64,7 @@ model ListeningMaterial {
 
   @@index([level, type])
   @@index([topic])
+  @@index([isAvailableForPlacement])
 }
 
 model ListeningQuestion {

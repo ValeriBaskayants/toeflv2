@@ -1,16 +1,18 @@
 import { Level } from '@prisma/client';
 
-export type AbilityDimension = 'GRAMMAR' | 'VOCABULARY' | 'READING';
+export type AbilityDimension = 'GRAMMAR' | 'VOCABULARY' | 'READING' | 'LISTENING';
 
 export interface DimensionTheta {
   grammar: number;
   vocabulary: number;
   reading: number;
+  listening: number;
 }
 export interface DimensionSE {
   grammar: number;
   vocabulary: number;
   reading: number;
+  listening: number;
 }
 
 export const GRID_MIN = -4.0;
@@ -37,9 +39,10 @@ export const MIN_QUESTIONS = 18;
 export const FETCH_WINDOW = 1.5;
 
 export const CONTENT_TARGET: Readonly<Record<AbilityDimension, number>> = {
-  GRAMMAR: 0.4,
-  VOCABULARY: 0.4,
+  GRAMMAR: 0.3,
+  VOCABULARY: 0.3,
   READING: 0.2,
+  LISTENING: 0.2,
 };
 
 export const LEVEL_BOUNDARIES: ReadonlyArray<{ level: Level; min: number; max: number }> = [

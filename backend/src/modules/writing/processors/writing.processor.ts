@@ -1,4 +1,4 @@
-import { Process, Processor } from '@nestjs/bullmq';
+import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
@@ -71,13 +71,18 @@ const CONNECTORS = [
 const CONNECTOR_REGEXES = CONNECTORS.map((c) => new RegExp(`\\b${c}\\b`, 'i'));
 
 @Processor('writing-analysis')
-export class WritingProcessor {
+export class WritingProcessor extends WorkerHost {
   private readonly logger = new Logger(WritingProcessor.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) {
+    super();
+  }
 
-  @Process('analyze')
-  async handleAnalysis(job: Job<AnalysisJobData>): Promise<void> {
+  async process(job: Job<AnalysisJobData>): Promise<void> {
+    if (job.name !== 'analyze') {
+      return;
+    }
+
     const { submissionId, text, minWords, userLevel } = job.data;
 
     try {
@@ -125,7 +130,7 @@ export class WritingProcessor {
       const connectorCount = CONNECTOR_REGEXES.filter((re) => re.test(text)).length;
 
       const avgWordsPerSentence = words / sentences;
-      let coherenceScore = 70; // base
+      let coherenceScore = 70;
 
       if (avgWordsPerSentence >= 12 && avgWordsPerSentence <= 25) {
         coherenceScore += 15;
@@ -172,8 +177,8 @@ export class WritingProcessor {
         errors: matches.slice(0, 15).map((e) => ({
           message: e.message,
           context: e.context?.text ?? '',
-          offset: e.offset, // Добавили
-          length: e.length, // Добавили
+          offset: e.offset,
+          length: e.length,
           replacements: e.replacements.slice(0, 3).map((r) => r.value),
         })),
       };

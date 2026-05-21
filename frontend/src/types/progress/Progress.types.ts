@@ -42,13 +42,27 @@ export interface DailyActivity {
   minutesSpent: number;
 }
 
+export interface SkillBreakdown {
+  sms:            number;
+  completed:      number;
+  required:       number;
+  accuracy:       number;
+  accuracyMin:    number;
+  remainingCount: number;
+  accuracyGap:    number;
+}
+
 export interface DashboardData {
-  currentLevel: string;
-  totalXp: number;
-  streak: number;
-  progress: LevelProgressData;
-  recentActivity: DailyActivity[];
+  currentLevel:     string;
+  totalXp:          number;
+  streak:           number;
+  progress:         LevelProgressData;
+  recentActivity:   DailyActivity[];
   readinessPercent: number;
+  skillBreakdown:   Record<string, SkillBreakdown>;
+  weakestSkill:     string;                          
+  nextMilestone:    string;                        
+  testUnlocked:     boolean;                         
 }
 
 export interface LevelUpResult {

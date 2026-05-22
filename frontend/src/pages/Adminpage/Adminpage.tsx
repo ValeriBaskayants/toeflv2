@@ -36,7 +36,7 @@ import {
 } from '@/store/Slices/AdminSlice';
 import type { ContentType } from '@/types/admin/Admin.types';
 import { EXAMPLES } from '@/constants/example';
-import styles from './AdminPage.module.css';
+import styles from './Adminpage.module.css';
 
 interface ContentConfig {
   key: ContentType;

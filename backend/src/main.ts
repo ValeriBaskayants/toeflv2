@@ -27,8 +27,8 @@ async function bootstrap(): Promise<void> {
       forbidUnknownValues: true,
     }),
   );
-
-  app.useGlobalFilters(new HttpExceptionFilter());
+  
+    app.useGlobalFilters(new HttpExceptionFilter());
   app.enableShutdownHooks();
 
   const port = config.getOrThrow<number>('port');

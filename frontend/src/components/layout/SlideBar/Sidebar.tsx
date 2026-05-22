@@ -49,7 +49,7 @@ const NAV_SECTIONS = [
       { to: '/reading', icon: BookOpen, label: 'navigation.reading' },
       { to: '/listening', icon: Headphones, label: 'navigation.listening' },
       { to: '/speaking', icon: Mic, label: 'navigation.speaking' },
-      { to: '/grammar', icon: CheckCheck, label: 'navigation.grammar' },
+      { to: '/grammar-rules', icon: CheckCheck, label: 'navigation.grammar' },
       { to: '/vocabulary', icon: Layers, label: 'navigation.vocabulary' },
     ],
   },

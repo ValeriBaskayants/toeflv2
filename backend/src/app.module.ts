@@ -19,6 +19,7 @@ import { MistakeModule } from './modules/mistakes/mistakes.module';
 import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PlacementModule } from './modules/placement/placement.module';
+import { BullModule } from '@nestjs/bullmq';
 
 @Module({
   imports: [
@@ -26,6 +27,15 @@ import { PlacementModule } from './modules/placement/placement.module';
       load: [configuration],
       isGlobal: true,
     }),
+    BullModule.forRootAsync({
+        inject: [ConfigService],
+        useFactory: (config: ConfigService) => ({
+          connection: {
+            host: config.getOrThrow<string>('redis.host'),
+            port: config.getOrThrow<number>('redis.port'),
+          },
+        }),
+      }),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({

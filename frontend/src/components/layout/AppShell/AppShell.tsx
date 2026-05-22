@@ -2,7 +2,7 @@ import { useState, useCallback } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Menu } from 'lucide-react';
 import { Sidebar } from '@/components/layout/SlideBar/Sidebar';
-import styles from './AppShell.module.css';
+import styles from './Appshell.module.css';
 
 export function AppShell() {
   const [sidebarOpen, setSidebarOpen] = useState(false);

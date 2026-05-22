@@ -4,6 +4,7 @@ import { authSlice } from './Slices/AuthSlice';
 import { progressSlice } from './Slices/ProgressSlice';
 import { adminSlice } from './Slices/AdminSlice';
 import { readingsSlice } from './Slices/ReadingsSlice';
+import { grammarRulesSlice } from './Slices/GrammarRulesSlice';
 
 export const store = configureStore({
   reducer: {
@@ -11,6 +12,7 @@ export const store = configureStore({
     progress: progressSlice.reducer,
     admin: adminSlice.reducer,
     readings: readingsSlice.reducer,
+    grammar: grammarRulesSlice.reducer
   },
 });
 

@@ -1,46 +1,45 @@
 import { type ID, Level, type ISODateString } from '../globalTypes';
 
-export interface Example {
+export interface GrammarExample {
   sentence: string;
   translation?: string;
 }
 
-export interface Usage {
+export interface GrammarUsage {
   title: string;
   explanation: string;
-  examples: Example[];
+  examples: GrammarExample[];
 }
 
-export interface Section {
+export interface GrammarSection {
   title: string;
   content: string;
-  examples: Example[];
+  examples: GrammarExample[];
 }
 
-export interface Comparison {
+export interface GrammarComparison {
   compareWith: string;
   explanation: string;
-  examples: Example[];
+  examples: GrammarExample[];
 }
 
-export interface GrammarRule {
+export interface GrammarRuleSummary {
   id: ID;
   topic: string;
   slug: string;
   level: Level;
-
   summary: string;
-  coreConcept: string;
-  structure: string;
-
-  usages: Usage[];
-  sections: Section[];
-  comparisons: Comparison[];
-
-  commonMistakes: string[];
   signalWords: string[];
   relatedTopics: string[];
-
   createdAt: ISODateString;
+}
+
+export interface GrammarRuleDetail extends GrammarRuleSummary {
+  coreConcept: string;
+  structure: string;
+  usages: GrammarUsage[];
+  sections: GrammarSection[];
+  comparisons: GrammarComparison[];
+  commonMistakes: string[];
   updatedAt: ISODateString;
 }

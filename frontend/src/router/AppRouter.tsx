@@ -8,6 +8,7 @@ import AdminPage from '@/pages/Adminpage/Adminpage';
 import ProgressPage from '@/pages/ProgressPage/ProgressPage';
 import ReadingListPage from '@/pages/ReadingListPage/ReadingListPage';
 import ReadingReaderPage from '@/pages/ReadingReaderPage/ReadingReaderPage';
+import { GrammarRulesPage } from '@/pages/GrammarRulesPage/GrammarRulesPage';
 
 function ComingSoonPage({ title }: { title: string }) {
   return (
@@ -44,6 +45,8 @@ export function AppRouter() {
         <Route path="/vocabulary" element={<ComingSoonPage title="Vocabulary" />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/progress" element={<ProgressPage />} />
+        <Route path="/grammar-rules" element={<GrammarRulesPage />} />
+        <Route path="/grammar-rules/:slug" element={<GrammarRulesPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

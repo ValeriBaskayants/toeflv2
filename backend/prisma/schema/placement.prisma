@@ -27,17 +27,21 @@ model PlacementTest {
   startedAt   DateTime?
   lastActivityAt DateTime?
 
+  /// Time of first completion (never updated on retakes)
   completedAt     DateTime?
+  /// Time of last completion (updated on every retake)
   lastCompletedAt DateTime?
 
   detectedLevel   Level?
   confidenceScore Int?
 
   attemptCount Int @default(0)
-  allowRetake  Boolean @default(false)
 
-  browserFingerprint String?
-  suspiciousFlags String[] @default([])
+  /// Time when test was completed (first/current attempt)
+  completedAt DateTime?
+  /// Last time test was completed (updated on retakes)
+  lastCompletedAt DateTime?
+
   testDurationSeconds Int?
   averageAnswerTimeSeconds Float?
 

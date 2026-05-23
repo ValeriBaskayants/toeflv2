@@ -45,29 +45,45 @@ interface AnswerRecord {
 @Injectable()
 export class PlacementService {
   private readonly logger = new Logger(PlacementService.name);
+  private readonly questionCache = new Map<
+    string,
+    { data: Array<QuestionSnapshot & { info: number }>; timestamp: number }
+  >();
+  private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async getOrCreate(userId: string) {
-    const existing = await this.prisma.placementTest.findUnique({ where: { userId } });
-    if (existing !== null) {
-      return existing;
-    }
+    try {
+      const existing = await this.prisma.placementTest.findUnique({ where: { userId } });
+      if (existing !== null) {
+        return existing;
+      }
 
-    return this.prisma.placementTest.create({
-      data: {
-        userId,
-        status: 'PENDING',
-        theta: this.initialTheta() as any,
-        standardError: this.initialSE() as any,
-        questions: [] as any,
-        answers: [] as any,
-      },
-    });
+      return this.prisma.placementTest.create({
+        data: {
+          userId,
+          status: 'PENDING',
+          theta: this.initialTheta() as any,
+          standardError: this.initialSE() as any,
+          questions: [] as any,
+          answers: [] as any,
+        },
+      });
+    } catch (error) {
+      this.logger.error('Error in getOrCreate', { userId, error });
+      throw error;
+    }
   }
 
   async start(userId: string) {
     const test = await this.getOrCreate(userId);
+
+    if (test.status === 'IN_PROGRESS') {
+      throw new BadRequestException(
+        'You have an active test in progress. Please complete or cancel it first.',
+      );
+    }
 
     if (test.status === 'COMPLETED') {
       throw new BadRequestException(
@@ -124,10 +140,12 @@ export class PlacementService {
     const question = questions[dto.questionIndex];
 
     if (question === undefined) {
+      this.logger.warn('Question not found', { userId, questionIndex: dto.questionIndex });
       throw new BadRequestException(`Question ${dto.questionIndex} not found.`);
     }
 
     if (answers.some((a) => a.questionIndex === dto.questionIndex)) {
+      this.logger.warn('Question already answered', { userId, questionIndex: dto.questionIndex });
       throw new BadRequestException('Question already answered.');
     }
 
@@ -167,7 +185,7 @@ export class PlacementService {
     }
 
     const typeCounts = this.countByDimension(allAnswers, questions);
-    const excludedIds = questions.slice(0, answeredCount).map((q) => q.sourceId);
+    const excludedIds = questions.map((q) => q.sourceId);
     const nextQuestion = await this.fetchNextQuestion(excludedIds, newTheta, typeCounts);
 
     if (nextQuestion === null) {
@@ -205,7 +223,12 @@ export class PlacementService {
       data: { status: 'SKIPPED' },
     });
 
-    await this.applyLevel(userId, 'A1');
+    try {
+      await this.applyLevel(userId, 'A1');
+    } catch (error) {
+      this.logger.error('Error applying A1 level after skip', { userId, error });
+    }
+
     return { skipped: true, assignedLevel: 'A1' };
   }
 
@@ -253,7 +276,7 @@ export class PlacementService {
     const confidenceScore = Math.round(Math.max(0, Math.min(100, (1 - avgSE / INITIAL_SE) * 100)));
 
     const testDurationSeconds = this.calculateTestDuration(answers);
-    const averageAnswerTime = testDurationSeconds / answers.length;
+    const averageAnswerTime = answers.length > 0 ? testDurationSeconds / answers.length : 0;
 
     const currentAttemptCount = (test.attemptCount ?? 0) + 1;
 
@@ -275,7 +298,15 @@ export class PlacementService {
       },
     });
 
-    await this.applyLevel(userId, detectedLevel);
+    try {
+      await this.applyLevel(userId, detectedLevel);
+    } catch (error) {
+      this.logger.error('Error applying level after completion', {
+        userId,
+        detectedLevel,
+        error,
+      });
+    }
 
     this.logger.log('PLACEMENT_COMPLETED', {
       userId,
@@ -344,9 +375,25 @@ export class PlacementService {
       }
 
       const { estimate, se } = eapForDimension(responses);
-      const key = dim.toLowerCase() as keyof DimensionTheta;
-      theta[key] = estimate;
-      standardError[key] = se;
+
+      switch (dim) {
+        case 'GRAMMAR':
+          theta.grammar = estimate;
+          standardError.grammar = se;
+          break;
+        case 'VOCABULARY':
+          theta.vocabulary = estimate;
+          standardError.vocabulary = se;
+          break;
+        case 'READING':
+          theta.reading = estimate;
+          standardError.reading = se;
+          break;
+        case 'LISTENING':
+          theta.listening = estimate;
+          standardError.listening = se;
+          break;
+      }
     }
 
     return { theta, standardError };
@@ -358,7 +405,22 @@ export class PlacementService {
     typeCounts: Record<AbilityDimension, number>,
   ): Promise<QuestionSnapshot | null> {
     const dim = this.selectDimension(typeCounts);
-    const thetaVal = theta[dim.toLowerCase() as keyof DimensionTheta];
+    let thetaVal: number;
+
+    switch (dim) {
+      case 'GRAMMAR':
+        thetaVal = theta.grammar;
+        break;
+      case 'VOCABULARY':
+        thetaVal = theta.vocabulary;
+        break;
+      case 'READING':
+        thetaVal = theta.reading;
+        break;
+      case 'LISTENING':
+        thetaVal = theta.listening;
+        break;
+    }
 
     const candidates = await this.fetchCandidates(excludeIds, dim, thetaVal, FETCH_WINDOW);
 
@@ -381,71 +443,122 @@ export class PlacementService {
     thetaVal: number,
     window: number,
   ): Promise<Array<QuestionSnapshot & { info: number }>> {
+    const cacheKey = this.getCacheKey(dim, thetaVal, window);
+    const cached = this.getFromCache(cacheKey);
+
+    let result: Array<QuestionSnapshot & { info: number }>;
+
+    if (cached !== null) {
+      result = cached;
+    } else {
+      result = await this.fetchCandidatesFromDB(dim, thetaVal, window);
+      this.setCache(cacheKey, result);
+    }
+
+    return result.filter((q) => !excludeIds.includes(q.sourceId));
+  }
+
+  private getCacheKey(dim: AbilityDimension, thetaVal: number, window: number): string {
+    const theta = thetaVal.toFixed(2);
+    const w = window === Infinity ? 'INF' : window.toFixed(1);
+    return `${dim}:${theta}:${w}`;
+  }
+
+  private getFromCache(
+    key: string,
+  ): Array<QuestionSnapshot & { info: number }> | null {
+    const cached = this.questionCache.get(key);
+    if (cached === undefined) {
+      return null;
+    }
+
+    const age = Date.now() - cached.timestamp;
+    if (age > this.CACHE_TTL_MS) {
+      this.questionCache.delete(key);
+      return null;
+    }
+
+    return cached.data;
+  }
+
+  private setCache(key: string, data: Array<QuestionSnapshot & { info: number }>): void {
+    if (this.questionCache.size > 100) {
+      const firstKey = this.questionCache.keys().next().value;
+      if (typeof firstKey === 'string') {
+        this.questionCache.delete(firstKey);
+      }
+    }
+
+    this.questionCache.set(key, { data, timestamp: Date.now() });
+  }
+
+  private async fetchCandidatesFromDB(
+    dim: AbilityDimension,
+    thetaVal: number,
+    window: number,
+  ): Promise<Array<QuestionSnapshot & { info: number }>> {
     const diffWhere = window === Infinity ? {} : { gte: thetaVal - window, lte: thetaVal + window };
 
     const [exercises, mcqs, listeningQuestions] = await Promise.all([
       dim === 'GRAMMAR'
         ? this.prisma.exercise.findMany({
-            where: {
-              id: { notIn: excludeIds },
-              isAvailableForPlacement: true,
-              ...(window !== Infinity && { difficultyRating: diffWhere }),
-            },
-            select: {
-              id: true,
-              sentence: true,
-              blanks: true,
-              difficultyRating: true,
-              discriminationRating: true,
-            },
-            take: 15,
-          })
+          where: {
+            isAvailableForPlacement: true,
+            ...(window !== Infinity && { difficultyRating: diffWhere }),
+          },
+          select: {
+            id: true,
+            sentence: true,
+            blanks: true,
+            difficultyRating: true,
+            discriminationRating: true,
+          },
+          take: 15,
+        })
         : Promise.resolve([]),
 
       dim !== 'GRAMMAR' && dim !== 'LISTENING'
         ? this.prisma.multipleChoice.findMany({
-            where: {
-              id: { notIn: excludeIds },
-              isAvailableForPlacement: true,
-              category: dim,
-              ...(window !== Infinity && { difficultyRating: diffWhere }),
-            },
-            select: {
-              id: true,
-              question: true,
-              options: true,
-              correctIndex: true,
-              difficultyRating: true,
-              discriminationRating: true,
-            },
-            take: 15,
-          })
+          where: {
+            isAvailableForPlacement: true,
+            category: dim,
+            ...(window !== Infinity && { difficultyRating: diffWhere }),
+          },
+          select: {
+            id: true,
+            question: true,
+            options: true,
+            correctIndex: true,
+            difficultyRating: true,
+            discriminationRating: true,
+          },
+          take: 15,
+        })
         : Promise.resolve([]),
 
       dim === 'LISTENING'
         ? this.prisma.listeningQuestion.findMany({
-            where: {
-              id: { notIn: excludeIds },
-              listeningMaterial: {
-                isAvailableForPlacement: true,
-                ...(window !== Infinity && { difficultyRating: diffWhere }),
+          where: {
+            listeningMaterial: {
+              isAvailableForPlacement: true,
+              ...(window !== Infinity && { difficultyRating: diffWhere }),
+            },
+          },
+          select: {
+            id: true,
+            question: true,
+            options: true,
+            correctIndex: true,
+            listeningMaterial: {
+              select: {
+                id: true,
+                difficultyRating: true,
+                discriminationRating: true,
               },
             },
-            select: {
-              id: true,
-              question: true,
-              options: true,
-              correctIndex: true,
-              listeningMaterial: {
-                select: {
-                  id: true,
-                  difficultyRating: true,
-                  discriminationRating: true,
-                },
-              },
-            },
-            take: 15,
-          })
+          },
+          take: 15,
+        })
         : Promise.resolve([]),
     ]);
 
@@ -545,12 +658,24 @@ export class PlacementService {
       return null;
     }
 
-    const distractors = first.options.filter((o) => o !== first.answer).slice(0, 3);
+    const distractors = first.options.filter((o) => o !== first.answer);
+
+    // If not enough distractors, pad with generic options
+    while (distractors.length < 3) {
+      const generic = `Option ${distractors.length + 2}`;
+      if (!distractors.includes(generic)) {
+        distractors.push(generic);
+      } else {
+        break;
+      }
+    }
+
     if (distractors.length < 3) {
       return null;
     }
 
-    const shuffled = this.deterministicShuffle([first.answer, ...distractors], ex.id);
+    const selectedDistractors = distractors.slice(0, 3);
+    const shuffled = this.deterministicShuffle([first.answer, ...selectedDistractors], ex.id);
 
     return {
       sourceId: ex.id,
@@ -586,14 +711,13 @@ export class PlacementService {
       data: { currentLevel: level },
     });
 
-    const existing = await this.prisma.levelProgress.findUnique({ where: { userId } });
-    const data = { ...buildInitialProgress(level), isReadyForTest: false, testUnlockedAt: null };
+    const progressData = { ...buildInitialProgress(level), isReadyForTest: false, testUnlockedAt: null };
 
-    if (existing !== null) {
-      await this.prisma.levelProgress.update({ where: { userId }, data });
-    } else {
-      await this.prisma.levelProgress.create({ data: { userId, ...data } });
-    }
+    await this.prisma.levelProgress.upsert({
+      where: { userId },
+      update: progressData,
+      create: { userId, ...progressData },
+    });
   }
 
   private thetaToLevel(theta: number): Level {

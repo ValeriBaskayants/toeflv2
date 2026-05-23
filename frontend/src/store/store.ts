@@ -5,6 +5,8 @@ import { progressSlice } from './Slices/ProgressSlice';
 import { adminSlice } from './Slices/AdminSlice';
 import { readingsSlice } from './Slices/ReadingsSlice';
 import { grammarRulesSlice } from './Slices/GrammarRulesSlice';
+import { listeningSlice } from './Slices/ListeningSlice';
+import { placementSlice } from './Slices/PlacementSlice';
 
 export const store = configureStore({
   reducer: {
@@ -12,7 +14,9 @@ export const store = configureStore({
     progress: progressSlice.reducer,
     admin: adminSlice.reducer,
     readings: readingsSlice.reducer,
-    grammar: grammarRulesSlice.reducer
+    grammar: grammarRulesSlice.reducer,
+    listening: listeningSlice.reducer,
+    placement: placementSlice.reducer
   },
 });
 

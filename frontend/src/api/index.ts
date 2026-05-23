@@ -10,3 +10,4 @@ export { vocabularyApi } from './services/vocabulary';
 export { grammarRulesApi } from './services/grammar-rules';
 export { writingApi } from './services/writing';
 export { listeningApi } from './services/listening';
+export { placementApi } from './services/placment';

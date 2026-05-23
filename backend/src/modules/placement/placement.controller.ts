@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -22,6 +23,9 @@ export class PlacementController {
   // Вызывается при загрузке приложения, чтобы показать/скрыть баннер
   @Get('status')
   getStatus(@CurrentUser() user: JwtUserPayload) {
+    if (!user?.id) {
+      throw new BadRequestException('User ID is required');
+    }
     return this.placementService.getStatus(user.id);
   }
 
@@ -31,6 +35,9 @@ export class PlacementController {
   @Post('start')
   @HttpCode(HttpStatus.OK)
   start(@CurrentUser() user: JwtUserPayload) {
+    if (!user?.id) {
+      throw new BadRequestException('User ID is required');
+    }
     return this.placementService.start(user.id);
   }
 
@@ -43,6 +50,9 @@ export class PlacementController {
     @CurrentUser() user: JwtUserPayload,
     @Body() dto: AnswerPlacementDto,
   ) {
+    if (!user?.id) {
+      throw new BadRequestException('User ID is required');
+    }
     return this.placementService.answer(user.id, dto);
   }
 
@@ -51,6 +61,9 @@ export class PlacementController {
   @Post('skip')
   @HttpCode(HttpStatus.OK)
   skip(@CurrentUser() user: JwtUserPayload) {
+    if (!user?.id) {
+      throw new BadRequestException('User ID is required');
+    }
     return this.placementService.skip(user.id);
   }
 
@@ -59,6 +72,9 @@ export class PlacementController {
   @Post('remind-later')
   @HttpCode(HttpStatus.OK)
   remindLater(@CurrentUser() user: JwtUserPayload) {
+    if (!user?.id) {
+      throw new BadRequestException('User ID is required');
+    }
     return this.placementService.remindLater(user.id);
   }
 }

@@ -15,16 +15,14 @@ model PlacementTest {
   status PlacementStatus @default(PENDING)
 
   theta         Json @default("{\"grammar\":0,\"vocabulary\":0,\"reading\":0,\"listening\":0}")
-
   standardError Json @default("{\"grammar\":2,\"vocabulary\":2,\"reading\":2,\"listening\":2}")
 
   questions Json @default("[]")
-
   answers   Json @default("[]")
 
   remindAfter DateTime?
 
-  startedAt   DateTime?
+  startedAt      DateTime?
   lastActivityAt DateTime?
 
   /// Time of first completion (never updated on retakes)
@@ -37,12 +35,7 @@ model PlacementTest {
 
   attemptCount Int @default(0)
 
-  /// Time when test was completed (first/current attempt)
-  completedAt DateTime?
-  /// Last time test was completed (updated on retakes)
-  lastCompletedAt DateTime?
-
-  testDurationSeconds Int?
+  testDurationSeconds      Int?
   averageAnswerTimeSeconds Float?
 
   createdAt DateTime @default(now())

@@ -26,22 +26,28 @@ import {
   selectProgressError,
   selectIsLevelingUp,
 } from '@/store/Slices/ProgressSlice';
+import {
+  fetchPlacementStatus,
+} from '@/store/Slices/PlacementSlice';
 import type { DailyActivity } from '@/types/progress/Progress.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
+import { PlacementBanner } from '@/components/component/PlacementBanner/PlacementBanner';
 import styles from './DashboardPage.module.css';
 
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const SKILL_CONFIGS = [
-  { key: 'grammar', Icon: CheckCheck, label: 'Grammar', color: '#14b8a6' },
-  { key: 'reading', Icon: BookOpen, label: 'Reading', color: '#22c55e' },
-  { key: 'listening', Icon: Headphones, label: 'Listening', color: '#f59e0b' },
-  { key: 'vocabulary', Icon: Layers, label: 'Vocabulary', color: '#8b5cf6' },
-  { key: 'writing', Icon: PenLine, label: 'Writing', color: '#ec4899' },
-  { key: 'quiz', Icon: Brain, label: 'Quiz', color: '#6366f1' },
+  { key: 'grammar',    Icon: CheckCheck, label: 'Grammar',    color: '#14b8a6' },
+  { key: 'reading',    Icon: BookOpen,   label: 'Reading',    color: '#22c55e' },
+  { key: 'listening',  Icon: Headphones, label: 'Listening',  color: '#f59e0b' },
+  { key: 'vocabulary', Icon: Layers,     label: 'Vocabulary', color: '#8b5cf6' },
+  { key: 'writing',    Icon: PenLine,    label: 'Writing',    color: '#ec4899' },
+  { key: 'quiz',       Icon: Brain,      label: 'Quiz',       color: '#6366f1' },
 ] as const;
 
 type SkillKey = typeof SKILL_CONFIGS[number]['key'];
 
+// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function buildWeekDots(recentActivity: DailyActivity[]) {
   const activitySet = new Set(recentActivity.map((a) => a.date));
@@ -62,36 +68,34 @@ function buildWeekDots(recentActivity: DailyActivity[]) {
 function getStreakMessage(streak: number): string {
   if (streak === 0) { return 'Start your streak today!'; }
   if (streak === 1) { return 'Great start — come back tomorrow!'; }
-  if (streak < 7) { return `${streak} days strong. Keep it up!`; }
+  if (streak < 7)  { return `${streak} days strong. Keep it up!`; }
   if (streak < 30) { return `${streak} days 🔥 You're on fire!`; }
   return `${streak} days — Legendary!`;
 }
 
-function getSmsColor(sms: number, baseColor: string): string {
-  if (sms >= 80) { return baseColor; }
-  if (sms >= 50) { return baseColor; }
+function getSmsColor(_sms: number, baseColor: string): string {
   return baseColor;
 }
 
-function getSkillDetailLabel(key: SkillKey, breakdown: {
-  completed: number; required: number; accuracy: number;
-} | undefined): string {
+function getSkillDetailLabel(
+  key: SkillKey,
+  breakdown: { completed: number; required: number; accuracy: number } | undefined,
+): string {
   if (breakdown === undefined) { return '—'; }
-
   if (key === 'vocabulary') {
     return `${breakdown.completed} / ${breakdown.required} words`;
   }
-
   return `${breakdown.completed}/${breakdown.required} done · ${Math.round(breakdown.accuracy)}% accuracy`;
 }
 
+// ─── Sub-components ───────────────────────────────────────────────────────────
 
 function GreetingMessage({ name }: { name: string }) {
   const hour = new Date().getHours();
   const greeting =
     hour < 12 ? 'Good morning' :
-      hour < 18 ? 'Good afternoon' :
-        'Good evening';
+    hour < 18 ? 'Good afternoon' :
+                'Good evening';
   const firstName = name.split(' ')[0] ?? name;
 
   return (
@@ -146,20 +150,34 @@ function ReadinessRing({ percent }: { percent: number }) {
   );
 }
 
+// ─── Main component ───────────────────────────────────────────────────────────
 
 export function DashboardPage() {
   const dispatch = useAppDispatch();
-  const user = useAppSelector(selectUser);
-  const data = useAppSelector(selectProgressData);
-  const isLoading = useAppSelector(selectProgressIsLoading);
-  const error = useAppSelector(selectProgressError);
+
+  const user         = useAppSelector(selectUser);
+  const data         = useAppSelector(selectProgressData);
+  const isLoading    = useAppSelector(selectProgressIsLoading);
+  const error        = useAppSelector(selectProgressError);
   const isLevelingUp = useAppSelector(selectIsLevelingUp);
 
+  // Placement state — читаем целиком, деструктурируем нужное
+  const { showBanner, statusLoaded } = useAppSelector(
+    (state) => state.placement,
+  );
+
   useEffect(() => {
+    // Загружаем прогресс если ещё не загружен
     if (data === null && !isLoading && error === null) {
       void dispatch(fetchDashboard());
     }
-  }, [data, isLoading, error, dispatch]);
+
+    // Загружаем статус placement один раз при монтировании страницы
+    // statusLoaded гарантирует что повторных запросов не будет
+    if (!statusLoaded) {
+      void dispatch(fetchPlacementStatus());
+    }
+  }, [data, isLoading, error, statusLoaded, dispatch]);
 
   const handleRetry = useCallback(() => {
     void dispatch(fetchDashboard());
@@ -169,6 +187,7 @@ export function DashboardPage() {
     void dispatch(requestLevelUp());
   }, [dispatch]);
 
+  // Guaranteed by ProtectedRoute
   if (user === null) { return null; }
 
   if (isLoading && data === null) {
@@ -181,6 +200,7 @@ export function DashboardPage() {
   return (
     <div className={styles['page']}>
 
+      {/* ── Header ── */}
       <header className={styles['header']}>
         <GreetingMessage name={user.name} />
         {user.role === 'ADMIN' && (
@@ -188,6 +208,13 @@ export function DashboardPage() {
         )}
       </header>
 
+      {/* ── Placement banner ─────────────────────────────────────────────────
+          Показывается пока пользователь не прошёл / не пропустил placement test.
+          statusLoaded предотвращает flash до ответа API.
+      ── */}
+      {showBanner && statusLoaded && <PlacementBanner />}
+
+      {/* ── Error banner ── */}
       {error !== null && (
         <div className={styles['errorBanner']}>
           <AlertCircle size={16} />
@@ -201,6 +228,7 @@ export function DashboardPage() {
 
       {data !== null && (
         <>
+          {/* ── Quick stats ── */}
           <div className={styles['statsGrid']}>
             <div className={styles['statCard']}>
               <div className={`${styles['statIcon']} ${styles['purple']}`}>
@@ -235,6 +263,7 @@ export function DashboardPage() {
             </div>
           </div>
 
+          {/* ── Next goal card ── */}
           <div className={styles['nextGoalCard']}>
             <div className={styles['nextGoalIcon']}>
               <Target size={17} />
@@ -246,6 +275,7 @@ export function DashboardPage() {
             <ArrowRight size={15} className={styles['nextGoalArrow']} />
           </div>
 
+          {/* ── Level readiness ── */}
           <section className={styles['readinessSection']}>
             <div className={styles['readinessLeft']}>
               <h2 className={styles['sectionTitle']}>Level Readiness</h2>
@@ -269,6 +299,7 @@ export function DashboardPage() {
             <ReadinessRing percent={data.readinessPercent} />
           </section>
 
+          {/* ── Weekly activity ── */}
           <section className={styles['activitySection']}>
             <div className={styles['sectionHeader']}>
               <h2 className={styles['sectionTitle']}>This Week</h2>
@@ -291,6 +322,7 @@ export function DashboardPage() {
             </div>
           </section>
 
+          {/* ── Skill mastery grid ── */}
           <section>
             <div className={styles['sectionHeader']}>
               <h2 className={styles['sectionTitle']}>Skill Mastery</h2>
@@ -302,9 +334,10 @@ export function DashboardPage() {
                 const sms = breakdown?.sms ?? 0;
                 const isWeakest = data.weakestSkill === key;
                 const hasAccuracyGap = (breakdown?.accuracyGap ?? 0) > 0;
-                const detailLabel = getSkillDetailLabel(key, breakdown as {
-                  completed: number; required: number; accuracy: number;
-                } | undefined);
+                const detailLabel = getSkillDetailLabel(
+                  key,
+                  breakdown as { completed: number; required: number; accuracy: number } | undefined,
+                );
 
                 return (
                   <div
@@ -350,6 +383,7 @@ export function DashboardPage() {
             </div>
           </section>
 
+          {/* ── Coming soon ── */}
           <div className={styles['comingSoonCard']}>
             <Mic size={16} />
             <span>Speaking practice — coming soon</span>

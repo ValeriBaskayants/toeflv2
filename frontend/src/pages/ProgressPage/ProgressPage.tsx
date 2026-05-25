@@ -1,5 +1,4 @@
 import { useEffect, useCallback } from 'react';
-import { useTranslation } from 'react-i18next';
 import {
   TrendingUp,
   Flame,
@@ -7,7 +6,6 @@ import {
   BookOpen,
   PenLine,
   Headphones,
-  Mic,
   CheckCheck,
   Layers,
   Trophy,
@@ -311,7 +309,6 @@ function SkillBreakdown({ progress }: { progress: LevelProgressData }) {
 }
 
 export default function ProgressPage() {
-  const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const user = useAppSelector(selectUser);
   const data = useAppSelector(selectProgressData);

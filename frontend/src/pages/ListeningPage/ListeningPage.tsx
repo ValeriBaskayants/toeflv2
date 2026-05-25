@@ -4,14 +4,12 @@ import { useTranslation } from 'react-i18next';
 import {
     Headphones,
     Search,
-    Mic,
     BookOpen,
     AlertCircle,
     RefreshCw,
     ChevronRight,
     MessageSquare,
     Zap,
-    Clock,
     BarChart2,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
@@ -40,13 +38,13 @@ const MODE_INFO = {
 };
 
 
-function estimateDuration(material: ListeningMaterialListItem): string {
-    const wordCount = 80;
-    const secs = Math.round((wordCount / 130) / material.speakerRate * 60);
-    const m = Math.floor(secs / 60);
-    const s = secs % 60;
-    return m > 0 ? `~${m}m` : `~${s}s`;
-}
+// function estimateDuration(material: ListeningMaterialListItem): string {
+//     const wordCount = 80;
+//     const secs = Math.round((wordCount / 130) / material.speakerRate * 60);
+//     const m = Math.floor(secs / 60);
+//     const s = secs % 60;
+//     return m > 0 ? `~${m}m` : `~${s}s`;
+// }
 
 
 

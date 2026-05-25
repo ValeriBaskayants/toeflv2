@@ -26,7 +26,7 @@ export interface ListeningAnswerRecord {
 export interface ListeningNote {
   id: ID;
   text: string;
-  anchorSec?: number;
+  anchorSec?: number | undefined;
   createdAt: ISODateString;
 }
 

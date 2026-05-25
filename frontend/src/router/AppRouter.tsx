@@ -9,6 +9,9 @@ import ProgressPage from '@/pages/ProgressPage/ProgressPage';
 import ReadingListPage from '@/pages/ReadingListPage/ReadingListPage';
 import ReadingReaderPage from '@/pages/ReadingReaderPage/ReadingReaderPage';
 import { GrammarRulesPage } from '@/pages/GrammarRulesPage/GrammarRulesPage';
+import { PlacementPage } from '@/pages/Placementpage/Placementpage';
+import ListeningPage from '@/pages/ListeningPage/ListeningPage';
+import ListeningPlayerPage from '@/pages/Listeningplayerpage/Listeningplayerpage';
 
 function ComingSoonPage({ title }: { title: string }) {
   return (
@@ -39,7 +42,8 @@ export function AppRouter() {
         <Route path="/reading" element={<ReadingListPage />} />
         <Route path="/reading/:slug" element={<ReadingReaderPage />} />
 
-        <Route path="/listening" element={<ComingSoonPage title="Listening" />} />
+        <Route path="/listening" element={<ListeningPage />} />
+        <Route path="/listening/:id" element={<ListeningPlayerPage />} />
         <Route path="/speaking" element={<ComingSoonPage title="Speaking" />} />
         <Route path="/grammar" element={<ComingSoonPage title="Grammar" />} />
         <Route path="/vocabulary" element={<ComingSoonPage title="Vocabulary" />} />
@@ -47,6 +51,7 @@ export function AppRouter() {
         <Route path="/progress" element={<ProgressPage />} />
         <Route path="/grammar-rules" element={<GrammarRulesPage />} />
         <Route path="/grammar-rules/:slug" element={<GrammarRulesPage />} />
+        <Route path="/placement" element={<PlacementPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
@@ -54,3 +59,4 @@ export function AppRouter() {
     </Routes>
   );
 }
+

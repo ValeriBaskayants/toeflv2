@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import  { useEffect, useState } from 'react';
 import { useDispatch, useSelector } from 'react-redux';
 import { AsyncMultipleChoiceSlice } from '@/store/Slices/MultipleChoiceSlice';
 import type { AppDispatch, RootState } from '@/store/store';
@@ -71,7 +71,7 @@ export const MultipleChoiceList = () => {
 
               <div className={styles['optionsList']}>
                 {q.options.map((option, idx) => {
-                  let btnStateClass = '';
+                  let btnStateClass :string | undefined= '';
 
                   if (isAnswered) {
                     if (idx === q.correctIndex) {

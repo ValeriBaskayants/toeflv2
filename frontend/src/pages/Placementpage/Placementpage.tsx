@@ -23,7 +23,7 @@ import {
 } from '@/store/Slices/PlacementSlice';
 import { clearProgress } from '@/store/Slices/ProgressSlice';
 
-import styles from './PlacementPage.module.css';
+import styles from './Placementpage.module.css';
 import type { Dimension } from '@/types/Placement/Placement.types';
 
 

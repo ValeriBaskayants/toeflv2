@@ -7,6 +7,7 @@ import { readingsSlice } from './Slices/ReadingsSlice';
 import { grammarRulesSlice } from './Slices/GrammarRulesSlice';
 import { listeningSlice } from './Slices/ListeningSlice';
 import { placementSlice } from './Slices/PlacementSlice';
+import MultipleChoiceSlice from './Slices/MultipleChoiceSlice';
 
 export const store = configureStore({
   reducer: {
@@ -16,7 +17,8 @@ export const store = configureStore({
     readings: readingsSlice.reducer,
     grammar: grammarRulesSlice.reducer,
     listening: listeningSlice.reducer,
-    placement: placementSlice.reducer
+    placement:placementSlice.reducer,
+    multipleChoice:MultipleChoiceSlice.reducer
   },
 });
 

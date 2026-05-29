@@ -13,7 +13,7 @@ import {
 import type { ListeningNote } from '@/types/listening/Listening.types';
 import { listeningApi } from '@/api';
 
-// ─── Types ────────────────────────────────────────────────────────────────────
+
 
 export interface AnswerRecord {
   questionId: string;
@@ -25,43 +25,43 @@ export interface AnswerRecord {
 }
 
 interface ListeningState {
-  // Material list
+  
   materials: ListeningMaterialListItem[];
   materialsLoading: boolean;
   materialsError: string | null;
 
-  // Current material (player view)
+  
   currentMaterial: ListeningMaterialDetail | null;
   materialLoading: boolean;
   materialError: string | null;
 
-  // Active session
+  
   activeSession: StartSessionResponse | null;
   sessionLoading: boolean;
   sessionError: string | null;
 
-  // Play tracking
+  
   playCount: number;
   maxAllowedPlays: number;
   recordingPlay: boolean;
 
-  // Answers (per question)
+  
   answers: Record<string, AnswerRecord>;
 
-  // Notes (local draft synced to API)
+  
   notes: ListeningNote[];
   notesSaving: boolean;
 
-  // Session result (after complete)
+  
   sessionResult: CompleteSessionResponse | null;
   completing: boolean;
   completeError: string | null;
 
-  // Session history
+  
   history: SessionHistoryItem[];
   historyLoading: boolean;
 
-  // Filters
+  
   filters: {
     level: string | null;
     type: string | null;
@@ -100,7 +100,7 @@ const initialState: ListeningState = {
   filters: { level: null, type: null, search: '' },
 };
 
-// ─── Thunks ───────────────────────────────────────────────────────────────────
+
 
 export const fetchMaterials = createAsyncThunk<
   ListeningMaterialListItem[],
@@ -216,7 +216,7 @@ export const fetchHistory = createAsyncThunk<
   }
 });
 
-// ─── Slice ────────────────────────────────────────────────────────────────────
+
 
 export const listeningSlice = createSlice({
   name: 'listening',
@@ -233,14 +233,14 @@ export const listeningSlice = createSlice({
       }
     },
 
-    // Local answer selection (before API submit)
+    
     selectAnswer: (
       state,
       action: PayloadAction<{ questionId: string; selectedIndex: number }>,
     ) => {
       const { questionId, selectedIndex } = action.payload;
       const existing = state.answers[questionId];
-      if (existing?.submitted) return; // don't allow re-select after submit
+      if (existing?.submitted) return; 
       state.answers[questionId] = {
         questionId,
         selectedIndex,
@@ -270,7 +270,7 @@ export const listeningSlice = createSlice({
   },
 
   extraReducers: (builder) => {
-    // fetchMaterials
+    
     builder
       .addCase(fetchMaterials.pending, (state) => {
         state.materialsLoading = true;
@@ -285,7 +285,7 @@ export const listeningSlice = createSlice({
         state.materialsError = action.payload ?? 'Unknown error';
       });
 
-    // fetchMaterialById
+    
     builder
       .addCase(fetchMaterialById.pending, (state) => {
         state.materialLoading = true;
@@ -295,7 +295,7 @@ export const listeningSlice = createSlice({
       .addCase(fetchMaterialById.fulfilled, (state, action) => {
         state.materialLoading = false;
         state.currentMaterial = action.payload;
-        // If there's already an open session from the API, restore it
+        
         if (action.payload.openSession) {
           const s = action.payload.openSession;
           state.activeSession = {
@@ -314,7 +314,7 @@ export const listeningSlice = createSlice({
         state.materialError = action.payload ?? 'Unknown error';
       });
 
-    // startSession
+    
     builder
       .addCase(startSession.pending, (state) => {
         state.sessionLoading = true;
@@ -335,7 +335,7 @@ export const listeningSlice = createSlice({
         state.sessionError = action.payload ?? 'Unknown error';
       });
 
-    // recordPlay
+    
     builder
       .addCase(recordPlay.pending, (state) => {
         state.recordingPlay = true;
@@ -349,7 +349,7 @@ export const listeningSlice = createSlice({
         state.recordingPlay = false;
       });
 
-    // submitAnswer
+    
     builder
       .addCase(submitAnswer.pending, (state, action) => {
         const { questionId } = action.meta.arg;
@@ -375,13 +375,13 @@ export const listeningSlice = createSlice({
         }
       });
 
-    // saveNotes
+    
     builder
       .addCase(saveNotes.pending, (state) => { state.notesSaving = true; })
       .addCase(saveNotes.fulfilled, (state) => { state.notesSaving = false; })
       .addCase(saveNotes.rejected, (state) => { state.notesSaving = false; });
 
-    // completeSession
+    
     builder
       .addCase(completeSession.pending, (state) => {
         state.completing = true;
@@ -397,7 +397,7 @@ export const listeningSlice = createSlice({
         state.completeError = action.payload ?? 'Unknown error';
       });
 
-    // fetchHistory
+    
     builder
       .addCase(fetchHistory.pending, (state) => { state.historyLoading = true; })
       .addCase(fetchHistory.fulfilled, (state, action) => {

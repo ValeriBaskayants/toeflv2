@@ -1,7 +1,7 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-// ══════════════════════════  EN  ══════════════════════════
+
 const listeningEN = {
   title: 'Listening',
   subtitle: 'Train your ear with real-world conversations and lectures',
@@ -9,43 +9,43 @@ const listeningEN = {
   error: 'Could not load listening materials',
   retry: 'Try again',
   materialsCount: 'materials',
-  questionsLabel: 'questions', // Переименовано для устранения конфликта
+  questionsLabel: 'questions', 
   modes: 'modes',
 
   type: {
-    lecture:      'Lecture',
+    lecture: 'Lecture',
     conversation: 'Conversation',
   },
 
   filters: {
     searchPlaceholder: 'Search by title or topic…',
-    allTypes:    'All',
-    allLevels:   'All levels',
+    allTypes: 'All',
+    allLevels: 'All levels',
   },
 
   empty: {
     title: 'No materials found',
-    hint:  'Try changing the filters or check back later',
+    hint: 'Try changing the filters or check back later',
   },
 
   modeSelect: {
-    title:    'Choose your practice mode',
+    title: 'Choose your practice mode',
     subtitle: 'Different modes offer different challenges and XP rewards',
   },
 
   player: {
-    backToList:     'Back to library',
-    transcript:     'Transcript',
+    backToList: 'Back to library',
+    transcript: 'Transcript',
     transcriptHidden:
       'Transcript hidden — complete the session to reveal it',
-    restart:        'Restart from beginning',
-    noPlaysLeft:    'No plays remaining',
-    completing:     'Saving results…',
-    complete:       'Complete session',
-    voicePremium:   'Premium voice',
-    voiceStandard:  'Standard voice',
-    voiceBasic:     'Basic voice — open Chrome for better audio',
-    voiceNone:      'No voice — browser not supported',
+    restart: 'Restart from beginning',
+    noPlaysLeft: 'No plays remaining',
+    completing: 'Saving results…',
+    complete: 'Complete session',
+    voicePremium: 'Premium voice',
+    voiceStandard: 'Standard voice',
+    voiceBasic: 'Basic voice — open Chrome for better audio',
+    voiceNone: 'No voice — browser not supported',
     voiceWarnBasic:
       'Your browser uses a basic voice. For the best experience open this page in Chrome.',
     ttsNotSupported:
@@ -53,30 +53,30 @@ const listeningEN = {
   },
 
   questions: {
-    title:       'Questions',
+    title: 'Questions',
     listenFirst: 'Listen at least once before answering the questions',
-    why:         'Why?',
+    why: 'Why?',
   },
 
   notes: {
-    label:       'Notes',
+    label: 'Notes',
     placeholder: 'Jot something down… (Ctrl+Enter to save)',
-    add:         'Add',
-    empty:       'No notes yet',
+    add: 'Add',
+    empty: 'No notes yet',
   },
 
   results: {
-    finalScore:      'Final score',
-    accuracy:        'Accuracy',
-    xpEarned:        'XP earned',
-    correct:         'Correct',
-    questions:       'Question breakdown',
-    showTranscript:  'View full transcript',
-    backToLibrary:   'Back to library',
+    finalScore: 'Final score',
+    accuracy: 'Accuracy',
+    xpEarned: 'XP earned',
+    correct: 'Correct',
+    questions: 'Question breakdown',
+    showTranscript: 'View full transcript',
+    backToLibrary: 'Back to library',
   },
 };
 
-// ══════════════════════════  RU  ══════════════════════════
+
 const listeningRU = {
   title: 'Аудирование',
   subtitle:
@@ -85,43 +85,43 @@ const listeningRU = {
   error: 'Не удалось загрузить материалы',
   retry: 'Повторить',
   materialsCount: 'материалов',
-  questionsLabel: 'вопросов', // Переименовано для устранения конфликта
+  questionsLabel: 'вопросов', 
   modes: 'режима',
 
   type: {
-    lecture:      'Лекция',
+    lecture: 'Лекция',
     conversation: 'Диалог',
   },
 
   filters: {
     searchPlaceholder: 'Поиск по названию или теме…',
-    allTypes:  'Все',
+    allTypes: 'Все',
     allLevels: 'Все уровни',
   },
 
   empty: {
     title: 'Материалы не найдены',
-    hint:  'Попробуйте изменить фильтры',
+    hint: 'Попробуйте изменить фильтры',
   },
 
   modeSelect: {
-    title:    'Выберите режим практики',
+    title: 'Выберите режим практики',
     subtitle: 'Разные режимы — разные задачи и награды XP',
   },
 
   player: {
-    backToList:    'Назад к библиотеке',
-    transcript:    'Транскрипт',
+    backToList: 'Назад к библиотеке',
+    transcript: 'Транскрипт',
     transcriptHidden:
       'Транскрипт скрыт — завершите сессию, чтобы его увидеть',
-    restart:       'Начать сначала',
-    noPlaysLeft:   'Прослушивания закончились',
-    completing:    'Сохраняем результаты…',
-    complete:      'Завершить сессию',
-    voicePremium:  'Премиум-голос',
+    restart: 'Начать сначала',
+    noPlaysLeft: 'Прослушивания закончились',
+    completing: 'Сохраняем результаты…',
+    complete: 'Завершить сессию',
+    voicePremium: 'Премиум-голос',
     voiceStandard: 'Стандартный голос',
-    voiceBasic:    'Базовый голос — откройте Chrome для лучшего звука',
-    voiceNone:     'Голос недоступен — браузер не поддерживается',
+    voiceBasic: 'Базовый голос — откройте Chrome для лучшего звука',
+    voiceNone: 'Голос недоступен — браузер не поддерживается',
     voiceWarnBasic:
       'Ваш browser использует базовый голос. Для лучшего опыта откройте страницу в Chrome.',
     ttsNotSupported:
@@ -129,30 +129,191 @@ const listeningRU = {
   },
 
   questions: {
-    title:       'Вопросы',
+    title: 'Вопросы',
     listenFirst: 'Прослушайте material хотя бы раз, прежде чем отвечать',
-    why:         'Почему?',
+    why: 'Почему?',
   },
 
   notes: {
-    label:       'Заметки',
+    label: 'Заметки',
     placeholder: 'Запишите что-нибудь… (Ctrl+Enter — сохранить)',
-    add:         'Добавить',
-    empty:       'Заметок пока нет',
+    add: 'Добавить',
+    empty: 'Заметок пока нет',
   },
 
   results: {
-    finalScore:     'Итоговый балл',
-    accuracy:       'Точность',
-    xpEarned:       'Получено XP',
-    correct:        'Верных',
-    questions:      'Разбор вопросов',
+    finalScore: 'Итоговый балл',
+    accuracy: 'Точность',
+    xpEarned: 'Получено XP',
+    correct: 'Верных',
+    questions: 'Разбор вопросов',
     showTranscript: 'Показать транскрипт',
-    backToLibrary:  'Вернуться в библиотеку',
+    backToLibrary: 'Вернуться в библиотеку',
+  },
+};
+const EN_ADDITIONS = {
+  navigation: {
+    
+    quiz: 'Quiz',
+    
+  },
+  grammar: {
+    title: 'Grammar Quiz',
+    subtitle: 'Test your knowledge, earn XP, track mistakes',
+    level: 'Your level',
+    difficulty: 'Difficulty',
+    recommended: 'Recommended for',
+    questionCount: 'Number of questions',
+    topic: 'Topic',
+    optional: 'optional',
+    topicPlaceholder: 'e.g. Present Perfect, Modal Verbs…',
+    loading: 'Loading questions…',
+    start: 'Start Quiz',
+    exit: 'Exit quiz',
+    prev: 'Previous',
+    next: 'Next',
+    answered: 'answered',
+    submit: 'Submit Quiz',
+    submitting: 'Submitting…',
+    accuracy: 'accuracy',
+    correct: 'Correct',
+    earned: 'earned',
+    newQuiz: 'New Quiz',
+    reviewTitle: 'Answer Review',
+    yourAnswer: 'You',
+    noQuestions: 'No questions found for these filters.',
+  },
+  reading: {
+    title: 'Reading',
+    subtitle: 'Improve comprehension across all CEFR levels',
+    allLevels: 'All',
+    searchPlaceholder: 'Search by topic or title…',
+    retry: 'Retry',
+    noResults: 'No readings found for this filter.',
+    vocabulary: 'Vocabulary',
+    questions: 'Comprehension Check',
+    accuracy: 'accuracy',
+    correct: 'correct',
+    yourAnswer: 'Your answer',
+    correctAnswer: 'Correct',
+    tryAgain: 'Try Again',
+    submit: 'Submit Answers',
+    submitting: 'Submitting…',
+    readyToSubmit: 'All questions answered',
+    loading: 'Loading article…',
+    notFound: 'Article not found.',
+    backToList: 'Back',
   },
 };
 
-// ══════════════════════════  HY  ══════════════════════════
+
+const RU_ADDITIONS = {
+  navigation: {
+    quiz: 'Квиз',
+  },
+  grammar: {
+    title: 'Грамматический квиз',
+    subtitle: 'Проверьте знания, зарабатывайте XP, отслеживайте ошибки',
+    level: 'Ваш уровень',
+    difficulty: 'Сложность',
+    recommended: 'Рекомендовано для',
+    questionCount: 'Количество вопросов',
+    topic: 'Тема',
+    optional: 'необязательно',
+    topicPlaceholder: 'Напр. Present Perfect, Modal Verbs…',
+    loading: 'Загрузка вопросов…',
+    start: 'Начать квиз',
+    exit: 'Выйти',
+    prev: 'Назад',
+    next: 'Далее',
+    answered: 'отвечено',
+    submit: 'Отправить квиз',
+    submitting: 'Отправка…',
+    accuracy: 'точность',
+    correct: 'Правильно',
+    earned: 'заработано',
+    newQuiz: 'Новый квиз',
+    reviewTitle: 'Разбор ошибок',
+    yourAnswer: 'Ваш ответ',
+    noQuestions: 'Вопросы не найдены. Измените фильтры.',
+  },
+  reading: {
+    title: 'Чтение',
+    subtitle: 'Улучшите понимание текста на всех уровнях CEFR',
+    allLevels: 'Все',
+    searchPlaceholder: 'Поиск по теме или названию…',
+    retry: 'Повторить',
+    noResults: 'Ничего не найдено.',
+    vocabulary: 'Словарь',
+    questions: 'Проверка понимания',
+    accuracy: 'точность',
+    correct: 'правильно',
+    yourAnswer: 'Вы',
+    correctAnswer: 'Правильно',
+    tryAgain: 'Попробовать снова',
+    submit: 'Отправить ответы',
+    submitting: 'Отправка…',
+    readyToSubmit: 'Все вопросы отвечены',
+    loading: 'Загрузка статьи…',
+    notFound: 'Статья не найдена.',
+    backToList: 'Назад',
+  },
+};
+
+
+const HY_ADDITIONS = {
+  navigation: {
+    quiz: 'Քվիզ',
+  },
+  grammar: {
+    title: 'Քերականական Քվիզ',
+    subtitle: 'Ստուգեք գիտելիքները, վաստակեք XP',
+    level: 'Ձեր մակարդակը',
+    difficulty: 'Բարդություն',
+    recommended: 'Առաջարկվում է',
+    questionCount: 'Հարցերի քանակ',
+    topic: 'Թեմա',
+    optional: 'կամընտիր',
+    topicPlaceholder: 'Օրինակ՝ Present Perfect…',
+    loading: 'Բեռնվում է…',
+    start: 'Սկսել Քվիզ',
+    exit: 'Ելք',
+    prev: 'Հետ',
+    next: 'Հաջորդ',
+    answered: 'պատասխանված',
+    submit: 'Ուղարկել',
+    submitting: 'Ուղարկվում է…',
+    accuracy: 'ճշտություն',
+    correct: 'Ճիշտ',
+    earned: 'վաստակված',
+    newQuiz: 'Նոր Քվիզ',
+    reviewTitle: 'Սխալների վերլուծություն',
+    yourAnswer: 'Ձեր',
+    noQuestions: 'Հարցեր չեն գտնվել։',
+  },
+  reading: {
+    title: 'Ընթերցում',
+    subtitle: 'Բարձրացրեք ըմբռնումը բոլոր մակարդակներում',
+    allLevels: 'Բոլոր',
+    searchPlaceholder: 'Որոնել թեմայով կամ անվամբ…',
+    retry: 'Կրկնել',
+    noResults: 'Ոչինչ չի գտնվել։',
+    vocabulary: 'Բառապաշար',
+    questions: 'Ըմբռնման ստուգում',
+    accuracy: 'ճշտություն',
+    correct: 'ճիշտ',
+    yourAnswer: 'Դուք',
+    correctAnswer: 'Ճիշտ',
+    tryAgain: 'Կրկին փորձել',
+    submit: 'Ուղարկել',
+    submitting: 'Ուղարկվում է…',
+    readyToSubmit: 'Բոլոր հարցերը պատասխանված են',
+    loading: 'Բեռնվում է…',
+    notFound: 'Հոդվածը չի գտնվել։',
+    backToList: 'Հետ',
+  },
+};
+
 const listeningHY = {
   title: 'Լսողություն',
   subtitle: 'Մարզեք ձեր ականջը իրական երկխոսությունների և դասախոսությունների վրա',
@@ -160,43 +321,43 @@ const listeningHY = {
   error: 'Չhajhogvets bervyl nyutery',
   retry: 'Կrkin փordzel',
   materialsCount: 'nyuter',
-  questionsLabel: 'harc', // Переименовано для устранения конфликта
+  questionsLabel: 'harc', 
   modes: 'rezhim',
 
   type: {
-    lecture:      'Դasakhosowtyown',
+    lecture: 'Դasakhosowtyown',
     conversation: 'Erkhaghowtyown',
   },
 
   filters: {
     searchPlaceholder: 'Orononel anvannov kam themayov…',
-    allTypes:  'Bolor',
+    allTypes: 'Bolor',
     allLevels: 'Bolor makardownery',
   },
 
   empty: {
     title: 'Nyuterchyen gtanvhel',
-    hint:  'Pordzeq phokhokhel filtery',
+    hint: 'Pordzeq phokhokhel filtery',
   },
 
   modeSelect: {
-    title:    'Entreq практики rezhim',
+    title: 'Entreq практики rezhim',
     subtitle: 'Taparhakan rezhimner — taparhakan ardyownqner ev XP payghater',
   },
 
   player: {
-    backToList:    'Verenadardz գraderan',
-    transcript:    'Transkript',
+    backToList: 'Verenadardz գraderan',
+    transcript: 'Transkript',
     transcriptHidden:
       'Transkript-y thaqnvatsvats e — avartecheq sessian bacehelow hamar',
-    restart:       'Sksel hnoc',
-    noPlaysLeft:   'Lsumner spaservhel en',
-    completing:    'Pahpanvum en ardyownqner…',
-    complete:      'Avaretnel session',
-    voicePremium:  'Premium dzayn',
+    restart: 'Sksel hnoc',
+    noPlaysLeft: 'Lsumner spaservhel en',
+    completing: 'Pahpanvum en ardyownqner…',
+    complete: 'Avaretnel session',
+    voicePremium: 'Premium dzayn',
     voiceStandard: 'Standarty dzayn',
-    voiceBasic:    'Havet dzayn — Chrome bacheq lav dzayni hamar',
-    voiceNone:     'Dzayn chka — brauzery chi shtakarel',
+    voiceBasic: 'Havet dzayn — Chrome bacheq lav dzayni hamar',
+    voiceNone: 'Dzayn chka — brauzery chi shtakarel',
     voiceWarnBasic:
       'Dzez brauzer-y ogtagordzovm e havet dzayn. Chrome-owm bacheq lav tesambirowtyown vayelelov.',
     ttsNotSupported:
@@ -204,26 +365,26 @@ const listeningHY = {
   },
 
   questions: {
-    title:       'Harcer',
+    title: 'Harcer',
     listenFirst: 'Lsheq nyuter-y goneaz mek angam, minchev pataskhanem harcerow',
-    why:         'Inc-ow?',
+    why: 'Inc-ow?',
   },
 
   notes: {
-    label:       'Grosher',
+    label: 'Grosher',
     placeholder: 'Grosheq inch-or… (Ctrl+Enter — pahpanel)',
-    add:         'Avelacnel',
-    empty:       'Grosher chenk gtnhel',
+    add: 'Avelacnel',
+    empty: 'Grosher chenk gtnhel',
   },
 
   results: {
-    finalScore:     'Verjnakan miav',
-    accuracy:       'Chshtowtyown',
-    xpEarned:       'Stacvats XP',
-    correct:        'Chisht',
-    questions:      'Harcer',
+    finalScore: 'Verjnakan miav',
+    accuracy: 'Chshtowtyown',
+    xpEarned: 'Stacvats XP',
+    correct: 'Chisht',
+    questions: 'Harcer',
     showTranscript: 'Tesnel transkript',
-    backToLibrary:  'Verenadardz graderan',
+    backToLibrary: 'Verenadardz graderan',
   },
 };
 
@@ -452,5 +613,6 @@ i18n.on('languageChanged', (lng: string) => {
   localStorage.setItem('toefl_lang', lng);
 });
 
-export { listeningEN, listeningRU, listeningHY };
+export { listeningEN, listeningRU, listeningHY ,RU_ADDITIONS,HY_ADDITIONS,EN_ADDITIONS};
+
 export default i18n;

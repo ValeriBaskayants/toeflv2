@@ -12,6 +12,8 @@ import { GrammarRulesPage } from '@/pages/GrammarRulesPage/GrammarRulesPage';
 import { PlacementPage } from '@/pages/Placementpage/Placementpage';
 import ListeningPage from '@/pages/ListeningPage/ListeningPage';
 import ListeningPlayerPage from '@/pages/Listeningplayerpage/Listeningplayerpage';
+import QuizPage from '@/pages/Quizpage/Quizpage';
+import { BookmarksPage } from '@/pages/Bookmarkspage/Bookmarkspage';
 
 function ComingSoonPage({ title }: { title: string }) {
   return (
@@ -49,6 +51,8 @@ export function AppRouter() {
         <Route path="/vocabulary" element={<ComingSoonPage title="Vocabulary" />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/progress" element={<ProgressPage />} />
+        <Route path="/quiz" element={<QuizPage />} />
+        <Route path="/bookmarks" element={<BookmarksPage />} />
         <Route path="/grammar-rules" element={<GrammarRulesPage />} />
         <Route path="/grammar-rules/:slug" element={<GrammarRulesPage />} />
         <Route path="/placement" element={<PlacementPage />} />

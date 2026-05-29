@@ -1,20 +1,9 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  LayoutDashboard,
-  PenLine,
-  BookOpen,
-  Headphones,
-  Mic,
-  Layers,
-  CheckCheck,
-  BarChart3,
-  Globe,
-  Sun,
-  Moon,
-  LogOut,
-  X,
-  ShieldAlert,
+  LayoutDashboard, PenLine, BookOpen, Headphones, Mic,
+  Layers, CheckCheck, BarChart3, Globe, Sun, Moon, LogOut,
+  X, ShieldAlert, Target,Bookmark
 } from 'lucide-react';
 import i18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/store/store';
@@ -49,8 +38,10 @@ const NAV_SECTIONS = [
       { to: '/reading', icon: BookOpen, label: 'navigation.reading' },
       { to: '/listening', icon: Headphones, label: 'navigation.listening' },
       { to: '/speaking', icon: Mic, label: 'navigation.speaking' },
-      { to: '/grammar-rules', icon: CheckCheck, label: 'navigation.grammar' },
+      { to: '/grammar', icon: CheckCheck, label: 'navigation.grammar' },
+      { to: '/quiz', icon: Target, label: 'navigation.quiz' },
       { to: '/vocabulary', icon: Layers, label: 'navigation.vocabulary' },
+      { to: '/bookmarks', icon: Bookmark, label: 'navigation.bookmarks' },
     ],
   },
 ] as const;
@@ -58,7 +49,12 @@ const NAV_SECTIONS = [
 function UserAvatar({ name, avatar }: { name: string; avatar: string | null }) {
   if (avatar !== null) {
     return (
-      <img src={avatar} alt={name} className={styles['avatarImg']} referrerPolicy="no-referrer" />
+      <img
+        src={avatar}
+        alt={name}
+        className={styles['avatarImg']}
+        referrerPolicy="no-referrer"
+      />
     );
   }
   const initials = name
@@ -81,31 +77,21 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
     try {
       await api.post('/auth/logout');
     } catch {
+      // best-effort
     } finally {
       dispatch(clearAuth());
       navigate('/login', { replace: true });
     }
   };
 
-  const handleLangChange = (lang: string) => {
-    void i18n.changeLanguage(lang);
-  };
-
   return (
     <aside className={`${styles['sidebar']} ${isOpen ? styles['sidebarOpen'] : ''}`}>
-      <button
-        className={styles['closeBtn']}
-        onClick={onClose}
-        type="button"
-        aria-label="Close sidebar"
-      >
+      <button className={styles['closeBtn']} onClick={onClose} type="button" aria-label="Close sidebar">
         <X size={18} />
       </button>
 
       <div className={styles['logo']}>
-        <div className={styles['logoMark']}>
-          <span className={styles['logoLetter']}>T</span>
-        </div>
+        <div className={styles['logoMark']}><span className={styles['logoLetter']}>T</span></div>
         <span className={styles['logoText']}>TOEFL Prep</span>
       </div>
 
@@ -153,8 +139,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             {LANGUAGES.map(({ code, label }) => (
               <button
                 key={code}
-                className={`${styles['langBtn']} ${currentLang === code ? styles['langBtnActive'] : ''}`}
-                onClick={() => handleLangChange(code)}
+                className={`${styles['langBtn']} ${i18n.language.slice(0, 2) === code ? styles['langBtnActive'] : ''}`}
+                onClick={() => void i18n.changeLanguage(code)}
                 type="button"
                 aria-label={`Switch to ${label}`}
               >
@@ -164,12 +150,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        <button
-          className={styles['themeBtn']}
-          onClick={toggleTheme}
-          type="button"
-          aria-label="Toggle theme"
-        >
+        <button className={styles['themeBtn']} onClick={toggleTheme} type="button" aria-label="Toggle theme">
           {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
           <span>{theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}</span>
         </button>
@@ -185,9 +166,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <button
               className={styles['logoutBtn']}
-              onClick={() => {
-                void handleLogout();
-              }}
+              onClick={() => { void handleLogout(); }}
               type="button"
               aria-label={t('auth.signOut')}
               title={t('auth.signOut')}

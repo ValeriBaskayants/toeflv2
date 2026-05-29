@@ -7,9 +7,10 @@ import {
     RefreshCw,
     ArrowRight,
     Tag,
-    ChevronRight,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/store';
+
+// Импорты для страницы грамматики
 import {
     fetchGrammarRules,
     setActiveLevel,
@@ -20,11 +21,15 @@ import {
     selectActiveLevel,
     selectGrammarSearch,
 } from '@/store/Slices/GrammarRulesSlice';
+
+// НОВЫЕ ИМПОРТЫ ДЛЯ ЗАКЛАДОК
+import { fetchBookmarks } from '@/store/Slices/BookMarksSlice';
+import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
+
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './GrammarRulesPage.module.css';
-import  { Level } from '@/types/globalTypes';
+import { Level } from '@/types/globalTypes';
 import type { GrammarRuleSummary } from '@/types/grammar/Grammar.types';
-
 
 const LEVELS: Array<{ value: Level | null; label: string }> = [
     { value: null, label: 'All' },
@@ -109,9 +114,20 @@ function RuleCard({
 
             <div className={styles['cardHead']}>
                 <LevelBadge level={rule.level} />
-                <span className={styles['cardArrow']}>
-                    <ChevronRight size={16} />
-                </span>
+                
+                {/* ОБЕРТКА ДЛЯ КНОПКИ ЗАКЛАДКИ */}
+                {/* e.stopPropagation() предотвращает срабатывание onClick всей карточки */}
+                <div 
+                    onClick={(e) => e.stopPropagation()} 
+                    onKeyDown={(e) => e.stopPropagation()}
+                    style={{ zIndex: 2, position: 'relative' }} // На случай проблем с кликабельностью
+                >
+                    <BookmarkButton 
+                        targetId={rule.id} 
+                        type="GRAMMAR_RULE" 
+                        size="sm" 
+                    />
+                </div>
             </div>
 
             <h3 className={styles['cardTopic']}>{rule.topic}</h3>
@@ -177,10 +193,15 @@ export function GrammarRulesPage() {
     const activeLevel = useAppSelector(selectActiveLevel);
     const search = useAppSelector(selectGrammarSearch);
 
-    // Fetch when level filter changes
+    // Fetch grammar rules when level filter changes
     useEffect(() => {
         void dispatch(fetchGrammarRules(activeLevel ?? undefined));
     }, [activeLevel, dispatch]);
+
+    // ЗАГРУЗКА ЗАКЛАДОК ПРИ РЕНДЕРЕ СТРАНИЦЫ
+    useEffect(() => {
+        void dispatch(fetchBookmarks());
+    }, [dispatch]);
 
     const handleLevelClick = useCallback(
         (level: Level | null) => {
@@ -210,7 +231,6 @@ export function GrammarRulesPage() {
     if (isLoading && rules.length === 0) {
         return <FullPageSpinner label="Loading grammar rules…" />;
     }
-
 
     const totalCount = rules.length;
 

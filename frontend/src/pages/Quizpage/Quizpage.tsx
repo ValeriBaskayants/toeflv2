@@ -17,7 +17,7 @@ import {
   exitQuiz,
   type QuizSetup,
 } from '@/store/Slices/QuizSlice';
-import styles from './QuizPage.module.css';
+import styles from './Quizpage.module.css'
 import { Level, Difficulty } from '@/types/globalTypes';
 
 

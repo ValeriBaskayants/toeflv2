@@ -13,6 +13,11 @@ import {
   selectLevelFilter,
   selectTopicSearch,
 } from '@/store/Slices/ReadingsSlice';
+
+// НОВЫЕ ИМПОРТЫ ДЛЯ ЗАКЛАДОК
+import { fetchBookmarks } from '@/store/Slices/BookMarksSlice';
+import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
+
 import type { ReadingMaterial } from '@/types/reading/Reading.types';
 import { getLevelColor, LEVEL_DISPLAY } from '@/constants/level';
 import styles from './ReadingListPage.module.css';
@@ -56,7 +61,20 @@ function ReadingCard({ item }: { item: ReadingMaterial }) {
       </div>
 
       <div className={styles['cardBody']}>
-        <span className={styles['topicTag']}>{item.topic}</span>
+        {/* Обертка для тега и кнопки закладок */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
+          <span className={styles['topicTag']} style={{ margin: 0 }}>{item.topic}</span>
+          
+          {/* Останавливаем всплытие, чтобы клик по закладке не открывал статью */}
+          <div 
+            onClick={(e) => e.stopPropagation()} 
+            onKeyDown={(e) => e.stopPropagation()}
+            style={{ zIndex: 2 }}
+          >
+            <BookmarkButton targetId={item.id} type={"READING" as any} size="sm" />
+          </div>
+        </div>
+
         <h2 className={styles['cardTitle']}>{item.title}</h2>
         {item.description !== undefined && <p className={styles['cardDesc']}>{item.description}</p>}
 
@@ -93,6 +111,11 @@ export default function ReadingListPage() {
   const error = useAppSelector(selectReadingListError);
   const levelFilter = useAppSelector(selectLevelFilter);
   const topicSearch = useAppSelector(selectTopicSearch);
+
+  // ЗАГРУЗКА ЗАКЛАДОК ПРИ ИНИЦИАЛИЗАЦИИ
+  useEffect(() => {
+    void dispatch(fetchBookmarks());
+  }, [dispatch]);
 
   useEffect(() => {
     if (status === 'idle') {

@@ -22,7 +22,7 @@ import {
 } from '@/store/Slices/BookMarksSlice';
 import type { Bookmark as BookmarkItem, BookmarkType } from '@/types/bookmarks/Bookmarks.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
-import styles from './BookmarksPage.module.css';
+import styles from './Bookmarkspage .module.css';
 
 
 

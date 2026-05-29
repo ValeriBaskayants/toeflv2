@@ -47,7 +47,7 @@ export function AppRouter() {
         <Route path="/listening" element={<ListeningPage />} />
         <Route path="/listening/:id" element={<ListeningPlayerPage />} />
         <Route path="/speaking" element={<ComingSoonPage title="Speaking" />} />
-        <Route path="/grammar" element={<ComingSoonPage title="Grammar" />} />
+        <Route path="/grammar" element={<GrammarRulesPage/>} />
         <Route path="/vocabulary" element={<ComingSoonPage title="Vocabulary" />} />
         <Route path="/admin" element={<AdminPage />} />
         <Route path="/progress" element={<ProgressPage />} />

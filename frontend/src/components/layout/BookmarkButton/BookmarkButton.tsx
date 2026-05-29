@@ -3,7 +3,7 @@ import { Bookmark, BookmarkCheck } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import { toggleBookmark, selectIsBookmarked } from '@/store/Slices/BookMarksSlice';
 import type { BookmarkType } from '@/types/bookmarks/Bookmarks.types';
-import styles from './BookmarkButton.module.css';
+import styles from './Bookmarkbutton.module.css';
 
 interface BookmarkButtonProps {
     targetId: string;

@@ -71,7 +71,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const navigate = useNavigate();
   const user = useAppSelector(selectUser);
   const { theme, toggleTheme } = useTheme();
-  const currentLang = i18n.language.slice(0, 2);
 
   const handleLogout = async (): Promise<void> => {
     try {

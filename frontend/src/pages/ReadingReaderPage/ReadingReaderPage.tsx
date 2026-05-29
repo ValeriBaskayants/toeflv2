@@ -35,6 +35,11 @@ import {
   selectXpEarned,
   selectAnsweredCount,
 } from '@/store/Slices/ReadingsSlice';
+
+// НОВЫЕ ИМПОРТЫ ДЛЯ ЗАКЛАДОК
+import { fetchBookmarks } from '@/store/Slices/BookMarksSlice';
+import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
+
 import { getLevelColor, LEVEL_DISPLAY } from '@/constants/level';
 import type { VocabularyEmbedded, Question } from '@/types/reading/Reading.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
@@ -384,6 +389,11 @@ export default function ReadingReaderPage() {
   const [scrollPct, setScrollPct] = useState(0);
   const articleRef = useRef<HTMLDivElement>(null);
 
+  // ЗАГРУЗКА ЗАКЛАДОК ПРИ ИНИЦИАЛИЗАЦИИ
+  useEffect(() => {
+    void dispatch(fetchBookmarks());
+  }, [dispatch]);
+
   useEffect(() => {
     if (slug === undefined) {
       return;
@@ -473,7 +483,15 @@ export default function ReadingReaderPage() {
             </span>
           </div>
 
-          <h1 className={styles['articleTitle']}>{article.title}</h1>
+          {/* КОНТЕЙНЕР ДЛЯ ЗАГОЛОВКА И КНОПКИ ЗАКЛАДОК */}
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap', margin: '0.5rem 0 1.5rem 0' }}>
+            <h1 className={styles['articleTitle']} style={{ margin: 0 }}>{article.title}</h1>
+            <BookmarkButton 
+              targetId={article.id} 
+              type={"READING" as any} 
+              size="md" 
+            />
+          </div>
 
           {article.description !== undefined && (
             <p className={styles['articleLead']}>{article.description}</p>

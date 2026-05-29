@@ -18,11 +18,14 @@ import {
     setFilter,
     clearPlayerState,
 } from '@/store/Slices/ListeningSlice';
+
+
+import { fetchBookmarks } from '@/store/Slices/BookMarksSlice';
+import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
+
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './ListeningPage.module.css';
 import type { ListeningMaterialListItem } from '@/types/listening/Listening.types';
-
-
 
 const LEVELS = ['A1', 'A1_PLUS', 'A2', 'A2_PLUS', 'B1', 'B1_PLUS', 'B2', 'B2_PLUS', 'C1', 'C2'];
 const LEVEL_DISPLAY: Record<string, string> = {
@@ -37,17 +40,6 @@ const MODE_INFO = {
     HARD: { color: '#ef4444', label: '×1', xp: '×1.3' },
 };
 
-
-// function estimateDuration(material: ListeningMaterialListItem): string {
-//     const wordCount = 80;
-//     const secs = Math.round((wordCount / 130) / material.speakerRate * 60);
-//     const m = Math.floor(secs / 60);
-//     const s = secs % 60;
-//     return m > 0 ? `~${m}m` : `~${s}s`;
-// }
-
-
-
 function MaterialCard({ material }: { material: ListeningMaterialListItem }) {
     const navigate = useNavigate();
     const dispatch = useAppDispatch();
@@ -61,17 +53,37 @@ function MaterialCard({ material }: { material: ListeningMaterialListItem }) {
     const isLecture = material.type === 'LECTURE';
 
     return (
-        <article className={styles['card']} onClick={handleClick} role="button" tabIndex={0}
-            onKeyDown={(e) => { if (e.key === 'Enter') handleClick(); }}>
+        <article 
+            className={styles['card']} 
+            onClick={handleClick} 
+            role="button" 
+            tabIndex={0}
+            onKeyDown={(e) => { if (e.key === 'Enter') handleClick(); }}
+        >
             <div className={`${styles['typeIcon']} ${isLecture ? styles['typeIconLecture'] : styles['typeIconConv']}`}>
                 {isLecture ? <BookOpen size={20} /> : <MessageSquare size={20} />}
             </div>
 
             <div className={styles['cardBody']}>
-                <div className={styles['cardMeta']}>
+                <div className={styles['cardMeta']} style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', flexWrap: 'wrap' }}>
                     <span className={styles['levelBadge']}>{LEVEL_DISPLAY[material.level] ?? material.level}</span>
                     <span className={styles['typeBadge']}>{isLecture ? t('listening.type.lecture') : t('listening.type.conversation')}</span>
                     <span className={styles['topicTag']}>#{material.topic}</span>
+                    
+                    {/* ОБЕРТКА ДЛЯ КНОПКИ ЗАКЛАДКИ */}
+                    {/* marginLeft: 'auto' прижмет её к правому краю, если cardMeta это flex-контейнер */}
+                    <div 
+                        onClick={(e) => e.stopPropagation()} 
+                        onKeyDown={(e) => e.stopPropagation()}
+                        style={{ marginLeft: 'auto', zIndex: 2, position: 'relative' }}
+                    >
+                        <BookmarkButton 
+                            targetId={material.id} 
+                            
+                            type={"LISTENING" as any} 
+                            size="sm" 
+                        />
+                    </div>
                 </div>
 
                 <h3 className={styles['cardTitle']}>{material.title}</h3>
@@ -110,14 +122,11 @@ function MaterialCard({ material }: { material: ListeningMaterialListItem }) {
     );
 }
 
-
-
 function FilterBar() {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const { filters } = useAppSelector((state) => state.listening);
     const [searchDraft, setSearchDraft] = useState(filters.search);
-
 
     useEffect(() => {
         const timer = setTimeout(() => {
@@ -186,14 +195,16 @@ function FilterBar() {
     );
 }
 
-
-
 export default function ListeningPage() {
     const { t } = useTranslation();
     const dispatch = useAppDispatch();
     const { materials, materialsLoading, materialsError, filters } =
         useAppSelector((state) => state.listening);
 
+    
+    useEffect(() => {
+        void dispatch(fetchBookmarks());
+    }, [dispatch]);
 
     useEffect(() => {
         const params: Record<string, string> = {};

@@ -22,6 +22,11 @@ import {
     selectGrammarRuleDetailIsLoading,
     selectGrammarRuleDetailError,
 } from '@/store/Slices/GrammarRulesSlice';
+
+// НОВЫЕ ИМПОРТЫ ДЛЯ ЗАКЛАДОК
+import { fetchBookmarks } from '@/store/Slices/BookMarksSlice';
+import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
+
 import type {
     GrammarExample,
     GrammarUsage,
@@ -351,6 +356,11 @@ export function GrammarRulePage() {
 
     const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
+    // ЗАГРУЗКА ЗАКЛАДОК НА СЛУЧАЙ ПРЯМОГО ПЕРЕХОДА НА СТРАНИЦУ
+    useEffect(() => {
+        void dispatch(fetchBookmarks());
+    }, [dispatch]);
+
     useEffect(() => {
         if (slug === undefined) { return; }
         void dispatch(fetchGrammarRuleDetail(slug));
@@ -427,16 +437,29 @@ export function GrammarRulePage() {
             >
                 <div className={styles['heroAccentLine']} />
                 <div className={styles['heroInner']}>
-                    <span
-                        className={styles['heroBadge']}
-                        style={{
-                            background: `${accentColor}1a`,
-                            color: accentColor,
-                            borderColor: `${accentColor}33`,
-                        }}
-                    >
-                        {LEVEL_DISPLAY[rule.level] ?? rule.level}
-                    </span>
+                    
+                    {/* ОБЕРТКА ДЛЯ БЕЙДЖА И КНОПКИ ЗАКЛАДОК */}
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                        <span
+                            className={styles['heroBadge']}
+                            style={{
+                                background: `${accentColor}1a`,
+                                color: accentColor,
+                                borderColor: `${accentColor}33`,
+                                margin: 0 // Убираем возможный марджин, так как используем flex
+                            }}
+                        >
+                            {LEVEL_DISPLAY[rule.level] ?? rule.level}
+                        </span>
+                        
+                        <BookmarkButton 
+                            targetId={rule.id} 
+                            type="GRAMMAR_RULE" 
+                            size="md" 
+                            label="Save Rule" 
+                        />
+                    </div>
+
                     <h1 className={styles['heroTitle']}>{rule.topic}</h1>
                     {rule.summary.length > 0 && (
                         <p className={styles['heroSummary']}>{rule.summary}</p>

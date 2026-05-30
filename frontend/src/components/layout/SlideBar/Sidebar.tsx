@@ -5,7 +5,6 @@ import {
   PenLine,
   BookOpen,
   Headphones,
-  Mic,
   Layers,
   CheckCheck,
   BarChart3,

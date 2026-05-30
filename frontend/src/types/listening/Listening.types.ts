@@ -7,7 +7,6 @@ import {
   type ISODateString,
 } from '../globalTypes';
 
-
 export interface ListeningSegment {
   index: number;
   text: string;
@@ -77,7 +76,6 @@ export interface ListeningSession {
   completedAt?: ISODateString;
 }
 
-
 export interface GetListeningParams {
   level?: Level;
   type?: ListeningType;
@@ -107,7 +105,6 @@ export interface ListeningMaterialDetail extends ListeningMaterial {
   } | null;
   recommendedRate: number;
 }
-
 
 export interface StartSessionPayload {
   materialId: ID;

@@ -11,7 +11,5 @@ export const grammarRulesApi = {
       params: level !== undefined ? { level } : undefined,
     }),
 
-  getBySlug: (slug: string) =>
-    api.get<GrammarRuleDetail>(`/grammar-rules/${slug}`),
+  getBySlug: (slug: string) => api.get<GrammarRuleDetail>(`/grammar-rules/${slug}`),
 };
-

@@ -18,4 +18,5 @@ enum BookmarkType {
   VOCABULARY
   READING
   WRITING_PROMPT
+  LISTENING
 }

@@ -28,14 +28,14 @@ import { BullModule } from '@nestjs/bullmq';
       isGlobal: true,
     }),
     BullModule.forRootAsync({
-        inject: [ConfigService],
-        useFactory: (config: ConfigService) => ({
-          connection: {
-            host: config.getOrThrow<string>('redis.host'),
-            port: config.getOrThrow<number>('redis.port'),
-          },
-        }),
+      inject: [ConfigService],
+      useFactory: (config: ConfigService) => ({
+        connection: {
+          host: config.getOrThrow<string>('redis.host'),
+          port: config.getOrThrow<number>('redis.port'),
+        },
       }),
+    }),
     ThrottlerModule.forRootAsync({
       inject: [ConfigService],
       useFactory: (config: ConfigService) => ({
@@ -60,7 +60,7 @@ import { BullModule } from '@nestjs/bullmq';
     MultipleChoiceModule,
     MistakeModule,
     BookmarksModule,
-    PlacementModule
+    PlacementModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

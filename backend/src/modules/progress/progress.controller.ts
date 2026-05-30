@@ -12,7 +12,6 @@ export class ProgressController {
     return this.progressService.getDashboard(user.id);
   }
 
-
   @Post('level-up')
   @HttpCode(HttpStatus.OK)
   levelUp(@CurrentUser() user: JwtUserPayload) {

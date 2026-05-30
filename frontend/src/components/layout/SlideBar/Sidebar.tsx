@@ -1,9 +1,22 @@
 import { NavLink, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  LayoutDashboard, PenLine, BookOpen, Headphones, Mic,
-  Layers, CheckCheck, BarChart3, Globe, Sun, Moon, LogOut,
-  X, ShieldAlert, Target,Bookmark
+  LayoutDashboard,
+  PenLine,
+  BookOpen,
+  Headphones,
+  Mic,
+  Layers,
+  CheckCheck,
+  BarChart3,
+  Globe,
+  Sun,
+  Moon,
+  LogOut,
+  X,
+  ShieldAlert,
+  Target,
+  Bookmark,
 } from 'lucide-react';
 import i18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/store/store';
@@ -37,7 +50,6 @@ const NAV_SECTIONS = [
       { to: '/writing', icon: PenLine, label: 'navigation.writing' },
       { to: '/reading', icon: BookOpen, label: 'navigation.reading' },
       { to: '/listening', icon: Headphones, label: 'navigation.listening' },
-      { to: '/speaking', icon: Mic, label: 'navigation.speaking' },
       { to: '/grammar', icon: CheckCheck, label: 'navigation.grammar' },
       { to: '/quiz', icon: Target, label: 'navigation.quiz' },
       { to: '/vocabulary', icon: Layers, label: 'navigation.vocabulary' },
@@ -49,12 +61,7 @@ const NAV_SECTIONS = [
 function UserAvatar({ name, avatar }: { name: string; avatar: string | null }) {
   if (avatar !== null) {
     return (
-      <img
-        src={avatar}
-        alt={name}
-        className={styles['avatarImg']}
-        referrerPolicy="no-referrer"
-      />
+      <img src={avatar} alt={name} className={styles['avatarImg']} referrerPolicy="no-referrer" />
     );
   }
   const initials = name
@@ -85,12 +92,19 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
 
   return (
     <aside className={`${styles['sidebar']} ${isOpen ? styles['sidebarOpen'] : ''}`}>
-      <button className={styles['closeBtn']} onClick={onClose} type="button" aria-label="Close sidebar">
+      <button
+        className={styles['closeBtn']}
+        onClick={onClose}
+        type="button"
+        aria-label="Close sidebar"
+      >
         <X size={18} />
       </button>
 
       <div className={styles['logo']}>
-        <div className={styles['logoMark']}><span className={styles['logoLetter']}>T</span></div>
+        <div className={styles['logoMark']}>
+          <span className={styles['logoLetter']}>T</span>
+        </div>
         <span className={styles['logoText']}>TOEFL Prep</span>
       </div>
 
@@ -149,7 +163,12 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
           </div>
         </div>
 
-        <button className={styles['themeBtn']} onClick={toggleTheme} type="button" aria-label="Toggle theme">
+        <button
+          className={styles['themeBtn']}
+          onClick={toggleTheme}
+          type="button"
+          aria-label="Toggle theme"
+        >
           {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
           <span>{theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}</span>
         </button>
@@ -165,7 +184,9 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <button
               className={styles['logoutBtn']}
-              onClick={() => { void handleLogout(); }}
+              onClick={() => {
+                void handleLogout();
+              }}
               type="button"
               aria-label={t('auth.signOut')}
               title={t('auth.signOut')}

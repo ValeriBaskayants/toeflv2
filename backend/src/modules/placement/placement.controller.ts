@@ -46,10 +46,7 @@ export class PlacementController {
   // Если converged === true — тест завершён, возвращает detectedLevel
   @Post('answer')
   @HttpCode(HttpStatus.OK)
-  answer(
-    @CurrentUser() user: JwtUserPayload,
-    @Body() dto: AnswerPlacementDto,
-  ) {
+  answer(@CurrentUser() user: JwtUserPayload, @Body() dto: AnswerPlacementDto) {
     if (!user?.id) {
       throw new BadRequestException('User ID is required');
     }

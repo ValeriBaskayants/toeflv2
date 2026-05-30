@@ -1,10 +1,10 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { MultipleChoiceApi } from '@/api';
 import { Level, Difficulty } from '@/types/globalTypes';
-import type { 
-  MultipleChoice, 
-  SubmitMCResult, 
-  SubmitMCSessionResponse 
+import type {
+  MultipleChoice,
+  SubmitMCResult,
+  SubmitMCSessionResponse,
 } from '@/types/multipleChoice/MultipleChoice.types';
 
 type AsyncStatus = 'idle' | 'loading' | 'success' | 'error';
@@ -21,9 +21,9 @@ interface QuizState {
   phase: QuizPhase;
   setup: QuizSetup;
 
-  questions: MultipleChoice[]; 
+  questions: MultipleChoice[];
   currentIdx: number;
-  
+
   answers: Record<string, number>;
 
   loadStatus: AsyncStatus;
@@ -81,7 +81,9 @@ export const loadQuizQuestions = createAsyncThunk<
     });
 
     if (data.length === 0) {
-      return rejectWithValue('No questions found for these filters. Try a different level or difficulty.');
+      return rejectWithValue(
+        'No questions found for these filters. Try a different level or difficulty.',
+      );
     }
 
     return [...data].sort(() => Math.random() - 0.5).slice(0, setup.count);
@@ -91,7 +93,7 @@ export const loadQuizQuestions = createAsyncThunk<
 });
 
 export const submitQuiz = createAsyncThunk<
-  SubmitMCSessionResponse, 
+  SubmitMCSessionResponse,
   { answers: Record<string, number>; level: Level; timezone?: string },
   { rejectValue: string }
 >('quiz/submit', async ({ answers, level, timezone }, { rejectWithValue }) => {
@@ -141,17 +143,17 @@ export const quizSlice = createSlice({
     },
 
     exitQuiz: (state) => {
-      state.phase        = 'setup';
-      state.questions    = [];
-      state.currentIdx   = 0;
-      state.answers      = {};
+      state.phase = 'setup';
+      state.questions = [];
+      state.currentIdx = 0;
+      state.answers = {};
       state.submitStatus = 'idle';
-      state.submitError  = null;
-      state.results      = null;
-      state.accuracy     = null;
-      state.xpEarned     = null;
+      state.submitError = null;
+      state.results = null;
+      state.accuracy = null;
+      state.xpEarned = null;
       state.correctCount = null;
-      state.totalCount   = null;
+      state.totalCount = null;
     },
 
     resetQuiz: () => initialState,
@@ -161,42 +163,42 @@ export const quizSlice = createSlice({
     builder
       .addCase(loadQuizQuestions.pending, (state) => {
         state.loadStatus = 'loading';
-        state.loadError  = null;
+        state.loadError = null;
       })
       .addCase(loadQuizQuestions.fulfilled, (state, action) => {
-        state.loadStatus  = 'success';
-        state.questions   = action.payload;
-        state.currentIdx  = 0;
-        state.answers     = {};
-        state.phase       = 'playing';
-        state.results     = null;
-        state.accuracy    = null;
-        state.xpEarned    = null;
+        state.loadStatus = 'success';
+        state.questions = action.payload;
+        state.currentIdx = 0;
+        state.answers = {};
+        state.phase = 'playing';
+        state.results = null;
+        state.accuracy = null;
+        state.xpEarned = null;
         state.correctCount = null;
-        state.totalCount   = null;
+        state.totalCount = null;
       })
       .addCase(loadQuizQuestions.rejected, (state, action) => {
         state.loadStatus = 'error';
-        state.loadError  = action.payload ?? 'Unknown error';
+        state.loadError = action.payload ?? 'Unknown error';
       });
 
     builder
       .addCase(submitQuiz.pending, (state) => {
         state.submitStatus = 'loading';
-        state.submitError  = null;
+        state.submitError = null;
       })
       .addCase(submitQuiz.fulfilled, (state, action) => {
         state.submitStatus = 'success';
-        state.results      = action.payload.results;
-        state.accuracy     = action.payload.accuracy;
-        state.xpEarned     = action.payload.xpEarned;
+        state.results = action.payload.results;
+        state.accuracy = action.payload.accuracy;
+        state.xpEarned = action.payload.xpEarned;
         state.correctCount = action.payload.correctCount;
-        state.totalCount   = action.payload.totalCount;
-        state.phase        = 'results';
+        state.totalCount = action.payload.totalCount;
+        state.phase = 'results';
       })
       .addCase(submitQuiz.rejected, (state, action) => {
         state.submitStatus = 'error';
-        state.submitError  = action.payload ?? 'Unknown error';
+        state.submitError = action.payload ?? 'Unknown error';
       });
   },
 });

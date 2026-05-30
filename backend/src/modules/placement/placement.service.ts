@@ -51,7 +51,7 @@ export class PlacementService {
   >();
   private readonly CACHE_TTL_MS = 5 * 60 * 1000; // 5 minutes
 
-  constructor(private readonly prisma: PrismaService) { }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getOrCreate(userId: string) {
     try {
@@ -170,12 +170,7 @@ export class PlacementService {
     const allAnswers = [...answers, answerRecord];
 
     const answeredCount = allAnswers.length;
-    const maxSE = Math.max(
-      newSE.grammar,
-      newSE.vocabulary,
-      newSE.reading,
-      newSE.listening,
-    );
+    const maxSE = Math.max(newSE.grammar, newSE.vocabulary, newSE.reading, newSE.listening);
 
     const converged =
       answeredCount >= MIN_QUESTIONS && (maxSE <= SE_CONVERGENCE || answeredCount >= MAX_QUESTIONS);
@@ -268,11 +263,17 @@ export class PlacementService {
     questions: QuestionSnapshot[],
     answers: AnswerRecord[],
   ) {
-    const aggregate = theta.grammar * 0.3 + theta.vocabulary * 0.3 + theta.reading * 0.2 + theta.listening * 0.2;
+    const aggregate =
+      theta.grammar * 0.3 + theta.vocabulary * 0.3 + theta.reading * 0.2 + theta.listening * 0.2;
 
     const detectedLevel = this.thetaToLevel(aggregate);
 
-    const avgSE = (standardError.grammar + standardError.vocabulary + standardError.reading + standardError.listening) / 4;
+    const avgSE =
+      (standardError.grammar +
+        standardError.vocabulary +
+        standardError.reading +
+        standardError.listening) /
+      4;
     const confidenceScore = Math.round(Math.max(0, Math.min(100, (1 - avgSE / INITIAL_SE) * 100)));
 
     const testDurationSeconds = this.calculateTestDuration(answers);
@@ -464,9 +465,7 @@ export class PlacementService {
     return `${dim}:${theta}:${w}`;
   }
 
-  private getFromCache(
-    key: string,
-  ): Array<QuestionSnapshot & { info: number }> | null {
+  private getFromCache(key: string): Array<QuestionSnapshot & { info: number }> | null {
     const cached = this.questionCache.get(key);
     if (cached === undefined) {
       return null;
@@ -502,63 +501,63 @@ export class PlacementService {
     const [exercises, mcqs, listeningQuestions] = await Promise.all([
       dim === 'GRAMMAR'
         ? this.prisma.exercise.findMany({
-          where: {
-            isAvailableForPlacement: true,
-            ...(window !== Infinity && { difficultyRating: diffWhere }),
-          },
-          select: {
-            id: true,
-            sentence: true,
-            blanks: true,
-            difficultyRating: true,
-            discriminationRating: true,
-          },
-          take: 15,
-        })
+            where: {
+              isAvailableForPlacement: true,
+              ...(window !== Infinity && { difficultyRating: diffWhere }),
+            },
+            select: {
+              id: true,
+              sentence: true,
+              blanks: true,
+              difficultyRating: true,
+              discriminationRating: true,
+            },
+            take: 15,
+          })
         : Promise.resolve([]),
 
       dim !== 'GRAMMAR' && dim !== 'LISTENING'
         ? this.prisma.multipleChoice.findMany({
-          where: {
-            isAvailableForPlacement: true,
-            category: dim,
-            ...(window !== Infinity && { difficultyRating: diffWhere }),
-          },
-          select: {
-            id: true,
-            question: true,
-            options: true,
-            correctIndex: true,
-            difficultyRating: true,
-            discriminationRating: true,
-          },
-          take: 15,
-        })
+            where: {
+              isAvailableForPlacement: true,
+              category: dim,
+              ...(window !== Infinity && { difficultyRating: diffWhere }),
+            },
+            select: {
+              id: true,
+              question: true,
+              options: true,
+              correctIndex: true,
+              difficultyRating: true,
+              discriminationRating: true,
+            },
+            take: 15,
+          })
         : Promise.resolve([]),
 
       dim === 'LISTENING'
         ? this.prisma.listeningQuestion.findMany({
-          where: {
-            listeningMaterial: {
-              isAvailableForPlacement: true,
-              ...(window !== Infinity && { difficultyRating: diffWhere }),
-            },
-          },
-          select: {
-            id: true,
-            question: true,
-            options: true,
-            correctIndex: true,
-            listeningMaterial: {
-              select: {
-                id: true,
-                difficultyRating: true,
-                discriminationRating: true,
+            where: {
+              listeningMaterial: {
+                isAvailableForPlacement: true,
+                ...(window !== Infinity && { difficultyRating: diffWhere }),
               },
             },
-          },
-          take: 15,
-        })
+            select: {
+              id: true,
+              question: true,
+              options: true,
+              correctIndex: true,
+              listeningMaterial: {
+                select: {
+                  id: true,
+                  difficultyRating: true,
+                  discriminationRating: true,
+                },
+              },
+            },
+            take: 15,
+          })
         : Promise.resolve([]),
     ]);
 
@@ -628,7 +627,12 @@ export class PlacementService {
     answers: AnswerRecord[],
     questions: QuestionSnapshot[],
   ): Record<AbilityDimension, number> {
-    const counts: Record<AbilityDimension, number> = { GRAMMAR: 0, VOCABULARY: 0, READING: 0, LISTENING: 0 };
+    const counts: Record<AbilityDimension, number> = {
+      GRAMMAR: 0,
+      VOCABULARY: 0,
+      READING: 0,
+      LISTENING: 0,
+    };
 
     for (const a of answers) {
       const q = questions[a.questionIndex];
@@ -711,7 +715,11 @@ export class PlacementService {
       data: { currentLevel: level },
     });
 
-    const progressData = { ...buildInitialProgress(level), isReadyForTest: false, testUnlockedAt: null };
+    const progressData = {
+      ...buildInitialProgress(level),
+      isReadyForTest: false,
+      testUnlockedAt: null,
+    };
 
     await this.prisma.levelProgress.upsert({
       where: { userId },
@@ -749,10 +757,20 @@ export class PlacementService {
   }
 
   private initialTheta(): DimensionTheta {
-    return { grammar: PRIOR_MEAN, vocabulary: PRIOR_MEAN, reading: PRIOR_MEAN, listening: PRIOR_MEAN };
+    return {
+      grammar: PRIOR_MEAN,
+      vocabulary: PRIOR_MEAN,
+      reading: PRIOR_MEAN,
+      listening: PRIOR_MEAN,
+    };
   }
 
   private initialSE(): DimensionSE {
-    return { grammar: INITIAL_SE, vocabulary: INITIAL_SE, reading: INITIAL_SE, listening: INITIAL_SE };
+    return {
+      grammar: INITIAL_SE,
+      vocabulary: INITIAL_SE,
+      reading: INITIAL_SE,
+      listening: INITIAL_SE,
+    };
   }
 }

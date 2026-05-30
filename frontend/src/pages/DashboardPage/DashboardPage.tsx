@@ -26,9 +26,7 @@ import {
   selectProgressError,
   selectIsLevelingUp,
 } from '@/store/Slices/ProgressSlice';
-import {
-  fetchPlacementStatus,
-} from '@/store/Slices/PlacementSlice';
+import { fetchPlacementStatus } from '@/store/Slices/PlacementSlice';
 import type { DailyActivity } from '@/types/progress/Progress.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import { PlacementBanner } from '@/components/component/PlacementBanner/PlacementBanner';
@@ -37,15 +35,15 @@ import styles from './DashboardPage.module.css';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const SKILL_CONFIGS = [
-  { key: 'grammar',    Icon: CheckCheck, label: 'Grammar',    color: '#14b8a6' },
-  { key: 'reading',    Icon: BookOpen,   label: 'Reading',    color: '#22c55e' },
-  { key: 'listening',  Icon: Headphones, label: 'Listening',  color: '#f59e0b' },
-  { key: 'vocabulary', Icon: Layers,     label: 'Vocabulary', color: '#8b5cf6' },
-  { key: 'writing',    Icon: PenLine,    label: 'Writing',    color: '#ec4899' },
-  { key: 'quiz',       Icon: Brain,      label: 'Quiz',       color: '#6366f1' },
+  { key: 'grammar', Icon: CheckCheck, label: 'Grammar', color: '#14b8a6' },
+  { key: 'reading', Icon: BookOpen, label: 'Reading', color: '#22c55e' },
+  { key: 'listening', Icon: Headphones, label: 'Listening', color: '#f59e0b' },
+  { key: 'vocabulary', Icon: Layers, label: 'Vocabulary', color: '#8b5cf6' },
+  { key: 'writing', Icon: PenLine, label: 'Writing', color: '#ec4899' },
+  { key: 'quiz', Icon: Brain, label: 'Quiz', color: '#6366f1' },
 ] as const;
 
-type SkillKey = typeof SKILL_CONFIGS[number]['key'];
+type SkillKey = (typeof SKILL_CONFIGS)[number]['key'];
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -66,10 +64,18 @@ function buildWeekDots(recentActivity: DailyActivity[]) {
 }
 
 function getStreakMessage(streak: number): string {
-  if (streak === 0) { return 'Start your streak today!'; }
-  if (streak === 1) { return 'Great start — come back tomorrow!'; }
-  if (streak < 7)  { return `${streak} days strong. Keep it up!`; }
-  if (streak < 30) { return `${streak} days 🔥 You're on fire!`; }
+  if (streak === 0) {
+    return 'Start your streak today!';
+  }
+  if (streak === 1) {
+    return 'Great start — come back tomorrow!';
+  }
+  if (streak < 7) {
+    return `${streak} days strong. Keep it up!`;
+  }
+  if (streak < 30) {
+    return `${streak} days 🔥 You're on fire!`;
+  }
   return `${streak} days — Legendary!`;
 }
 
@@ -81,7 +87,9 @@ function getSkillDetailLabel(
   key: SkillKey,
   breakdown: { completed: number; required: number; accuracy: number } | undefined,
 ): string {
-  if (breakdown === undefined) { return '—'; }
+  if (breakdown === undefined) {
+    return '—';
+  }
   if (key === 'vocabulary') {
     return `${breakdown.completed} / ${breakdown.required} words`;
   }
@@ -92,21 +100,15 @@ function getSkillDetailLabel(
 
 function GreetingMessage({ name }: { name: string }) {
   const hour = new Date().getHours();
-  const greeting =
-    hour < 12 ? 'Good morning' :
-    hour < 18 ? 'Good afternoon' :
-                'Good evening';
+  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
   const firstName = name.split(' ')[0] ?? name;
 
   return (
     <div className={styles['greetingBlock']}>
       <h1 className={styles['greeting']}>
-        {greeting},{' '}
-        <span className={styles['greetingName']}>{firstName}</span>
+        {greeting}, <span className={styles['greetingName']}>{firstName}</span>
       </h1>
-      <p className={styles['greetingSubtitle']}>
-        Ready to level up your English today?
-      </p>
+      <p className={styles['greetingSubtitle']}>Ready to level up your English today?</p>
     </div>
   );
 }
@@ -120,14 +122,7 @@ function ReadinessRing({ percent }: { percent: number }) {
   return (
     <div className={styles['ringWrapper']}>
       <svg width="100" height="100" viewBox="0 0 100 100">
-        <circle
-          cx="50"
-          cy="50"
-          r={radius}
-          fill="none"
-          stroke="var(--surface-2)"
-          strokeWidth="8"
-        />
+        <circle cx="50" cy="50" r={radius} fill="none" stroke="var(--surface-2)" strokeWidth="8" />
         <circle
           cx="50"
           cy="50"
@@ -155,16 +150,14 @@ function ReadinessRing({ percent }: { percent: number }) {
 export function DashboardPage() {
   const dispatch = useAppDispatch();
 
-  const user         = useAppSelector(selectUser);
-  const data         = useAppSelector(selectProgressData);
-  const isLoading    = useAppSelector(selectProgressIsLoading);
-  const error        = useAppSelector(selectProgressError);
+  const user = useAppSelector(selectUser);
+  const data = useAppSelector(selectProgressData);
+  const isLoading = useAppSelector(selectProgressIsLoading);
+  const error = useAppSelector(selectProgressError);
   const isLevelingUp = useAppSelector(selectIsLevelingUp);
 
   // Placement state — читаем целиком, деструктурируем нужное
-  const { showBanner, statusLoaded } = useAppSelector(
-    (state) => state.placement,
-  );
+  const { showBanner, statusLoaded } = useAppSelector((state) => state.placement);
 
   useEffect(() => {
     // Загружаем прогресс если ещё не загружен
@@ -188,7 +181,9 @@ export function DashboardPage() {
   }, [dispatch]);
 
   // Guaranteed by ProtectedRoute
-  if (user === null) { return null; }
+  if (user === null) {
+    return null;
+  }
 
   if (isLoading && data === null) {
     return <FullPageSpinner label="Loading your progress…" />;
@@ -199,13 +194,10 @@ export function DashboardPage() {
 
   return (
     <div className={styles['page']}>
-
       {/* ── Header ── */}
       <header className={styles['header']}>
         <GreetingMessage name={user.name} />
-        {user.role === 'ADMIN' && (
-          <span className={styles['adminBadge']}>Admin</span>
-        )}
+        {user.role === 'ADMIN' && <span className={styles['adminBadge']}>Admin</span>}
       </header>
 
       {/* ── Placement banner ─────────────────────────────────────────────────
@@ -304,14 +296,10 @@ export function DashboardPage() {
             <div className={styles['sectionHeader']}>
               <h2 className={styles['sectionTitle']}>This Week</h2>
               <span className={styles['sectionMeta']}>
-                {activeDaysThisWeek === 7
-                  ? '🏆 Perfect week!'
-                  : `${activeDaysThisWeek} / 7 days`}
+                {activeDaysThisWeek === 7 ? '🏆 Perfect week!' : `${activeDaysThisWeek} / 7 days`}
               </span>
             </div>
-            <div className={styles['streakMessage']}>
-              {getStreakMessage(data.streak)}
-            </div>
+            <div className={styles['streakMessage']}>{getStreakMessage(data.streak)}</div>
             <div className={styles['weekDots']}>
               {weekDots.map(({ date, label, active }) => (
                 <div key={date} className={styles['weekDot']}>
@@ -336,7 +324,9 @@ export function DashboardPage() {
                 const hasAccuracyGap = (breakdown?.accuracyGap ?? 0) > 0;
                 const detailLabel = getSkillDetailLabel(
                   key,
-                  breakdown as { completed: number; required: number; accuracy: number } | undefined,
+                  breakdown as
+                    | { completed: number; required: number; accuracy: number }
+                    | undefined,
                 );
 
                 return (
@@ -349,9 +339,7 @@ export function DashboardPage() {
                       <div className={styles['skillIconWrap']}>
                         <Icon size={17} />
                       </div>
-                      {isWeakest && (
-                        <span className={styles['weakBadge']}>Focus here</span>
-                      )}
+                      {isWeakest && <span className={styles['weakBadge']}>Focus here</span>}
                     </div>
 
                     <h3 className={styles['skillName']}>{label}</h3>

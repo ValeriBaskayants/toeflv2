@@ -1,7 +1,6 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
-
 const listeningEN = {
   title: 'Listening',
   subtitle: 'Train your ear with real-world conversations and lectures',
@@ -9,7 +8,7 @@ const listeningEN = {
   error: 'Could not load listening materials',
   retry: 'Try again',
   materialsCount: 'materials',
-  questionsLabel: 'questions', 
+  questionsLabel: 'questions',
   modes: 'modes',
 
   type: {
@@ -36,8 +35,7 @@ const listeningEN = {
   player: {
     backToList: 'Back to library',
     transcript: 'Transcript',
-    transcriptHidden:
-      'Transcript hidden — complete the session to reveal it',
+    transcriptHidden: 'Transcript hidden — complete the session to reveal it',
     restart: 'Restart from beginning',
     noPlaysLeft: 'No plays remaining',
     completing: 'Saving results…',
@@ -76,16 +74,14 @@ const listeningEN = {
   },
 };
 
-
 const listeningRU = {
   title: 'Аудирование',
-  subtitle:
-    'Тренируйте восприятие на слух с реальными диалогами и лекциями',
+  subtitle: 'Тренируйте восприятие на слух с реальными диалогами и лекциями',
   loading: 'Загружаем материалы…',
   error: 'Не удалось загрузить материалы',
   retry: 'Повторить',
   materialsCount: 'материалов',
-  questionsLabel: 'вопросов', 
+  questionsLabel: 'вопросов',
   modes: 'режима',
 
   type: {
@@ -112,8 +108,7 @@ const listeningRU = {
   player: {
     backToList: 'Назад к библиотеке',
     transcript: 'Транскрипт',
-    transcriptHidden:
-      'Транскрипт скрыт — завершите сессию, чтобы его увидеть',
+    transcriptHidden: 'Транскрипт скрыт — завершите сессию, чтобы его увидеть',
     restart: 'Начать сначала',
     noPlaysLeft: 'Прослушивания закончились',
     completing: 'Сохраняем результаты…',
@@ -153,9 +148,7 @@ const listeningRU = {
 };
 const EN_ADDITIONS = {
   navigation: {
-    
     quiz: 'Quiz',
-    
   },
   grammar: {
     title: 'Grammar Quiz',
@@ -205,7 +198,6 @@ const EN_ADDITIONS = {
     backToList: 'Back',
   },
 };
-
 
 const RU_ADDITIONS = {
   navigation: {
@@ -259,7 +251,6 @@ const RU_ADDITIONS = {
     backToList: 'Назад',
   },
 };
-
 
 const HY_ADDITIONS = {
   navigation: {
@@ -321,7 +312,7 @@ const listeningHY = {
   error: 'Չhajhogvets bervyl nyutery',
   retry: 'Կrkin փordzel',
   materialsCount: 'nyuter',
-  questionsLabel: 'harc', 
+  questionsLabel: 'harc',
   modes: 'rezhim',
 
   type: {
@@ -348,8 +339,7 @@ const listeningHY = {
   player: {
     backToList: 'Verenadardz գraderan',
     transcript: 'Transkript',
-    transcriptHidden:
-      'Transkript-y thaqnvatsvats e — avartecheq sessian bacehelow hamar',
+    transcriptHidden: 'Transkript-y thaqnvatsvats e — avartecheq sessian bacehelow hamar',
     restart: 'Sksel hnoc',
     noPlaysLeft: 'Lsumner spaservhel en',
     completing: 'Pahpanvum en ardyownqner…',
@@ -419,6 +409,8 @@ const resources = {
         vocabulary: 'Vocabulary',
         analyticsTitle: 'Analytics',
         progress: 'Progress',
+        bookmarks:'Bookmarks',
+        quilz:"Quiz"
       },
       dashboard: {
         morning: 'Good morning',
@@ -488,6 +480,8 @@ const resources = {
         vocabulary: 'Словарный запас',
         analyticsTitle: 'Аналитика',
         progress: 'Прогресс',
+        bookmarks: "Закладки" ,
+        quiz:"Квиз"
       },
       dashboard: {
         morning: 'Доброе утро',
@@ -545,7 +539,7 @@ const resources = {
         statRange: 'CEFR Շրջանակ',
       },
       navigation: {
-        overview: 'Ակնարկ',
+        obookmarksverview: 'Ակնարկ',
         dashboard: 'Գլխավոր',
         practiceTitle: 'Պրակտիկա',
         writing: 'Գրություն',
@@ -556,6 +550,8 @@ const resources = {
         vocabulary: 'Բառապաշար',
         analyticsTitle: 'Վերլուծություն',
         progress: 'Առաջընթաց',
+        bookmarks:"Պահպանած",
+        quiz:"Քվիզ"
       },
       dashboard: {
         morning: 'Բարի լույս',
@@ -613,6 +609,6 @@ i18n.on('languageChanged', (lng: string) => {
   localStorage.setItem('toefl_lang', lng);
 });
 
-export { listeningEN, listeningRU, listeningHY ,RU_ADDITIONS,HY_ADDITIONS,EN_ADDITIONS};
+export { listeningEN, listeningRU, listeningHY, RU_ADDITIONS, HY_ADDITIONS, EN_ADDITIONS };
 
 export default i18n;

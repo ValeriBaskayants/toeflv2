@@ -1,8 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import type { ListeningSegment } from '@/types/listening/Listening.types';
 
-
-
 export interface TTSConfig {
   segments: ListeningSegment[];
   rate: number;
@@ -25,11 +23,6 @@ export interface TTSControls {
   setRate: (r: number) => void;
   currentRate: number;
 }
-
-
-
-
-
 
 function rankVoice(v: SpeechSynthesisVoice, lang: string): number {
   const langBase = lang.slice(0, 2).toLowerCase();
@@ -80,8 +73,6 @@ function getVoiceQuality(
   return 'basic';
 }
 
-
-
 export function useTTS(config: TTSConfig): TTSControls {
   const { segments, pitch, lang } = config;
 
@@ -93,7 +84,6 @@ export function useTTS(config: TTSConfig): TTSControls {
   const [currentRate, setCurrentRate] = useState(config.rate);
 
   const isSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
-
 
   useEffect(() => {
     if (!isSupported) return;
@@ -113,18 +103,15 @@ export function useTTS(config: TTSConfig): TTSControls {
     };
   }, [isSupported, lang]);
 
-
   useEffect(() => {
     setCurrentRate(config.rate);
   }, [config.rate]);
-
 
   useEffect(() => {
     return () => {
       if (isSupported) window.speechSynthesis.cancel();
     };
   }, [isSupported]);
-
 
   const speakFrom = useCallback(
     (startIdx: number, rate: number) => {
@@ -163,7 +150,6 @@ export function useTTS(config: TTSConfig): TTSControls {
     },
     [isSupported, segments, pitch, lang, selectedVoice],
   );
-
 
   const play = useCallback(() => {
     if (!isSupported) return;

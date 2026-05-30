@@ -1,9 +1,19 @@
 import { useCallback, useId } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
-  CheckCheck, ChevronLeft, ChevronRight, X, Zap,
-  CheckCircle2, XCircle, RefreshCw, Loader2, AlertCircle,
-  Target, Lightbulb, Trophy,
+  CheckCheck,
+  ChevronLeft,
+  ChevronRight,
+  X,
+  Zap,
+  CheckCircle2,
+  XCircle,
+  RefreshCw,
+  Loader2,
+  AlertCircle,
+  Target,
+  Lightbulb,
+  Trophy,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
@@ -17,28 +27,46 @@ import {
   exitQuiz,
   type QuizSetup,
 } from '@/store/Slices/QuizSlice';
-import styles from './Quizpage.module.css'
+import styles from './Quizpage.module.css';
 import { Level, Difficulty } from '@/types/globalTypes';
 
-
-
-
 const LEVELS: Level[] = [
-  Level.A1, Level.A1_PLUS, Level.A2, Level.A2_PLUS,
-  Level.B1, Level.B1_PLUS, Level.B2, Level.B2_PLUS,
-  Level.C1, Level.C2
+  Level.A1,
+  Level.A1_PLUS,
+  Level.A2,
+  Level.A2_PLUS,
+  Level.B1,
+  Level.B1_PLUS,
+  Level.B2,
+  Level.B2_PLUS,
+  Level.C1,
+  Level.C2,
 ];
 
 const LEVEL_DISPLAY: Record<Level, string> = {
-  [Level.A1]: 'A1', [Level.A1_PLUS]: 'A1+', [Level.A2]: 'A2', [Level.A2_PLUS]: 'A2+',
-  [Level.B1]: 'B1', [Level.B1_PLUS]: 'B1+', [Level.B2]: 'B2', [Level.B2_PLUS]: 'B2+',
-  [Level.C1]: 'C1', [Level.C2]: 'C2',
+  [Level.A1]: 'A1',
+  [Level.A1_PLUS]: 'A1+',
+  [Level.A2]: 'A2',
+  [Level.A2_PLUS]: 'A2+',
+  [Level.B1]: 'B1',
+  [Level.B1_PLUS]: 'B1+',
+  [Level.B2]: 'B2',
+  [Level.B2_PLUS]: 'B2+',
+  [Level.C1]: 'C1',
+  [Level.C2]: 'C2',
 };
 
 const LEVEL_COLOR: Record<Level, string> = {
-  [Level.A1]: '#22c55e', [Level.A1_PLUS]: '#16a34a', [Level.A2]: '#14b8a6', [Level.A2_PLUS]: '#0d9488',
-  [Level.B1]: '#3b82f6', [Level.B1_PLUS]: '#2563eb', [Level.B2]: '#8b5cf6', [Level.B2_PLUS]: '#7c3aed',
-  [Level.C1]: '#f59e0b', [Level.C2]: '#ef4444',
+  [Level.A1]: '#22c55e',
+  [Level.A1_PLUS]: '#16a34a',
+  [Level.A2]: '#14b8a6',
+  [Level.A2_PLUS]: '#0d9488',
+  [Level.B1]: '#3b82f6',
+  [Level.B1_PLUS]: '#2563eb',
+  [Level.B2]: '#8b5cf6',
+  [Level.B2_PLUS]: '#7c3aed',
+  [Level.C1]: '#f59e0b',
+  [Level.C2]: '#ef4444',
 };
 
 const RECOMMENDED_DIFFICULTY: Record<Level, Difficulty> = {
@@ -54,12 +82,7 @@ const RECOMMENDED_DIFFICULTY: Record<Level, Difficulty> = {
   [Level.C2]: Difficulty.HARD,
 };
 
-const DIFFICULTIES: Difficulty[] = [
-  Difficulty.EASY,
-  Difficulty.MEDIUM,
-  Difficulty.HARD
-];
-
+const DIFFICULTIES: Difficulty[] = [Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD];
 
 const DIFFICULTY_COLOR: Record<Difficulty, string> = {
   [Difficulty.EASY]: '#22c55e',
@@ -80,8 +103,6 @@ function getLevelColor(level: Level): string {
   return LEVEL_COLOR[level] ?? '#6366f1';
 }
 
-
-
 function SetupPhase() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -89,7 +110,6 @@ function SetupPhase() {
 
   const { setup, loadStatus, loadError } = useAppSelector((state) => state.quiz);
 
-  
   const currentLevel = setup.level as Level;
   const recommended = RECOMMENDED_DIFFICULTY[currentLevel] ?? Difficulty.MEDIUM;
   const isLoading = loadStatus === 'loading';
@@ -98,23 +118,23 @@ function SetupPhase() {
     void dispatch(loadQuizQuestions(setup));
   }, [dispatch, setup]);
 
-  const patch = useCallback((partial: Partial<QuizSetup>) => {
-    dispatch(updateSetup(partial));
-  }, [dispatch]);
+  const patch = useCallback(
+    (partial: Partial<QuizSetup>) => {
+      dispatch(updateSetup(partial));
+    },
+    [dispatch],
+  );
 
   return (
     <div className={styles['setupPage']}>
       <div className={styles['setupCard']}>
-
         {/* Header */}
         <div className={styles['setupHeader']}>
           <div className={styles['setupIcon']}>
             <CheckCheck size={22} />
           </div>
           <div>
-            <h1 className={styles['setupTitle']}>
-              {t('grammar.title', 'Grammar Quiz')}
-            </h1>
+            <h1 className={styles['setupTitle']}>{t('grammar.title', 'Grammar Quiz')}</h1>
             <p className={styles['setupSubtitle']}>
               {t('grammar.subtitle', 'Test your knowledge, earn XP, track mistakes')}
             </p>
@@ -123,21 +143,21 @@ function SetupPhase() {
 
         {/* Level picker */}
         <div className={styles['setupSection']}>
-          <label className={styles['setupLabel']}>
-            {t('grammar.level', 'Your level')}
-          </label>
+          <label className={styles['setupLabel']}>{t('grammar.level', 'Your level')}</label>
           <div className={styles['levelGrid']}>
             {LEVELS.map((lvl) => (
               <button
                 key={lvl}
                 type="button"
                 className={`${styles['levelBtn']} ${currentLevel === lvl ? styles['levelBtnActive'] : ''}`}
-                style={{
-                  '--lc': getLevelColor(lvl),
-                  ...(currentLevel === lvl
-                    ? { background: getLevelColor(lvl), borderColor: getLevelColor(lvl) }
-                    : {}),
-                } as React.CSSProperties}
+                style={
+                  {
+                    '--lc': getLevelColor(lvl),
+                    ...(currentLevel === lvl
+                      ? { background: getLevelColor(lvl), borderColor: getLevelColor(lvl) }
+                      : {}),
+                  } as React.CSSProperties
+                }
                 onClick={() => patch({ level: lvl })}
               >
                 {LEVEL_DISPLAY[lvl]}
@@ -149,9 +169,7 @@ function SetupPhase() {
         {/* Difficulty picker */}
         <div className={styles['setupSection']}>
           <div className={styles['setupLabelRow']}>
-            <label className={styles['setupLabel']}>
-              {t('grammar.difficulty', 'Difficulty')}
-            </label>
+            <label className={styles['setupLabel']}>{t('grammar.difficulty', 'Difficulty')}</label>
             <span className={styles['setupHint']}>
               <Lightbulb size={11} />
               {t('grammar.recommended', 'Recommended for')} {LEVEL_DISPLAY[currentLevel]}:{' '}
@@ -170,12 +188,17 @@ function SetupPhase() {
                   key={diff}
                   type="button"
                   className={`${styles['diffBtn']} ${isActive ? styles['diffBtnActive'] : ''} ${isRec ? styles['diffBtnRec'] : ''}`}
-                  style={{
-                    '--dc': DIFFICULTY_COLOR[diff],
-                    ...(isActive
-                      ? { background: DIFFICULTY_COLOR[diff], borderColor: DIFFICULTY_COLOR[diff] }
-                      : {}),
-                  } as React.CSSProperties}
+                  style={
+                    {
+                      '--dc': DIFFICULTY_COLOR[diff],
+                      ...(isActive
+                        ? {
+                            background: DIFFICULTY_COLOR[diff],
+                            borderColor: DIFFICULTY_COLOR[diff],
+                          }
+                        : {}),
+                    } as React.CSSProperties
+                  }
                   onClick={() => patch({ difficulty: diff })}
                 >
                   <span
@@ -240,10 +263,7 @@ function SetupPhase() {
           onClick={handleStart}
           disabled={isLoading}
         >
-          {isLoading
-            ? <Loader2 size={18} className={styles['spin']} />
-            : <Target size={18} />
-          }
+          {isLoading ? <Loader2 size={18} className={styles['spin']} /> : <Target size={18} />}
           {isLoading
             ? t('grammar.loading', 'Loading questions…')
             : t('grammar.start', 'Start Quiz')}
@@ -253,25 +273,17 @@ function SetupPhase() {
   );
 }
 
-
-
 function PlayingPhase() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
-  const {
-    setup,
-    questions,
-    currentIdx,
-    answers,
-    submitStatus,
-    submitError,
-  } = useAppSelector((state) => state.quiz);
+  const { setup, questions, currentIdx, answers, submitStatus, submitError } = useAppSelector(
+    (state) => state.quiz,
+  );
 
   const currentLevel = setup.level as Level;
   const currentDiff = setup.difficulty as Difficulty;
 
-  
   const question = questions[currentIdx] ?? null;
   const total = questions.length;
   const answeredCount = Object.keys(answers).length;
@@ -281,24 +293,32 @@ function PlayingPhase() {
   const levelColor = getLevelColor(currentLevel);
   const progress = total > 0 ? Math.round((answeredCount / total) * 100) : 0;
 
-  const handleSelect = useCallback((index: number) => {
-    if (question === null) { return; }
-    dispatch(selectAnswer({ questionId: question.id, index }));
-  }, [dispatch, question]);
+  const handleSelect = useCallback(
+    (index: number) => {
+      if (question === null) {
+        return;
+      }
+      dispatch(selectAnswer({ questionId: question.id, index }));
+    },
+    [dispatch, question],
+  );
 
   const handleSubmit = useCallback(() => {
-    void dispatch(submitQuiz({
-      answers,
-      level: setup.level,
-      timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
-    }));
+    void dispatch(
+      submitQuiz({
+        answers,
+        level: setup.level,
+        timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
+      }),
+    );
   }, [dispatch, answers, setup.level]);
 
-  if (question === null) { return null; }
+  if (question === null) {
+    return null;
+  }
 
   return (
     <div className={styles['playPage']}>
-
       {/* ── Top bar ── */}
       <div className={styles['playTopBar']}>
         <div className={styles['progressTrack']}>
@@ -354,9 +374,7 @@ function PlayingPhase() {
       {/* ── Question card ── */}
       <div className={styles['questionWrap']}>
         <div className={styles['questionCard']}>
-          {question.topic !== '' && (
-            <span className={styles['qTopic']}>{question.topic}</span>
-          )}
+          {question.topic !== '' && <span className={styles['qTopic']}>{question.topic}</span>}
 
           <p className={styles['questionText']}>{question.question}</p>
 
@@ -370,9 +388,8 @@ function PlayingPhase() {
                   role="radio"
                   aria-checked={isSelected}
                   className={`${styles['option']} ${isSelected ? styles['optionSelected'] : ''}`}
-                  style={isSelected
-                    ? { borderColor: levelColor, background: `${levelColor}14` }
-                    : {}
+                  style={
+                    isSelected ? { borderColor: levelColor, background: `${levelColor}14` } : {}
                   }
                   onClick={() => handleSelect(idx)}
                 >
@@ -430,10 +447,11 @@ function PlayingPhase() {
             disabled={!allAnswered || isSubmitting}
             style={allAnswered ? { background: levelColor } : {}}
           >
-            {isSubmitting
-              ? <Loader2 size={16} className={styles['spin']} />
-              : <CheckCircle2 size={16} />
-            }
+            {isSubmitting ? (
+              <Loader2 size={16} className={styles['spin']} />
+            ) : (
+              <CheckCircle2 size={16} />
+            )}
             {isSubmitting
               ? t('grammar.submitting', 'Submitting…')
               : t('grammar.submit', 'Submit Quiz')}
@@ -451,22 +469,12 @@ function PlayingPhase() {
   );
 }
 
-
-
 function ResultsPhase() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
 
-  const {
-    setup,
-    questions,
-    answers,
-    results,
-    accuracy,
-    xpEarned,
-    correctCount,
-    totalCount,
-  } = useAppSelector((state) => state.quiz);
+  const { setup, questions, answers, results, accuracy, xpEarned, correctCount, totalCount } =
+    useAppSelector((state) => state.quiz);
 
   const currentLevel = setup.level as Level;
   const currentDiff = setup.difficulty as Difficulty;
@@ -474,27 +482,30 @@ function ResultsPhase() {
   const pct = accuracy ?? 0;
   const levelColor = getLevelColor(currentLevel);
 
-  
   const CIRC = 339.3;
   const dashOffset = CIRC - (CIRC * pct) / 100;
 
   const scoreLabel =
-    pct >= 90 ? '🏆 Excellent!'
-      : pct >= 75 ? '🎯 Great job!'
-        : pct >= 60 ? '📚 Good effort!'
+    pct >= 90
+      ? '🏆 Excellent!'
+      : pct >= 75
+        ? '🎯 Great job!'
+        : pct >= 60
+          ? '📚 Good effort!'
           : '💪 Keep practising!';
 
   return (
     <div className={styles['resultsPage']}>
       <div className={styles['resultsCard']}>
-
         {/* Score section */}
         <div className={styles['scoreTop']}>
           <div className={styles['scoreCircleWrap']}>
             <svg viewBox="0 0 120 120" className={styles['scoreSvg']}>
               <circle cx="60" cy="60" r="54" className={styles['ringTrack']} />
               <circle
-                cx="60" cy="60" r="54"
+                cx="60"
+                cy="60"
+                r="54"
                 className={styles['ringFill']}
                 style={{ stroke: levelColor, strokeDashoffset: dashOffset }}
               />
@@ -511,15 +522,21 @@ function ResultsPhase() {
             <div className={styles['scoreStats']}>
               <div className={styles['scoreStat']}>
                 <CheckCircle2 size={16} className={styles['iconGreen']} />
-                <span>{correctCount ?? 0} / {totalCount ?? 0} {t('grammar.correct', 'correct')}</span>
+                <span>
+                  {correctCount ?? 0} / {totalCount ?? 0} {t('grammar.correct', 'correct')}
+                </span>
               </div>
               <div className={styles['scoreStat']}>
                 <Zap size={16} className={styles['iconAmber']} />
-                <span>+{xpEarned ?? 0} XP {t('grammar.earned', 'earned')}</span>
+                <span>
+                  +{xpEarned ?? 0} XP {t('grammar.earned', 'earned')}
+                </span>
               </div>
               <div className={styles['scoreStat']}>
                 <Trophy size={16} className={styles['iconPurple']} />
-                <span>{LEVEL_DISPLAY[currentLevel]} · {DIFFICULTY_LABEL[currentDiff]}</span>
+                <span>
+                  {LEVEL_DISPLAY[currentLevel]} · {DIFFICULTY_LABEL[currentDiff]}
+                </span>
               </div>
             </div>
 
@@ -544,7 +561,7 @@ function ResultsPhase() {
           <div className={styles['reviewList']}>
             {questions.map((q, qi) => {
               const res = results?.find((r) => r.questionId === q.id);
-              const userIdx :any = answers[q.id];
+              const userIdx: any = answers[q.id];
               const isCorrect = res?.isCorrect ?? false;
               const correctIdx = res?.correctIndex ?? q.correctIndex;
 
@@ -555,10 +572,11 @@ function ResultsPhase() {
                 >
                   <div className={styles['reviewCardHead']}>
                     <span className={styles['reviewNum']}>{qi + 1}</span>
-                    {isCorrect
-                      ? <CheckCircle2 size={15} className={styles['iconGreen']} />
-                      : <XCircle size={15} className={styles['iconRed']} />
-                    }
+                    {isCorrect ? (
+                      <CheckCircle2 size={15} className={styles['iconGreen']} />
+                    ) : (
+                      <XCircle size={15} className={styles['iconRed']} />
+                    )}
                     <p className={styles['reviewQ']}>{q.question}</p>
                   </div>
 
@@ -588,8 +606,6 @@ function ResultsPhase() {
     </div>
   );
 }
-
-
 
 export default function QuizPage() {
   const { phase } = useAppSelector((state) => state.quiz);

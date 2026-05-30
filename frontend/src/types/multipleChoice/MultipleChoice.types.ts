@@ -1,8 +1,5 @@
 import { type ID, Level, Difficulty, type ISODateString } from '../globalTypes';
 
-
-
-
 export interface MultipleChoice {
   id: ID;
 
@@ -15,7 +12,6 @@ export interface MultipleChoice {
   level: Level;
   difficulty: Difficulty;
 
-
   category: string;
   isAvailableForPlacement: boolean;
   difficultyRating: number | null;
@@ -24,9 +20,6 @@ export interface MultipleChoice {
   createdAt: ISODateString;
   updatedAt: ISODateString;
 }
-
-
-
 
 export interface CreateMultipleChoiceDto {
   question: string;
@@ -37,7 +30,6 @@ export interface CreateMultipleChoiceDto {
   topic?: string;
   level: Level;
   difficulty?: Difficulty;
-
 
   category?: string;
   isAvailableForPlacement?: boolean;
@@ -57,18 +49,12 @@ export interface BulkCreateResponse {
   skipped: number;
 }
 
-
-
-
 export interface GetMultipleChoiceQuery {
   level?: Level;
   difficulty?: Difficulty;
   topic?: string;
   limit?: number;
 }
-
-
-
 
 export interface SubmitMCAnswerDto {
   questionId: string;
@@ -78,7 +64,6 @@ export interface SubmitMCAnswerDto {
 export interface SubmitMCSessionDto {
   answers: SubmitMCAnswerDto[];
 }
-
 
 export interface SubmitMCResult {
   questionId: string;

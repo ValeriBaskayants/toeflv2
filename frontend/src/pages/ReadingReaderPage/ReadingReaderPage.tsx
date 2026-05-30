@@ -484,13 +484,20 @@ export default function ReadingReaderPage() {
           </div>
 
           {/* КОНТЕЙНЕР ДЛЯ ЗАГОЛОВКА И КНОПКИ ЗАКЛАДОК */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', gap: '1rem', flexWrap: 'wrap', margin: '0.5rem 0 1.5rem 0' }}>
-            <h1 className={styles['articleTitle']} style={{ margin: 0 }}>{article.title}</h1>
-            <BookmarkButton 
-              targetId={article.id} 
-              type={"READING" as any} 
-              size="md" 
-            />
+          <div
+            style={{
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'flex-start',
+              gap: '1rem',
+              flexWrap: 'wrap',
+              margin: '0.5rem 0 1.5rem 0',
+            }}
+          >
+            <h1 className={styles['articleTitle']} style={{ margin: 0 }}>
+              {article.title}
+            </h1>
+            <BookmarkButton targetId={article.id} type={'READING' as any} size="md" />
           </div>
 
           {article.description !== undefined && (

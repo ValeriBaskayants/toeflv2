@@ -62,16 +62,25 @@ function ReadingCard({ item }: { item: ReadingMaterial }) {
 
       <div className={styles['cardBody']}>
         {/* Обертка для тега и кнопки закладок */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '0.5rem' }}>
-          <span className={styles['topicTag']} style={{ margin: 0 }}>{item.topic}</span>
-          
+        <div
+          style={{
+            display: 'flex',
+            justifyContent: 'space-between',
+            alignItems: 'flex-start',
+            marginBottom: '0.5rem',
+          }}
+        >
+          <span className={styles['topicTag']} style={{ margin: 0 }}>
+            {item.topic}
+          </span>
+
           {/* Останавливаем всплытие, чтобы клик по закладке не открывал статью */}
-          <div 
-            onClick={(e) => e.stopPropagation()} 
+          <div
+            onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
             style={{ zIndex: 2 }}
           >
-            <BookmarkButton targetId={item.id} type={"READING" as any} size="sm" />
+            <BookmarkButton targetId={item.id} type={'READING' as any} size="sm" />
           </div>
         </div>
 

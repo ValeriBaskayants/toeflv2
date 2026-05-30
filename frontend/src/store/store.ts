@@ -20,7 +20,7 @@ export const store = configureStore({
     listening: listeningSlice.reducer,
     placement: placementSlice.reducer,
     quiz: quizSlice.reducer,
-    bookmarks: bookmarksReducer.reducer
+    bookmarks: bookmarksReducer.reducer,
   },
 });
 

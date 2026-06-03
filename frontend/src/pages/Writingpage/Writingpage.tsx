@@ -1,0 +1,312 @@
+import { useEffect, useCallback } from 'react';
+import { useNavigate } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
+import {
+  PenLine, BookOpen, FileText, AlignLeft,
+  ChevronRight, AlertCircle, RefreshCw,
+  Clock, BarChart2, Zap, CheckCircle2, XCircle,
+} from 'lucide-react';
+import { useAppDispatch, useAppSelector } from '@/store/store';
+import {
+  fetchPrompts,
+  fetchSubmissions,
+  setFilter,
+  clearEditor,
+} from '@/store/Slices/WritingSlice';
+import type { WritingPrompt } from '@/types/writing/Writing.types';
+import type { SubmissionWithPrompt } from '@/api/services/writing';
+import { FullPageSpinner } from '@/components/ui/Spinner';
+import styles from './WritingPage.module.css';
+
+// ─── Constants ────────────────────────────────────────────────────────────────
+
+const LEVELS = ['A1','A1_PLUS','A2','A2_PLUS','B1','B1_PLUS','B2','B2_PLUS','C1','C2'];
+const LEVEL_DISPLAY: Record<string, string> = {
+  A1:'A1', A1_PLUS:'A1+', A2:'A2', A2_PLUS:'A2+',
+  B1:'B1', B1_PLUS:'B1+', B2:'B2', B2_PLUS:'B2+', C1:'C1', C2:'C2',
+};
+
+const TYPE_ICON: Record<string, React.ReactNode> = {
+  SENTENCE:  <AlignLeft size={16} />,
+  PARAGRAPH: <FileText  size={16} />,
+  ESSAY:     <BookOpen  size={16} />,
+};
+
+const TYPE_COLOR: Record<string, string> = {
+  SENTENCE:  '#14b8a6',
+  PARAGRAPH: '#6366f1',
+  ESSAY:     '#ec4899',
+};
+
+function formatDate(iso: string): string {
+  return new Date(iso).toLocaleDateString('en-US', {
+    month: 'short', day: 'numeric',
+  });
+}
+
+// ─── PromptCard ───────────────────────────────────────────────────────────────
+
+function PromptCard({ prompt }: { prompt: WritingPrompt }) {
+  const navigate   = useNavigate();
+  const dispatch   = useAppDispatch();
+  const { t }      = useTranslation();
+  const color      = TYPE_COLOR[prompt.type] ?? '#6366f1';
+
+  const handleClick = () => {
+    dispatch(clearEditor());
+    navigate(`/writing/${prompt.id}`);
+  };
+
+  return (
+    <article
+      className={styles['promptCard']}
+      style={{ '--card-color': color } as React.CSSProperties}
+      onClick={handleClick}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') handleClick(); }}
+    >
+      {/* Top accent bar animates on hover via CSS */}
+      <div className={styles['promptCardHeader']}>
+        <div className={styles['promptCardBadges']}>
+          <span className={styles['levelBadge']}>
+            {LEVEL_DISPLAY[prompt.level] ?? prompt.level}
+          </span>
+          <span className={styles['typeBadge']} style={{ '--type-color': color } as React.CSSProperties}>
+            {TYPE_ICON[prompt.type]}
+            {prompt.type.charAt(0) + prompt.type.slice(1).toLowerCase()}
+          </span>
+          {prompt.topic && (
+            <span className={styles['topicTag']}>#{prompt.topic}</span>
+          )}
+        </div>
+        <ChevronRight size={15} className={styles['cardArrow']} />
+      </div>
+
+      <p className={styles['promptText']}>{prompt.prompt}</p>
+
+      <div className={styles['promptCardFooter']}>
+        <span className={styles['wordRange']}>
+          <BarChart2 size={12} />
+          {prompt.minWords}–{prompt.maxWords} {t('writing.words')}
+        </span>
+        {prompt.instructions && (
+          <span className={styles['hasInstructions']}>
+            {t('writing.hasInstructions')}
+          </span>
+        )}
+      </div>
+    </article>
+  );
+}
+
+// ─── SubmissionCard ───────────────────────────────────────────────────────────
+
+function SubmissionCard({ sub }: { sub: SubmissionWithPrompt }) {
+  const navigate = useNavigate();
+  const { t }    = useTranslation();
+  const score    = sub.analysis?.overallScore;
+  const isOk     = sub.status === 'ANALYZED';
+  const isErr    = sub.status === 'ERROR';
+
+  return (
+    <article
+      className={styles['submissionCard']}
+      onClick={() => navigate(`/writing/${sub.promptId}?submission=${sub.id}`)}
+      role="button"
+      tabIndex={0}
+      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/writing/${sub.promptId}?submission=${sub.id}`); }}
+    >
+      <div className={styles['subTop']}>
+        <span className={styles['subDate']}>
+          <Clock size={11} />
+          {formatDate(sub.submittedAt)}
+        </span>
+        {isOk && score !== undefined && (
+          <span
+            className={styles['subScore']}
+            style={{
+              color: score >= 75 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444',
+            }}
+          >
+            <Zap size={11} />
+            {Math.round(score)}%
+          </span>
+        )}
+        {isErr && (
+          <span className={styles['subError']}>
+            <XCircle size={11} /> {t('writing.submissionError')}
+          </span>
+        )}
+        {sub.status === 'PENDING' && (
+          <span className={styles['subPending']}>{t('writing.analyzing')}</span>
+        )}
+      </div>
+      <p className={styles['subPromptSnippet']}>
+        {sub.prompt.prompt.slice(0, 80)}…
+      </p>
+      <p className={styles['subTextSnippet']}>{sub.text.slice(0, 100)}…</p>
+    </article>
+  );
+}
+
+// ─── WritingPage ──────────────────────────────────────────────────────────────
+
+export default function WritingPage() {
+  const { t }       = useTranslation();
+  const dispatch    = useAppDispatch();
+  const {
+    prompts, promptsLoading, promptsError,
+    submissions,
+    filters,
+  } = useAppSelector((state) => state.writing);
+
+  // Load prompts when filters change
+  useEffect(() => {
+    const params: Record<string, string> = {};
+    if (filters.level) params['level'] = filters.level;
+    void dispatch(fetchPrompts(Object.keys(params).length > 0 ? params : undefined));
+  }, [dispatch, filters.level]);
+
+  // Load recent submissions once
+  useEffect(() => {
+    void dispatch(fetchSubmissions(undefined));
+  }, [dispatch]);
+
+  const handleRetry = useCallback(() => {
+    void dispatch(fetchPrompts());
+  }, [dispatch]);
+
+  if (promptsLoading && prompts.length === 0) {
+    return <FullPageSpinner label={t('writing.loading')} />;
+  }
+
+  // Group prompts by type
+  const byType: Record<string, WritingPrompt[]> = {};
+  for (const p of prompts) {
+    if (filters.type && p.type !== filters.type) continue;
+    (byType[p.type] ??= []).push(p);
+  }
+  const filteredPrompts = filters.type
+    ? prompts.filter((p) => p.type === filters.type)
+    : prompts;
+
+  return (
+    <div className={styles['page']}>
+      {/* ── Header ── */}
+      <header className={styles['header']}>
+        <div>
+          <h1 className={styles['pageTitle']}>
+            <PenLine size={22} className={styles['pageTitleIcon']} />
+            {t('writing.title')}
+          </h1>
+          <p className={styles['pageSubtitle']}>{t('writing.subtitle')}</p>
+        </div>
+        {prompts.length > 0 && (
+          <span className={styles['countBadge']}>
+            {filteredPrompts.length} {t('writing.promptsCount')}
+          </span>
+        )}
+      </header>
+
+      {/* ── Filters ── */}
+      <div className={styles['filterBar']}>
+        {/* Level chips */}
+        <div className={styles['filterRow']}>
+          <span className={styles['filterLabel']}>{t('writing.filters.level')}</span>
+          <div className={styles['chips']}>
+            <button
+              type="button"
+              className={`${styles['chip']} ${filters.level === null ? styles['chipActive'] : ''}`}
+              onClick={() => dispatch(setFilter({ key: 'level', value: null }))}
+            >
+              {t('writing.filters.allLevels')}
+            </button>
+            {LEVELS.map((lv) => (
+              <button
+                key={lv}
+                type="button"
+                className={`${styles['chip']} ${filters.level === lv ? styles['chipActive'] : ''}`}
+                onClick={() =>
+                  dispatch(setFilter({ key: 'level', value: filters.level === lv ? null : lv }))
+                }
+              >
+                {LEVEL_DISPLAY[lv]}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        {/* Type tabs */}
+        <div className={styles['filterRow']}>
+          <span className={styles['filterLabel']}>{t('writing.filters.type')}</span>
+          <div className={styles['typeTabs']}>
+            {[null, 'SENTENCE', 'PARAGRAPH', 'ESSAY'].map((tp) => (
+              <button
+                key={String(tp)}
+                type="button"
+                className={`${styles['typeTab']} ${filters.type === tp ? styles['typeTabActive'] : ''}`}
+                style={
+                  tp !== null && filters.type === tp
+                    ? ({ '--tab-color': TYPE_COLOR[tp] } as React.CSSProperties)
+                    : undefined
+                }
+                onClick={() => dispatch(setFilter({ key: 'type', value: tp }))}
+              >
+                {tp === null
+                  ? t('writing.filters.allTypes')
+                  : tp.charAt(0) + tp.slice(1).toLowerCase()}
+              </button>
+            ))}
+          </div>
+        </div>
+      </div>
+
+      {/* ── Error banner ── */}
+      {promptsError !== null && (
+        <div className={styles['errorBanner']}>
+          <AlertCircle size={15} />
+          <span>{t('writing.error')}</span>
+          <button type="button" className={styles['retryBtn']} onClick={handleRetry}>
+            <RefreshCw size={13} /> {t('writing.retry')}
+          </button>
+        </div>
+      )}
+
+      {/* ── Empty ── */}
+      {!promptsLoading && promptsError === null && filteredPrompts.length === 0 && (
+        <div className={styles['emptyState']}>
+          <PenLine size={52} className={styles['emptyIcon']} />
+          <p className={styles['emptyTitle']}>{t('writing.empty.title')}</p>
+          <p className={styles['emptyHint']}>{t('writing.empty.hint')}</p>
+        </div>
+      )}
+
+      {/* ── Prompts grid ── */}
+      {filteredPrompts.length > 0 && (
+        <section className={styles['promptsSection']}>
+          <div className={styles['promptsGrid']}>
+            {filteredPrompts.map((p) => (
+              <PromptCard key={p.id} prompt={p} />
+            ))}
+          </div>
+        </section>
+      )}
+
+      {/* ── Recent submissions ── */}
+      {submissions.length > 0 && (
+        <section className={styles['historySection']}>
+          <h2 className={styles['sectionTitle']}>
+            <CheckCircle2 size={16} />
+            {t('writing.history.title')}
+          </h2>
+          <div className={styles['submissionsGrid']}>
+            {submissions.slice(0, 6).map((sub) => (
+              <SubmissionCard key={sub.id} sub={sub} />
+            ))}
+          </div>
+        </section>
+      )}
+    </div>
+  );
+}

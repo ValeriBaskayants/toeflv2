@@ -14,6 +14,8 @@ import ListeningPage from '@/pages/ListeningPage/ListeningPage';
 import ListeningPlayerPage from '@/pages/Listeningplayerpage/Listeningplayerpage';
 import QuizPage from '@/pages/Quizpage/Quizpage';
 import { BookmarksPage } from '@/pages/Bookmarkspage/Bookmarkspage';
+import WritingEditorPage from '@/pages/Writingeditorpage/Writingeditorpage';
+import WritingPage from '@/pages/Writingpage/Writingpage';
 
 function ComingSoonPage({ title }: { title: string }) {
   return (
@@ -40,7 +42,8 @@ export function AppRouter() {
         }
       >
         <Route path="/dashboard" element={<DashboardPage />} />
-        <Route path="/writing" element={<ComingSoonPage title="Writing" />} />
+                <Route path="/writing"           element={<WritingPage />} />
+        <Route path="/writing/:promptId" element={<WritingEditorPage />} />
         <Route path="/reading" element={<ReadingListPage />} />
         <Route path="/reading/:slug" element={<ReadingReaderPage />} />
 

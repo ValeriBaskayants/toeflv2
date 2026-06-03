@@ -252,6 +252,222 @@ const RU_ADDITIONS = {
   },
 };
 
+<<<<<<< Updated upstream
+=======
+
+
+
+
+
+export const writingEN = {
+  title:         'Writing',
+  subtitle:      'Practise written English and get instant AI feedback',
+  loading:       'Loading prompts…',
+  error:         'Could not load writing prompts',
+  retry:         'Try again',
+  promptsCount:  'prompts',
+  words:         'words',
+  hasInstructions: 'Has instructions',
+  backToPrompts:   'Back to prompts',
+  submissionError: 'Analysis failed',
+
+  
+  prompt:       'Your prompt',
+  instructions: 'Instructions',
+  target:       'Target',
+  yourResponse: 'Your response',
+  placeholder:  'Start writing here… Take your time and write clearly.',
+  submit:       'Submit for feedback',
+  submitting:   'Submitting…',
+  analyzing:    'Analysing your writing…',
+  analyzingHint:'This usually takes 10–30 seconds. The AI is checking grammar, vocabulary, coherence and task completion.',
+  analysisError:    'Analysis failed',
+  analysisErrorHint:'The analysis service is temporarily unavailable. Please try again in a moment.',
+  analyzed:    'Feedback ready',
+  writeAgain:  'Write again',
+  tryAgain:    'Try again',
+
+  wordCount: {
+    tooShort:  'Too short — aim for at least {{min}} words',
+    belowMin:  '{{count}} words — you need {{min}} to submit',
+    inRange:   '{{count}} words ✓',
+    tooLong:   'Over the limit of {{max}} words',
+  },
+
+  filters: {
+    level:     'Level',
+    type:      'Type',
+    allLevels: 'All',
+    allTypes:  'All',
+  },
+
+  history: {
+    title: 'My recent submissions',
+  },
+
+  analysis: {
+    overallScore: 'Overall score',
+    grammar:      'Grammar',
+    task:         'Task completion',
+    vocabulary:   'Vocabulary',
+    coherence:    'Coherence',
+    errors:       'errors',
+    noErrors:     'No critical errors found — great work!',
+    feedback:     'Feedback',
+    suggestions:  'Suggestions',
+    hoverErrors:  'Hover over highlighted words to see suggestions.',
+    tab: {
+      scores: 'Scores',
+      errors: 'Errors',
+      text:   'Annotated text',
+    },
+  },
+
+  empty: {
+    title: 'No prompts available',
+    hint:  'Try a different level or check back later',
+  },
+};
+
+export const writingRU = {
+  title:         'Письмо',
+  subtitle:      'Практикуйте письменный английский и получайте мгновенную обратную связь',
+  loading:       'Загружаем задания…',
+  error:         'Не удалось загрузить задания',
+  retry:         'Повторить',
+  promptsCount:  'заданий',
+  words:         'слов',
+  hasInstructions: 'Есть инструкции',
+  backToPrompts:   'К списку заданий',
+  submissionError: 'Ошибка анализа',
+
+  prompt:       'Задание',
+  instructions: 'Инструкции',
+  target:       'Цель',
+  yourResponse: 'Ваш ответ',
+  placeholder:  'Начните писать здесь… Пишите чётко и связно.',
+  submit:       'Отправить на проверку',
+  submitting:   'Отправляем…',
+  analyzing:    'Анализируем вашу работу…',
+  analyzingHint:'Обычно это занимает 10–30 секунд. ИИ проверяет грамматику, словарный запас, связность и выполнение задания.',
+  analysisError:    'Анализ не выполнен',
+  analysisErrorHint:'Сервис анализа временно недоступен. Попробуйте снова через момент.',
+  analyzed:    'Обратная связь готова',
+  writeAgain:  'Написать заново',
+  tryAgain:    'Попробовать снова',
+
+  wordCount: {
+    tooShort:  'Слишком коротко — напишите хотя бы {{min}} слов',
+    belowMin:  '{{count}} слов — нужно {{min}} для отправки',
+    inRange:   '{{count}} слов ✓',
+    tooLong:   'Превышен лимит {{max}} слов',
+  },
+
+  filters: {
+    level:     'Уровень',
+    type:      'Тип',
+    allLevels: 'Все',
+    allTypes:  'Все',
+  },
+
+  history: {
+    title: 'Последние работы',
+  },
+
+  analysis: {
+    overallScore: 'Общий балл',
+    grammar:      'Грамматика',
+    task:         'Выполнение задания',
+    vocabulary:   'Словарный запас',
+    coherence:    'Связность',
+    errors:       'ошибок',
+    noErrors:     'Критических ошибок не найдено — отличная работа!',
+    feedback:     'Обратная связь',
+    suggestions:  'Исправления',
+    hoverErrors:  'Наведите на выделенные слова, чтобы увидеть подсказки.',
+    tab: {
+      scores: 'Оценки',
+      errors: 'Ошибки',
+      text:   'Текст с пометками',
+    },
+  },
+
+  empty: {
+    title: 'Заданий пока нет',
+    hint:  'Попробуйте другой уровень или зайдите позже',
+  },
+};
+
+export const writingHY = {
+  title:         'Գrrowtyown',
+  subtitle:      'Marzheq grvakan angleren ev stacek ANI arajanin kardziqayin ardzagankh',
+  loading:       'Bervum en andradzagrery…',
+  error:         'Chhajhoghvets bervyl andradzagrery',
+  retry:         'Noric pordzel',
+  promptsCount:  'andradzager',
+  words:         'barer',
+  hasInstructions: 'Kanon-ner ka',
+  backToPrompts:   'Andradzagrer verenadardz',
+  submissionError: 'Verclutyuny chstacvec',
+
+  prompt:       'Andradzager',
+  instructions: 'Kanon-ner',
+  target:       'Npatakaketer',
+  yourResponse: 'Dzez pataskhan',
+  placeholder:  'Sksel grel ayste… Greq hast ev kapaktsabar.',
+  submit:       'Ukharkol verclutyyan hamar',
+  submitting:   'Ukharkolvum e…',
+  analyzing:    'Vercloghowme dzez ashkhataynqy…',
+  analyzingHint:'Sader e 10–30 vayrkyan. ABI-n stugowm e qerakanowthowthoyn, barashowthowthoyn, kapaktsabarowthowthoyn ev andradzagri katarowmowthowthoyn.',
+  analysisError:    'Verclutyuny chstacvec',
+  analysisErrorHint:'Vercloghowme hamakargichhy jobov anhetagayelye e. Pordzeq noric mek vayrkyan anc.',
+  analyzed:    'Ardzagankhe patrastel e',
+  writeAgain:  'Greq noric',
+  tryAgain:    'Noric pordzel',
+
+  wordCount: {
+    tooShort:  'Karr e — greq goneaz {{min}} bar',
+    belowMin:  '{{count}} bar — petq e {{min}} ukharkeli hamar',
+    inRange:   '{{count}} bar ✓',
+    tooLong:   'Antsnel e {{max}} bari serrnagordzakan sirrry',
+  },
+
+  filters: {
+    level:     'Makardownak',
+    type:      'Taresar',
+    allLevels: 'Bolor',
+    allTypes:  'Bolor',
+  },
+
+  history: {
+    title: 'Verjin ashkhataynqery',
+  },
+
+  analysis: {
+    overallScore: 'Ynthanur miav',
+    grammar:      'Qerakanowthowthoyn',
+    task:         'Andradzagri katarwowthowthoyn',
+    vocabulary:   'Barashowthowthoyn',
+    coherence:    'Kapaktsabarowthowthoyn',
+    errors:       'sahman',
+    noErrors:     'Karevagayin sahmanyer chyen gnacvel — gagecaneli ashkhataynq!',
+    feedback:     'Ardzagankh',
+    suggestions:  'Kshownmner',
+    hoverErrors:  'Mnaceq nnshvats bari vray andradzel kshownmner tesnelow hamar.',
+    tab: {
+      scores: 'Miavner',
+      errors: 'Sahmanvatsner',
+      text:   'Nshvats text',
+    },
+  },
+
+  empty: {
+    title: 'Andradzagrer chka',
+    hint:  'Pordzeq ayl makardownak kam verelan ayceq',
+  },
+};
+
+>>>>>>> Stashed changes
 const HY_ADDITIONS = {
   navigation: {
     quiz: 'Քվիզ',

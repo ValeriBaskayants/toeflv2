@@ -9,6 +9,7 @@ import { listeningSlice } from './Slices/ListeningSlice';
 import { placementSlice } from './Slices/PlacementSlice';
 import { quizSlice } from './Slices/QuizSlice';
 import { bookmarksReducer } from './Slices/BookMarksSlice';
+import { writingSlice } from './Slices/WritingSlice';
 
 export const store = configureStore({
   reducer: {
@@ -21,7 +22,9 @@ export const store = configureStore({
     placement: placementSlice.reducer,
     quiz: quizSlice.reducer,
     bookmarks: bookmarksReducer.reducer,
+    writing: writingSlice.reducer,
   },
+
 });
 
 export type RootState = ReturnType<typeof store.getState>;

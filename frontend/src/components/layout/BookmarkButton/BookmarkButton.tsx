@@ -7,32 +7,28 @@ import styles from './Bookmarkbutton.module.css';
 
 interface BookmarkButtonProps {
   targetId: string;
-  type:     BookmarkType;
-  size?:    'sm' | 'md';
-  label?:   string;
+  type: BookmarkType;
+  size?: 'sm' | 'md';
+  label?: string;
 }
 
-export function BookmarkButton({
-  targetId,
-  type,
-  size = 'md',
-  label,
-}: BookmarkButtonProps) {
-  const dispatch  = useAppDispatch();
+export function BookmarkButton({ targetId, type, size = 'md', label }: BookmarkButtonProps) {
+  const dispatch = useAppDispatch();
   const isInStore = useAppSelector(selectIsBookmarked(targetId, type));
 
-  const [isPending,  setIsPending]  = useState(false);
+  const [isPending, setIsPending] = useState(false);
   const [optimistic, setOptimistic] = useState<boolean | null>(null);
-
 
   const isBookmarked = optimistic ?? isInStore;
 
   const handleToggle = useCallback(async () => {
-    if (isPending) { return; }
+    if (isPending) {
+      return;
+    }
 
     const next = !isBookmarked;
 
-    setOptimistic(next); 
+    setOptimistic(next);
     setIsPending(true);
 
     const result = await dispatch(toggleBookmark({ targetId, type }));
@@ -40,9 +36,9 @@ export function BookmarkButton({
     setIsPending(false);
 
     if (toggleBookmark.rejected.match(result)) {
-      setOptimistic(null); 
+      setOptimistic(null);
     } else {
-      setOptimistic(null); 
+      setOptimistic(null);
     }
   }, [isPending, isBookmarked, dispatch, targetId, type]);
 
@@ -51,27 +47,26 @@ export function BookmarkButton({
   return (
     <button
       type="button"
-      onClick={() => { void handleToggle(); }}
+      onClick={() => {
+        void handleToggle();
+      }}
       disabled={isPending}
       aria-label={isBookmarked ? 'Remove bookmark' : 'Save bookmark'}
       aria-pressed={isBookmarked}
       className={[
         styles['btn'],
         styles[size],
-        isBookmarked ? styles['active']  : '',
-        isPending    ? styles['pending'] : '',
-      ].filter(Boolean).join(' ')}
+        isBookmarked ? styles['active'] : '',
+        isPending ? styles['pending'] : '',
+      ]
+        .filter(Boolean)
+        .join(' ')}
     >
       <span className={styles['iconWrap']}>
-        {isBookmarked
-          ? <BookmarkCheck size={iconSize} />
-          : <Bookmark      size={iconSize} />
-        }
+        {isBookmarked ? <BookmarkCheck size={iconSize} /> : <Bookmark size={iconSize} />}
       </span>
       {label !== undefined && (
-        <span className={styles['label']}>
-          {isBookmarked ? 'Saved' : label}
-        </span>
+        <span className={styles['label']}>{isBookmarked ? 'Saved' : label}</span>
       )}
     </button>
   );

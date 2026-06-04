@@ -42,7 +42,7 @@ export function AppRouter() {
         }
       >
         <Route path="/dashboard" element={<DashboardPage />} />
-                <Route path="/writing"           element={<WritingPage />} />
+        <Route path="/writing" element={<WritingPage />} />
         <Route path="/writing/:promptId" element={<WritingEditorPage />} />
         <Route path="/reading" element={<ReadingListPage />} />
         <Route path="/reading/:slug" element={<ReadingReaderPage />} />

@@ -2,9 +2,18 @@ import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  PenLine, BookOpen, FileText, AlignLeft,
-  ChevronRight, AlertCircle, RefreshCw,
-  Clock, BarChart2, Zap, CheckCircle2, XCircle,
+  PenLine,
+  BookOpen,
+  FileText,
+  AlignLeft,
+  ChevronRight,
+  AlertCircle,
+  RefreshCw,
+  Clock,
+  BarChart2,
+  Zap,
+  CheckCircle2,
+  XCircle,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
@@ -20,37 +29,46 @@ import styles from './WritingPage.module.css';
 
 // ─── Constants ────────────────────────────────────────────────────────────────
 
-const LEVELS = ['A1','A1_PLUS','A2','A2_PLUS','B1','B1_PLUS','B2','B2_PLUS','C1','C2'];
+const LEVELS = ['A1', 'A1_PLUS', 'A2', 'A2_PLUS', 'B1', 'B1_PLUS', 'B2', 'B2_PLUS', 'C1', 'C2'];
 const LEVEL_DISPLAY: Record<string, string> = {
-  A1:'A1', A1_PLUS:'A1+', A2:'A2', A2_PLUS:'A2+',
-  B1:'B1', B1_PLUS:'B1+', B2:'B2', B2_PLUS:'B2+', C1:'C1', C2:'C2',
+  A1: 'A1',
+  A1_PLUS: 'A1+',
+  A2: 'A2',
+  A2_PLUS: 'A2+',
+  B1: 'B1',
+  B1_PLUS: 'B1+',
+  B2: 'B2',
+  B2_PLUS: 'B2+',
+  C1: 'C1',
+  C2: 'C2',
 };
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
-  SENTENCE:  <AlignLeft size={16} />,
-  PARAGRAPH: <FileText  size={16} />,
-  ESSAY:     <BookOpen  size={16} />,
+  SENTENCE: <AlignLeft size={16} />,
+  PARAGRAPH: <FileText size={16} />,
+  ESSAY: <BookOpen size={16} />,
 };
 
 const TYPE_COLOR: Record<string, string> = {
-  SENTENCE:  '#14b8a6',
+  SENTENCE: '#14b8a6',
   PARAGRAPH: '#6366f1',
-  ESSAY:     '#ec4899',
+  ESSAY: '#ec4899',
 };
 
 function formatDate(iso: string): string {
   return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short', day: 'numeric',
+    month: 'short',
+    day: 'numeric',
   });
 }
 
 // ─── PromptCard ───────────────────────────────────────────────────────────────
 
 function PromptCard({ prompt }: { prompt: WritingPrompt }) {
-  const navigate   = useNavigate();
-  const dispatch   = useAppDispatch();
-  const { t }      = useTranslation();
-  const color      = TYPE_COLOR[prompt.type] ?? '#6366f1';
+  const navigate = useNavigate();
+  const dispatch = useAppDispatch();
+  const { t } = useTranslation();
+  const color = TYPE_COLOR[prompt.type] ?? '#6366f1';
 
   const handleClick = () => {
     dispatch(clearEditor());
@@ -64,7 +82,9 @@ function PromptCard({ prompt }: { prompt: WritingPrompt }) {
       onClick={handleClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') handleClick(); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') handleClick();
+      }}
     >
       {/* Top accent bar animates on hover via CSS */}
       <div className={styles['promptCardHeader']}>
@@ -72,13 +92,14 @@ function PromptCard({ prompt }: { prompt: WritingPrompt }) {
           <span className={styles['levelBadge']}>
             {LEVEL_DISPLAY[prompt.level] ?? prompt.level}
           </span>
-          <span className={styles['typeBadge']} style={{ '--type-color': color } as React.CSSProperties}>
+          <span
+            className={styles['typeBadge']}
+            style={{ '--type-color': color } as React.CSSProperties}
+          >
             {TYPE_ICON[prompt.type]}
             {prompt.type.charAt(0) + prompt.type.slice(1).toLowerCase()}
           </span>
-          {prompt.topic && (
-            <span className={styles['topicTag']}>#{prompt.topic}</span>
-          )}
+          {prompt.topic && <span className={styles['topicTag']}>#{prompt.topic}</span>}
         </div>
         <ChevronRight size={15} className={styles['cardArrow']} />
       </div>
@@ -91,9 +112,7 @@ function PromptCard({ prompt }: { prompt: WritingPrompt }) {
           {prompt.minWords}–{prompt.maxWords} {t('writing.words')}
         </span>
         {prompt.instructions && (
-          <span className={styles['hasInstructions']}>
-            {t('writing.hasInstructions')}
-          </span>
+          <span className={styles['hasInstructions']}>{t('writing.hasInstructions')}</span>
         )}
       </div>
     </article>
@@ -104,10 +123,10 @@ function PromptCard({ prompt }: { prompt: WritingPrompt }) {
 
 function SubmissionCard({ sub }: { sub: SubmissionWithPrompt }) {
   const navigate = useNavigate();
-  const { t }    = useTranslation();
-  const score    = sub.analysis?.overallScore;
-  const isOk     = sub.status === 'ANALYZED';
-  const isErr    = sub.status === 'ERROR';
+  const { t } = useTranslation();
+  const score = sub.analysis?.overallScore;
+  const isOk = sub.status === 'ANALYZED';
+  const isErr = sub.status === 'ERROR';
 
   return (
     <article
@@ -115,7 +134,9 @@ function SubmissionCard({ sub }: { sub: SubmissionWithPrompt }) {
       onClick={() => navigate(`/writing/${sub.promptId}?submission=${sub.id}`)}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter') navigate(`/writing/${sub.promptId}?submission=${sub.id}`); }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter') navigate(`/writing/${sub.promptId}?submission=${sub.id}`);
+      }}
     >
       <div className={styles['subTop']}>
         <span className={styles['subDate']}>
@@ -142,9 +163,7 @@ function SubmissionCard({ sub }: { sub: SubmissionWithPrompt }) {
           <span className={styles['subPending']}>{t('writing.analyzing')}</span>
         )}
       </div>
-      <p className={styles['subPromptSnippet']}>
-        {sub.prompt.prompt.slice(0, 80)}…
-      </p>
+      <p className={styles['subPromptSnippet']}>{sub.prompt.prompt.slice(0, 80)}…</p>
       <p className={styles['subTextSnippet']}>{sub.text.slice(0, 100)}…</p>
     </article>
   );
@@ -153,13 +172,11 @@ function SubmissionCard({ sub }: { sub: SubmissionWithPrompt }) {
 // ─── WritingPage ──────────────────────────────────────────────────────────────
 
 export default function WritingPage() {
-  const { t }       = useTranslation();
-  const dispatch    = useAppDispatch();
-  const {
-    prompts, promptsLoading, promptsError,
-    submissions,
-    filters,
-  } = useAppSelector((state) => state.writing);
+  const { t } = useTranslation();
+  const dispatch = useAppDispatch();
+  const { prompts, promptsLoading, promptsError, submissions, filters } = useAppSelector(
+    (state) => state.writing,
+  );
 
   // Load prompts when filters change
   useEffect(() => {
@@ -187,9 +204,7 @@ export default function WritingPage() {
     if (filters.type && p.type !== filters.type) continue;
     (byType[p.type] ??= []).push(p);
   }
-  const filteredPrompts = filters.type
-    ? prompts.filter((p) => p.type === filters.type)
-    : prompts;
+  const filteredPrompts = filters.type ? prompts.filter((p) => p.type === filters.type) : prompts;
 
   return (
     <div className={styles['page']}>

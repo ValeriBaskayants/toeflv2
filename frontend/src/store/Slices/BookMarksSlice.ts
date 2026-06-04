@@ -162,10 +162,10 @@ export const selectDeleteStatus = (state: BookmarksRootState): AsyncStatus =>
 
 export const selectIsBookmarked =
   (targetId: string, type: BookmarkType) =>
-    (state: BookmarksRootState): boolean =>
-      state.bookmarks.list.some((b) => b.targetId === targetId && b.type === type);
+  (state: BookmarksRootState): boolean =>
+    state.bookmarks.list.some((b) => b.targetId === targetId && b.type === type);
 
 export const selectBookmarksByType =
   (type: BookmarkType) =>
-    (state: BookmarksRootState): Bookmark[] =>
-      state.bookmarks.list.filter((b) => b.type === type);
+  (state: BookmarksRootState): Bookmark[] =>
+    state.bookmarks.list.filter((b) => b.type === type);

@@ -1,17 +1,23 @@
-import {
-  useEffect,
-  useCallback,
-  useRef,
-  useState,
-  useMemo,
-} from 'react';
+import { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
-  ArrowLeft, Send, Loader2, AlertCircle,
-  CheckCircle2, XCircle, BookOpen, AlignLeft,
-  FileText, RefreshCw, Lightbulb, MessageSquare,
-  Underline, Target, Brain, BarChart2,
+  ArrowLeft,
+  Send,
+  Loader2,
+  AlertCircle,
+  CheckCircle2,
+  XCircle,
+  BookOpen,
+  AlignLeft,
+  FileText,
+  RefreshCw,
+  Lightbulb,
+  MessageSquare,
+  Underline,
+  Target,
+  Brain,
+  BarChart2,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
@@ -28,18 +34,25 @@ import styles from './WritingEditorPage.module.css';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const LEVEL_DISPLAY: Record<string, string> = {
-  A1:'A1', A1_PLUS:'A1+', A2:'A2', A2_PLUS:'A2+',
-  B1:'B1', B1_PLUS:'B1+', B2:'B2', B2_PLUS:'B2+', C1:'C1', C2:'C2',
+  A1: 'A1',
+  A1_PLUS: 'A1+',
+  A2: 'A2',
+  A2_PLUS: 'A2+',
+  B1: 'B1',
+  B1_PLUS: 'B1+',
+  B2: 'B2',
+  B2_PLUS: 'B2+',
+  C1: 'C1',
+  C2: 'C2',
 };
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
-  SENTENCE:  <AlignLeft size={15} />,
-  PARAGRAPH: <FileText  size={15} />,
-  ESSAY:     <BookOpen  size={15} />,
+  SENTENCE: <AlignLeft size={15} />,
+  PARAGRAPH: <FileText size={15} />,
+  ESSAY: <BookOpen size={15} />,
 };
 
-const SCORE_COLOR = (s: number) =>
-  s >= 80 ? '#22c55e' : s >= 60 ? '#f59e0b' : '#ef4444';
+const SCORE_COLOR = (s: number) => (s >= 80 ? '#22c55e' : s >= 60 ? '#f59e0b' : '#ef4444');
 
 const POLL_INTERVAL_MS = 2500;
 const POLL_MAX_ATTEMPTS = 28; // 70s max
@@ -47,42 +60,38 @@ const POLL_MAX_ATTEMPTS = 28; // 70s max
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function countWords(text: string): number {
-  return text.trim().length === 0
-    ? 0
-    : text.trim().split(/\s+/).length;
+  return text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
 }
 
 // ─── ScoreRing (SVG) ──────────────────────────────────────────────────────────
 
 function ScoreRing({ score }: { score: number }) {
-  const r     = 42;
-  const circ  = 2 * Math.PI * r;
+  const r = 42;
+  const circ = 2 * Math.PI * r;
   const color = SCORE_COLOR(score);
   const filled = (score / 100) * circ;
 
   return (
     <svg viewBox="0 0 100 100" className={styles['scoreRing']} aria-label={`Score: ${score}%`}>
       {/* Background track */}
-      <circle
-        cx="50" cy="50" r={r}
-        fill="none"
-        stroke="var(--border)"
-        strokeWidth="7"
-      />
+      <circle cx="50" cy="50" r={r} fill="none" stroke="var(--border)" strokeWidth="7" />
       {/* Filled arc */}
       <circle
-        cx="50" cy="50" r={r}
+        cx="50"
+        cy="50"
+        r={r}
         fill="none"
         stroke={color}
         strokeWidth="7"
         strokeLinecap="round"
         strokeDasharray={`${filled} ${circ - filled}`}
-        strokeDashoffset={circ * 0.25}   /* start at top */
+        strokeDashoffset={circ * 0.25} /* start at top */
         style={{ transition: 'stroke-dasharray 1s var(--ease-spring)' }}
       />
       {/* Score text */}
       <text
-        x="50" y="47"
+        x="50"
+        y="47"
         textAnchor="middle"
         dominantBaseline="middle"
         fill={color}
@@ -93,7 +102,8 @@ function ScoreRing({ score }: { score: number }) {
         {Math.round(score)}
       </text>
       <text
-        x="50" y="64"
+        x="50"
+        y="64"
         textAnchor="middle"
         fill="var(--text-3)"
         fontSize="9"
@@ -108,9 +118,9 @@ function ScoreRing({ score }: { score: number }) {
 // ─── ScoreBar ─────────────────────────────────────────────────────────────────
 
 interface ScoreBarProps {
-  label:   string;
-  score:   number;
-  icon:    React.ReactNode;
+  label: string;
+  score: number;
+  icon: React.ReactNode;
   weight?: string;
 }
 
@@ -119,7 +129,9 @@ function ScoreBar({ label, score, icon, weight }: ScoreBarProps) {
   return (
     <div className={styles['scoreBar']}>
       <div className={styles['scoreBarHeader']}>
-        <span className={styles['scoreBarIcon']} style={{ color }}>{icon}</span>
+        <span className={styles['scoreBarIcon']} style={{ color }}>
+          {icon}
+        </span>
         <span className={styles['scoreBarLabel']}>{label}</span>
         {weight && <span className={styles['scoreBarWeight']}>{weight}</span>}
         <span className={styles['scoreBarValue']} style={{ color }}>
@@ -144,13 +156,16 @@ function ScoreBar({ label, score, icon, weight }: ScoreBarProps) {
 // Renders the submitted text with error spans highlighted by offset/length.
 
 interface HighlightedTextProps {
-  text:   string;
+  text: string;
   errors: WritingError[];
 }
 
 function HighlightedText({ text, errors }: HighlightedTextProps) {
   const [tooltip, setTooltip] = useState<{
-    msg: string; reps: string[]; x: number; y: number;
+    msg: string;
+    reps: string[];
+    x: number;
+    y: number;
   } | null>(null);
 
   // Sort errors by offset, remove overlaps
@@ -192,10 +207,10 @@ function HighlightedText({ text, errors }: HighlightedTextProps) {
             onMouseEnter={(e) => {
               const rect = (e.target as HTMLElement).getBoundingClientRect();
               setTooltip({
-                msg:  part.error!.message,
+                msg: part.error!.message,
                 reps: part.error!.replacements,
-                x:    rect.left,
-                y:    rect.bottom + window.scrollY + 4,
+                x: rect.left,
+                y: rect.bottom + window.scrollY + 4,
               });
             }}
             onMouseLeave={() => setTooltip(null)}
@@ -203,8 +218,10 @@ function HighlightedText({ text, errors }: HighlightedTextProps) {
             {part.text}
           </mark>
         ) : (
-          <span key={i} style={{ whiteSpace: 'pre-wrap' }}>{part.text}</span>
-        )
+          <span key={i} style={{ whiteSpace: 'pre-wrap' }}>
+            {part.text}
+          </span>
+        ),
       )}
 
       {/* Tooltip */}
@@ -217,7 +234,9 @@ function HighlightedText({ text, errors }: HighlightedTextProps) {
           {tooltip.reps.length > 0 && (
             <div className={styles['tooltipReps']}>
               {tooltip.reps.map((r) => (
-                <span key={r} className={styles['tooltipRep']}>{r}</span>
+                <span key={r} className={styles['tooltipRep']}>
+                  {r}
+                </span>
               ))}
             </div>
           )}
@@ -231,7 +250,7 @@ function HighlightedText({ text, errors }: HighlightedTextProps) {
 
 interface AnalysisPanelProps {
   analysis: WritingAnalysis;
-  text:     string;
+  text: string;
 }
 
 function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
@@ -240,27 +259,27 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
 
   const metrics: ScoreBarProps[] = [
     {
-      label:  t('writing.analysis.grammar'),
-      score:  analysis.grammarScore,
-      icon:   <CheckCircle2 size={14} />,
+      label: t('writing.analysis.grammar'),
+      score: analysis.grammarScore,
+      icon: <CheckCircle2 size={14} />,
       weight: '35%',
     },
     {
-      label:  t('writing.analysis.task'),
-      score:  analysis.taskScore,
-      icon:   <Target size={14} />,
+      label: t('writing.analysis.task'),
+      score: analysis.taskScore,
+      icon: <Target size={14} />,
       weight: '30%',
     },
     {
-      label:  t('writing.analysis.vocabulary'),
-      score:  analysis.vocabularyScore,
-      icon:   <Brain size={14} />,
+      label: t('writing.analysis.vocabulary'),
+      score: analysis.vocabularyScore,
+      icon: <Brain size={14} />,
       weight: '20%',
     },
     {
-      label:  t('writing.analysis.coherence'),
-      score:  analysis.coherenceScore,
-      icon:   <BarChart2 size={14} />,
+      label: t('writing.analysis.coherence'),
+      score: analysis.coherenceScore,
+      icon: <BarChart2 size={14} />,
       weight: '15%',
     },
   ];
@@ -350,18 +369,16 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
                     <Underline size={13} className={styles['errorItemIcon']} />
                     <span className={styles['errorItemMsg']}>{err.message}</span>
                   </div>
-                  {err.context && (
-                    <p className={styles['errorContext']}>
-                      "…{err.context}…"
-                    </p>
-                  )}
+                  {err.context && <p className={styles['errorContext']}>"…{err.context}…"</p>}
                   {err.replacements.length > 0 && (
                     <div className={styles['errorReps']}>
                       <span className={styles['errorRepsLabel']}>
                         {t('writing.analysis.suggestions')}:
                       </span>
                       {err.replacements.map((r) => (
-                        <span key={r} className={styles['errorRep']}>{r}</span>
+                        <span key={r} className={styles['errorRep']}>
+                          {r}
+                        </span>
                       ))}
                     </div>
                   )}
@@ -386,47 +403,51 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
 // ─── WordCountBar ─────────────────────────────────────────────────────────────
 
 interface WordCountBarProps {
-  count:   number;
-  min:     number;
-  max:     number;
+  count: number;
+  min: number;
+  max: number;
 }
 
 function WordCountBar({ count, min, max }: WordCountBarProps) {
   const { t } = useTranslation();
 
-  const pct     = Math.min(100, (count / max) * 100);
+  const pct = Math.min(100, (count / max) * 100);
   const tooShort = count < Math.floor(min * 0.5);
   const belowMin = count < min && !tooShort;
-  const inRange  = count >= min && count <= max;
+  const inRange = count >= min && count <= max;
 
-  const color = tooShort ? '#ef4444'
-    : belowMin ? '#f59e0b'
-    : inRange  ? '#22c55e'
-    : '#f59e0b';
+  const color = tooShort ? '#ef4444' : belowMin ? '#f59e0b' : inRange ? '#22c55e' : '#f59e0b';
 
-  const label = tooShort  ? t('writing.wordCount.tooShort', { min })
-    : belowMin ? t('writing.wordCount.belowMin', { count, min })
-    : inRange  ? t('writing.wordCount.inRange', { count })
-    : t('writing.wordCount.tooLong', { max });
+  const label = tooShort
+    ? t('writing.wordCount.tooShort', { min })
+    : belowMin
+      ? t('writing.wordCount.belowMin', { count, min })
+      : inRange
+        ? t('writing.wordCount.inRange', { count })
+        : t('writing.wordCount.tooLong', { max });
 
   return (
     <div className={styles['wordCountBar']}>
       <div className={styles['wordCountTrack']}>
         {/* Min marker */}
-        <div
-          className={styles['wordCountMarker']}
-          style={{ left: `${(min / max) * 100}%` }}
-        />
+        <div className={styles['wordCountMarker']} style={{ left: `${(min / max) * 100}%` }} />
         {/* Fill */}
         <div
           className={styles['wordCountFill']}
-          style={{ width: `${pct}%`, backgroundColor: color,
-            transition: 'width .2s ease, background-color .3s ease' }}
+          style={{
+            width: `${pct}%`,
+            backgroundColor: color,
+            transition: 'width .2s ease, background-color .3s ease',
+          }}
         />
       </div>
       <div className={styles['wordCountMeta']}>
-        <span className={styles['wordCountLabel']} style={{ color }}>{label}</span>
-        <span className={styles['wordCountRange']}>{min}–{max} {t('writing.words')}</span>
+        <span className={styles['wordCountLabel']} style={{ color }}>
+          {label}
+        </span>
+        <span className={styles['wordCountRange']}>
+          {min}–{max} {t('writing.words')}
+        </span>
       </div>
     </div>
   );
@@ -435,11 +456,11 @@ function WordCountBar({ count, min, max }: WordCountBarProps) {
 // ─── WritingEditorPage ────────────────────────────────────────────────────────
 
 export default function WritingEditorPage() {
-  const { promptId }       = useParams<{ promptId: string }>();
-  const [searchParams]     = useSearchParams();
-  const navigate           = useNavigate();
-  const { t }              = useTranslation();
-  const dispatch           = useAppDispatch();
+  const { promptId } = useParams<{ promptId: string }>();
+  const [searchParams] = useSearchParams();
+  const navigate = useNavigate();
+  const { t } = useTranslation();
+  const dispatch = useAppDispatch();
 
   const {
     currentPrompt,
@@ -453,8 +474,8 @@ export default function WritingEditorPage() {
   } = useAppSelector((state) => state.writing);
 
   // Polling ref
-  const pollRef     = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollCount   = useRef(0);
+  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const pollCount = useRef(0);
 
   // ── Load prompt ──────────────────────────────────────────────────────────
   useEffect(() => {
@@ -509,16 +530,14 @@ export default function WritingEditorPage() {
   }, [dispatch, promptId]);
 
   // ── Derived ───────────────────────────────────────────────────────────────
-  const wordCount   = countWords(draftText);
-  const minWords    = currentPrompt?.minWords ?? 50;
-  const maxWords    = currentPrompt?.maxWords ?? 200;
-  const canSubmit   =
-    wordCount >= Math.floor(minWords * 0.5) && !submitting;
+  const wordCount = countWords(draftText);
+  const minWords = currentPrompt?.minWords ?? 50;
+  const maxWords = currentPrompt?.maxWords ?? 200;
+  const canSubmit = wordCount >= Math.floor(minWords * 0.5) && !submitting;
 
-  const isPending   = pendingSubmissionId !== null
-    || currentSubmission?.status === 'PENDING';
-  const isAnalyzed  = currentSubmission?.status === 'ANALYZED';
-  const isError     = currentSubmission?.status === 'ERROR';
+  const isPending = pendingSubmissionId !== null || currentSubmission?.status === 'PENDING';
+  const isAnalyzed = currentSubmission?.status === 'ANALYZED';
+  const isError = currentSubmission?.status === 'ERROR';
 
   // ── Render ────────────────────────────────────────────────────────────────
 
@@ -536,9 +555,12 @@ export default function WritingEditorPage() {
     );
   }
 
-  const typeColor = currentPrompt.type === 'SENTENCE' ? '#14b8a6'
-    : currentPrompt.type === 'PARAGRAPH' ? '#6366f1'
-    : '#ec4899';
+  const typeColor =
+    currentPrompt.type === 'SENTENCE'
+      ? '#14b8a6'
+      : currentPrompt.type === 'PARAGRAPH'
+        ? '#6366f1'
+        : '#ec4899';
 
   return (
     <div className={styles['page']}>
@@ -550,7 +572,6 @@ export default function WritingEditorPage() {
 
       {/* ── Two-column layout ── */}
       <div className={styles['layout']}>
-
         {/* ══ LEFT: Prompt panel ══ */}
         <aside className={styles['promptPanel']}>
           <div className={styles['promptPanelInner']}>
@@ -584,9 +605,7 @@ export default function WritingEditorPage() {
                   <Lightbulb size={14} style={{ color: '#f59e0b' }} />
                   {t('writing.instructions')}
                 </div>
-                <p className={styles['instructionsText']}>
-                  {currentPrompt.instructions}
-                </p>
+                <p className={styles['instructionsText']}>{currentPrompt.instructions}</p>
               </div>
             )}
 
@@ -602,7 +621,6 @@ export default function WritingEditorPage() {
 
         {/* ══ RIGHT: Editor / Analysis ══ */}
         <main className={styles['editorPanel']}>
-
           {/* ── State: not yet submitted ── */}
           {!isPending && !isAnalyzed && !isError && (
             <>
@@ -635,10 +653,17 @@ export default function WritingEditorPage() {
                 onClick={handleSubmit}
                 disabled={!canSubmit || submitting}
               >
-                {submitting
-                  ? <><Loader2 size={16} className={styles['spin']} />{t('writing.submitting')}</>
-                  : <><Send size={16} />{t('writing.submit')}</>
-                }
+                {submitting ? (
+                  <>
+                    <Loader2 size={16} className={styles['spin']} />
+                    {t('writing.submitting')}
+                  </>
+                ) : (
+                  <>
+                    <Send size={16} />
+                    {t('writing.submit')}
+                  </>
+                )}
               </button>
             </>
           )}
@@ -682,23 +707,15 @@ export default function WritingEditorPage() {
                   <CheckCircle2 size={14} />
                   {t('writing.analyzed')}
                 </div>
-                <button
-                  type="button"
-                  className={styles['writeAgainBtn']}
-                  onClick={handleReset}
-                >
+                <button type="button" className={styles['writeAgainBtn']} onClick={handleReset}>
                   <RefreshCw size={13} />
                   {t('writing.writeAgain')}
                 </button>
               </div>
 
-              <AnalysisPanel
-                analysis={currentSubmission.analysis}
-                text={currentSubmission.text}
-              />
+              <AnalysisPanel analysis={currentSubmission.analysis} text={currentSubmission.text} />
             </>
           )}
-
         </main>
       </div>
     </div>

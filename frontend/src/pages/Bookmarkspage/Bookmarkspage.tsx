@@ -1,9 +1,17 @@
 import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  CheckCheck, Layers, BookOpen, PenLine,
-  Bookmark, Trash2, ArrowUpRight, RefreshCw,
-  Clock, Frown, AudioLines,
+  CheckCheck,
+  Layers,
+  BookOpen,
+  PenLine,
+  Bookmark,
+  Trash2,
+  ArrowUpRight,
+  RefreshCw,
+  Clock,
+  Frown,
+  AudioLines,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
@@ -21,48 +29,48 @@ import styles from './Bookmarkspage .module.css';
 // ─── Config ────────────────────────────────────────────────────────────────────
 
 interface TypeConfig {
-  label:       string;
+  label: string;
   description: string;
-  icon:        typeof CheckCheck;
-  color:       string;
-  route:       string;
+  icon: typeof CheckCheck;
+  color: string;
+  route: string;
 }
 
 const TYPE_CONFIG: Record<BookmarkType, TypeConfig> = {
   GRAMMAR_RULE: {
-    label:       'Grammar Rule',
+    label: 'Grammar Rule',
     description: 'Saved grammar pattern',
-    icon:        CheckCheck,
-    color:       '#14b8a6',
-    route:       '/grammar',
+    icon: CheckCheck,
+    color: '#14b8a6',
+    route: '/grammar',
   },
   VOCABULARY: {
-    label:       'Vocabulary Word',
+    label: 'Vocabulary Word',
     description: 'Saved word to review',
-    icon:        Layers,
-    color:       '#8b5cf6',
-    route:       '/vocabulary',
+    icon: Layers,
+    color: '#8b5cf6',
+    route: '/vocabulary',
   },
   READING: {
-    label:       'Reading Passage',
+    label: 'Reading Passage',
     description: 'Saved reading exercise',
-    icon:        BookOpen,
-    color:       '#22c55e',
-    route:       '/reading',
+    icon: BookOpen,
+    color: '#22c55e',
+    route: '/reading',
   },
   WRITING_PROMPT: {
-    label:       'Writing Prompt',
+    label: 'Writing Prompt',
     description: 'Saved writing task',
-    icon:        PenLine,
-    color:       '#ec4899',
-    route:       '/writing',
+    icon: PenLine,
+    color: '#ec4899',
+    route: '/writing',
   },
   LISTENING: {
-    label:       'Listening Exercise',
+    label: 'Listening Exercise',
     description: 'Saved audio exercise',
-    icon:        AudioLines,
-    color:       '#f59e0b',
-    route:       '/listening',
+    icon: AudioLines,
+    color: '#f59e0b',
+    route: '/listening',
   },
 };
 
@@ -78,34 +86,39 @@ const TYPE_ORDER: BookmarkType[] = [
 
 function timeAgo(isoString: string): string {
   const seconds = Math.floor((Date.now() - new Date(isoString).getTime()) / 1000);
-  if (seconds < 60)     { return 'just now'; }
-  if (seconds < 3600)   { return `${Math.floor(seconds / 60)}m ago`; }
-  if (seconds < 86400)  { return `${Math.floor(seconds / 3600)}h ago`; }
-  if (seconds < 604800) { return `${Math.floor(seconds / 86400)}d ago`; }
+  if (seconds < 60) {
+    return 'just now';
+  }
+  if (seconds < 3600) {
+    return `${Math.floor(seconds / 60)}m ago`;
+  }
+  if (seconds < 86400) {
+    return `${Math.floor(seconds / 3600)}h ago`;
+  }
+  if (seconds < 604800) {
+    return `${Math.floor(seconds / 86400)}d ago`;
+  }
   return new Intl.DateTimeFormat('en-US', {
     month: 'short',
-    day:   'numeric',
+    day: 'numeric',
   }).format(new Date(isoString));
 }
 
 // ─── BookmarkCard ──────────────────────────────────────────────────────────────
 
 interface CardProps {
-  item:         BookmarkItem;
-  onDelete:     (id: string) => void;
+  item: BookmarkItem;
+  onDelete: (id: string) => void;
   deleteStatus: string;
 }
 
 function BookmarkCard({ item, onDelete, deleteStatus }: CardProps) {
   const navigate = useNavigate();
-  const config   = TYPE_CONFIG[item.type];
+  const config = TYPE_CONFIG[item.type];
   const { label, description, icon: Icon, color, route } = config;
 
   return (
-    <article
-      className={styles['card']}
-      style={{ '--card-color': color } as React.CSSProperties}
-    >
+    <article className={styles['card']} style={{ '--card-color': color } as React.CSSProperties}>
       {/* Left accent line */}
       <div className={styles['cardAccent']} />
 
@@ -151,18 +164,20 @@ function BookmarkCard({ item, onDelete, deleteStatus }: CardProps) {
 // ─── Group ─────────────────────────────────────────────────────────────────────
 
 interface GroupProps {
-  type:         BookmarkType;
-  items:        BookmarkItem[];
-  onDelete:     (id: string) => void;
+  type: BookmarkType;
+  items: BookmarkItem[];
+  onDelete: (id: string) => void;
   deleteStatus: string;
 }
 
 function BookmarkGroup({ type, items, onDelete, deleteStatus }: GroupProps) {
   const navigate = useNavigate();
-  const config   = TYPE_CONFIG[type];
+  const config = TYPE_CONFIG[type];
   const { label, icon: Icon, color, route } = config;
 
-  if (items.length === 0) { return null; }
+  if (items.length === 0) {
+    return null;
+  }
 
   return (
     <section className={styles['group']}>
@@ -176,11 +191,7 @@ function BookmarkGroup({ type, items, onDelete, deleteStatus }: GroupProps) {
         </div>
         <h2 className={styles['groupTitle']}>{label}s</h2>
         <span className={styles['groupCount']}>{items.length}</span>
-        <button
-          type="button"
-          className={styles['groupLink']}
-          onClick={() => navigate(route)}
-        >
+        <button type="button" className={styles['groupLink']} onClick={() => navigate(route)}>
           Practice all
           <ArrowUpRight size={13} />
         </button>
@@ -189,12 +200,7 @@ function BookmarkGroup({ type, items, onDelete, deleteStatus }: GroupProps) {
       {/* Cards */}
       <div className={styles['cardList']}>
         {items.map((item) => (
-          <BookmarkCard
-            key={item.id}
-            item={item}
-            onDelete={onDelete}
-            deleteStatus={deleteStatus}
-          />
+          <BookmarkCard key={item.id} item={item} onDelete={onDelete} deleteStatus={deleteStatus} />
         ))}
       </div>
     </section>
@@ -242,10 +248,10 @@ function EmptyState() {
 // ─── Page ──────────────────────────────────────────────────────────────────────
 
 export function BookmarksPage() {
-  const dispatch     = useAppDispatch();
-  const list         = useAppSelector(selectBookmarksList);
-  const listStatus   = useAppSelector(selectBookmarksListStatus);
-  const listError    = useAppSelector(selectBookmarksListError);
+  const dispatch = useAppDispatch();
+  const list = useAppSelector(selectBookmarksList);
+  const listStatus = useAppSelector(selectBookmarksListStatus);
+  const listError = useAppSelector(selectBookmarksListError);
   const deleteStatus = useAppSelector(selectDeleteStatus);
 
   useEffect(() => {
@@ -254,9 +260,12 @@ export function BookmarksPage() {
     }
   }, [listStatus, dispatch]);
 
-  const handleDelete = useCallback((id: string) => {
-    void dispatch(deleteBookmark(id));
-  }, [dispatch]);
+  const handleDelete = useCallback(
+    (id: string) => {
+      void dispatch(deleteBookmark(id));
+    },
+    [dispatch],
+  );
 
   const handleRetry = useCallback(() => {
     void dispatch(fetchBookmarks());
@@ -279,7 +288,6 @@ export function BookmarksPage() {
 
   return (
     <div className={styles['page']}>
-
       {/* Header */}
       <header className={styles['header']}>
         <div className={styles['headerLeft']}>
@@ -311,22 +319,21 @@ export function BookmarksPage() {
       )}
 
       {/* Content */}
-      {list.length === 0 && listStatus !== 'loading' && listError === null
-        ? <EmptyState />
-        : (
-          <div className={styles['groups']}>
-            {TYPE_ORDER.map((type) => (
-              <BookmarkGroup
-                key={type}
-                type={type}
-                items={grouped[type]}
-                onDelete={handleDelete}
-                deleteStatus={deleteStatus}
-              />
-            ))}
-          </div>
-        )
-      }
+      {list.length === 0 && listStatus !== 'loading' && listError === null ? (
+        <EmptyState />
+      ) : (
+        <div className={styles['groups']}>
+          {TYPE_ORDER.map((type) => (
+            <BookmarkGroup
+              key={type}
+              type={type}
+              items={grouped[type]}
+              onDelete={handleDelete}
+              deleteStatus={deleteStatus}
+            />
+          ))}
+        </div>
+      )}
     </div>
   );
 }

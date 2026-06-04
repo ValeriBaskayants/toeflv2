@@ -24,9 +24,8 @@ export const store = configureStore({
     quiz: quizSlice.reducer,
     bookmarks: bookmarksReducer.reducer,
     writing: writingSlice.reducer,
-    vocabulary: vocabularySlice.reducer
+    vocabulary: vocabularySlice.reducer,
   },
-
 });
 
 export type RootState = ReturnType<typeof store.getState>;

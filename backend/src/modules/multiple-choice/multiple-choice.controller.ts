@@ -7,17 +7,14 @@ import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import { IsEnum, IsOptional, IsString } from 'class-validator';
-import { Level } from '@prisma/client';
-class MCSessionQueryDto {
-  @IsOptional()
-  @IsEnum(Level)
-  level?: Level;
+import { IsOptional, IsString } from 'class-validator';
 
+class TimezoneDto {
   @IsOptional()
   @IsString()
   timezone?: string;
 }
+
 @Controller('multiple-choice')
 export class MultipleChoiceController {
   constructor(private readonly service: MultipleChoiceService) {}
@@ -31,10 +28,11 @@ export class MultipleChoiceController {
   submitSession(
     @CurrentUser() user: JwtUserPayload,
     @Body() dto: SubmitMCSessionDto,
-    @Query() query: MCSessionQueryDto,
+    @Query() query: TimezoneDto,
   ) {
-    return this.service.submitSession(user.id, dto, query.level as Level, query.timezone);
+    return this.service.submitSession(user.id, dto, query.timezone);
   }
+
   @Post('bulk')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')

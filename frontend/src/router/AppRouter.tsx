@@ -16,6 +16,7 @@ import QuizPage from '@/pages/Quizpage/Quizpage';
 import { BookmarksPage } from '@/pages/Bookmarkspage/Bookmarkspage';
 import WritingEditorPage from '@/pages/Writingeditorpage/Writingeditorpage';
 import WritingPage from '@/pages/Writingpage/Writingpage';
+import MistakesPage from '@/pages/MistakePage/MistakesPage';
 
 function ComingSoonPage({ title }: { title: string }) {
   return (
@@ -59,6 +60,8 @@ export function AppRouter() {
         <Route path="/grammar-rules" element={<GrammarRulesPage />} />
         <Route path="/grammar-rules/:slug" element={<GrammarRulesPage />} />
         <Route path="/placement" element={<PlacementPage />} />
+        <Route path="/mistakes"   element={<MistakesPage />} />
+
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

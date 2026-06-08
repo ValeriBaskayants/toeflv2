@@ -1,6 +1,144 @@
 import i18n from 'i18next';
 import { initReactI18next } from 'react-i18next';
 
+export const mistakesEN = {
+  title:    'My Mistakes',
+  subtitle: 'Review your errors and track which topics need more practice',
+  loading:  'Loading mistakes…',
+  error:    'Could not load mistakes',
+  retry:    'Try again',
+  total:    'mistakes',
+
+  stats: {
+    total:     'Total',
+    dueReview: 'Due review',
+    mastered:  'Mastered',
+    accuracy:  'Accuracy',
+  },
+
+  weakSpots: {
+    title:  'Weak spots',
+    errors: 'errors',
+  },
+
+  filters: {
+    source:            'Source',
+    category:          'Category',
+    status:            'Status',
+    all:               'All',
+    reset:             'Reset filters',
+    searchPlaceholder: 'Search by topic…',
+    noResults:         'No mistakes match the current filters',
+  },
+
+  card: {
+    dueNow:         'Due now',
+    recentAttempts: 'Recent attempts',
+    noAttempts:     'No attempts recorded yet',
+  },
+
+  empty: {
+    title: 'No mistakes yet — keep it up!',
+    hint:  'Errors from quizzes, writing, reading and listening will appear here as you practise.',
+  },
+};
+
+// ══════════════  RU  ══════════════
+export const mistakesRU = {
+  title:    'Мои ошибки',
+  subtitle: 'Просматривайте ошибки и отслеживайте темы, требующие дополнительной практики',
+  loading:  'Загружаем ошибки…',
+  error:    'Не удалось загрузить ошибки',
+  retry:    'Повторить',
+  total:    'ошибок',
+
+  stats: {
+    total:     'Всего',
+    dueReview: 'На повторение',
+    mastered:  'Освоено',
+    accuracy:  'Точность',
+  },
+
+  weakSpots: {
+    title:  'Слабые места',
+    errors: 'ошибок',
+  },
+
+  filters: {
+    source:            'Источник',
+    category:          'Категория',
+    status:            'Статус',
+    all:               'Все',
+    reset:             'Сбросить фильтры',
+    searchPlaceholder: 'Поиск по теме…',
+    noResults:         'Нет ошибок, соответствующих фильтрам',
+  },
+
+  card: {
+    dueNow:         'Пора повторить',
+    recentAttempts: 'Последние попытки',
+    noAttempts:     'Попыток пока нет',
+  },
+
+  empty: {
+    title: 'Ошибок пока нет — отличный результат!',
+    hint:  'Ошибки из тестов, письма, чтения и аудирования будут появляться здесь по мере практики.',
+  },
+};
+
+// ══════════════  HY  ══════════════
+export const mistakesHY = {
+  title:    'Im sahmanvatsner',
+  subtitle: 'Verakandel sahmanvatsnery ev hetekel bayts themaner, vory pityowm en avelacyal mamowm',
+  loading:  'Bervum en sahmanvatsner…',
+  error:    'Chhajhoghvets bervyl sahmanvatsner',
+  retry:    'Noric pordzel',
+  total:    'sahmanvatsnery',
+
+  stats: {
+    total:     'Ynthanur',
+    dueReview: 'Krknelow',
+    mastered:  'Tirapetvel',
+    accuracy:  'Chshtowtyown',
+  },
+
+  weakSpots: {
+    title:  'Thowyl kyetky',
+    errors: 'sahman',
+  },
+
+  filters: {
+    source:            'Akhbyowr',
+    category:          'Khowmb',
+    status:            'Ktakowm',
+    all:               'Bolor',
+    reset:             'Zarkel filtery',
+    searchPlaceholder: 'Orononel themayov…',
+    noResults:         'Filtreri hamapataskhann sahmanvatsnery chka',
+  },
+
+  card: {
+    dueNow:         'Pityowm e krkneli',
+    recentAttempts: 'Vrakin pordzerownery',
+    noAttempts:     'Pordzerownery derevan chka',
+  },
+
+  empty: {
+    title: 'Sahmanvatsnery derevan chka — bravo!',
+    hint:  'Testery, grovume, ynthercowe ev lselu sahmanvatsner kayerewi er aystegh mamowm cer.',
+  },
+};
+
+// ─────────────────────────────────────────────────────────────────────────────
+// INTEGRATION (i18n/index.ts):
+//
+//   en: { translation: { ...existing, mistakes: mistakesEN,
+//           navigation: { ...existing.navigation, mistakes: 'Mistakes' } } }
+//   ru: { translation: { ...existing, mistakes: mistakesRU,
+//           navigation: { ...existing.navigation, mistakes: 'Ошибки' } } }
+//   hy: { translation: { ...existing, mistakes: mistakesHY,
+//           navigation: { ...existing.navigation, mistakes: 'Sahmanvatsner' } } }
+// ─────────────────────────────────────────────────────────────────────────────
 export const listeningEN = {
   title: 'Listening',
   subtitle: 'Train your ear with real-world conversations and lectures',

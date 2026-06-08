@@ -20,16 +20,23 @@ class GetTopicsDto {
 export class ExercisesController {
   constructor(private readonly service: ExercisesService) {}
 
+  // GET /api/exercises?level=A1&difficulty=EASY&topic=Present+Simple
+  // userId из JWT — для userStatus обогащения
   @Get()
-  findAll(@Query() query: GetExercisesDto) {
-    return this.service.findAll(query);
+  findAll(
+    @CurrentUser() user: JwtUserPayload,
+    @Query() query: GetExercisesDto,
+  ) {
+    return this.service.findAll({ ...query, userId: user.id });
   }
 
+  // GET /api/exercises/topics?level=B1
   @Get('topics')
   getTopics(@Query() query: GetTopicsDto) {
     return this.service.getTopics(query.level);
   }
 
+  // POST /api/exercises/submit
   @Post('submit')
   submitAnswer(
     @CurrentUser() user: JwtUserPayload,

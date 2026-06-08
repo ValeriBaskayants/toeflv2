@@ -20,8 +20,11 @@ export class WritingController {
   constructor(private readonly service: WritingService) {}
 
   @Get('prompts')
-  getPrompts(@Query() query: GetPromptsDto) {
-    return this.service.getPrompts(query.level);
+  getPrompts(
+    @CurrentUser() user: JwtUserPayload,
+    @Query() query: GetPromptsDto,
+  ) {
+    return this.service.getPrompts(user.id, query.level);
   }
 
   @Get('prompts/:id')
@@ -29,18 +32,33 @@ export class WritingController {
     return this.service.getPromptById(id);
   }
 
+  @Get('stats')
+  getUserStats(@CurrentUser() user: JwtUserPayload) {
+    return this.service.getUserStats(user.id);
+  }
+
   @Post('submit')
-  submit(@CurrentUser() user: JwtUserPayload, @Body() dto: SubmitWritingDto) {
-    return this.service.submit(user.id, dto.promptId, dto.text);
+  submit(
+    @CurrentUser() user: JwtUserPayload,
+    @Body() dto: SubmitWritingDto,
+    @Query('timezone') timezone?: string,
+  ) {
+    return this.service.submit(user.id, dto.promptId, dto.text, timezone);
   }
 
   @Get('submissions')
-  getSubmissions(@CurrentUser() user: JwtUserPayload, @Query() query: GetSubmissionsDto) {
+  getSubmissions(
+    @CurrentUser() user: JwtUserPayload,
+    @Query() query: GetSubmissionsDto,
+  ) {
     return this.service.getSubmissions(user.id, query.promptId);
   }
 
   @Get('submissions/:id')
-  getSubmission(@CurrentUser() user: JwtUserPayload, @Param('id') id: string) {
+  getSubmission(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id') id: string,
+  ) {
     return this.service.getSubmission(id, user.id);
   }
 

@@ -13,22 +13,34 @@ export class ListeningController {
   constructor(private readonly service: ListeningService) {}
 
   @Get()
-  findAll(@Query() query: GetListeningDto) {
-    return this.service.findAll(query);
+  findAll(
+    @CurrentUser() user: JwtUserPayload,
+    @Query() query: GetListeningDto,
+  ) {
+    return this.service.findAll({ ...query, userId: user.id });
   }
 
   @Get(':id')
-  findById(@Param('id') id: string, @CurrentUser() user: JwtUserPayload) {
+  findById(
+    @Param('id') id: string,
+    @CurrentUser() user: JwtUserPayload,
+  ) {
     return this.service.findById(id, user.id);
   }
 
   @Post('sessions')
-  startSession(@CurrentUser() user: JwtUserPayload, @Body() dto: StartSessionDto) {
+  startSession(
+    @CurrentUser() user: JwtUserPayload,
+    @Body() dto: StartSessionDto,
+  ) {
     return this.service.startSession(user.id, dto);
   }
 
   @Post('sessions/:id/play')
-  recordPlay(@CurrentUser() user: JwtUserPayload, @Param('id') sessionId: string) {
+  recordPlay(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id') sessionId: string,
+  ) {
     return this.service.recordPlay(user.id, sessionId);
   }
 
@@ -51,12 +63,18 @@ export class ListeningController {
   }
 
   @Post('sessions/:id/complete')
-  completeSession(@CurrentUser() user: JwtUserPayload, @Param('id') sessionId: string) {
+  completeSession(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id') sessionId: string,
+  ) {
     return this.service.completeSession(user.id, sessionId);
   }
 
   @Get('sessions')
-  getUserSessions(@CurrentUser() user: JwtUserPayload, @Query('materialId') materialId?: string) {
+  getUserSessions(
+    @CurrentUser() user: JwtUserPayload,
+    @Query('materialId') materialId?: string,
+  ) {
     return this.service.getUserSessions(user.id, materialId);
   }
 

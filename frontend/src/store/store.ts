@@ -11,6 +11,7 @@ import { quizSlice } from './Slices/QuizSlice';
 import { bookmarksReducer } from './Slices/BookMarksSlice';
 import { writingSlice } from './Slices/WritingSlice';
 import { vocabularySlice } from './Slices/VocabularySlice';
+import { mistakesSlice } from './Slices/MistakesSlice';
 
 export const store = configureStore({
   reducer: {
@@ -25,6 +26,7 @@ export const store = configureStore({
     bookmarks: bookmarksReducer.reducer,
     writing: writingSlice.reducer,
     vocabulary: vocabularySlice.reducer,
+    mistakes: mistakesSlice.reducer,
   },
 });
 

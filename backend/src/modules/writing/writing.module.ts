@@ -1,12 +1,17 @@
 import { Module } from '@nestjs/common';
 import { BullModule } from '@nestjs/bullmq';
 import { WritingService } from './writing.service';
+import { WritingController } from './writing.controller';
 import { WritingProcessor } from './processors/writing.processor';
-import PrismaModule from './../prisma/prisma.module';
-
+import { ProgressModule } from '../progress/progress.module';
+ 
 @Module({
-  imports: [PrismaModule, BullModule.registerQueue({ name: 'writing-analysis' })],
-  providers: [WritingService, WritingProcessor],
-  exports: [WritingService],
+  imports: [
+    BullModule.registerQueue({ name: 'writing-analysis' }),
+    ProgressModule,  
+  ],
+  controllers: [WritingController],
+  providers:   [WritingService, WritingProcessor],
+  exports:     [WritingService],
 })
 export class WritingModule {}

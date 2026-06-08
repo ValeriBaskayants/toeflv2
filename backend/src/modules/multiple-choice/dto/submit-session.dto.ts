@@ -16,7 +16,7 @@ class SubmitMCAnswerDto {
 
   @IsInt()
   @Min(0)
-  @Max(3)
+  @Max(5)
   selectedIndex!: number;
 }
 

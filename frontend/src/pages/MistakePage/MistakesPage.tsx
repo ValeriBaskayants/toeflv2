@@ -4,7 +4,7 @@ import {
     AlertTriangle, RefreshCw, AlertCircle,
     CheckCircle2, XCircle, Clock, RotateCcw,
     BookOpen, Headphones, PenLine, Target,
-    Brain, Lightbulb, Flame, Search, SlidersHorizontal,
+    Search, SlidersHorizontal,
     ChevronDown, Zap, TrendingDown,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
@@ -144,7 +144,6 @@ function MistakeCard({ mistake }: { mistake: UserMistake }) {
     const src = SOURCE_CONFIG[mistake.source];
     const cat = CATEGORY_CONFIG[mistake.category];
     const statusConf = STATUS_CONFIG[mistake.status];
-    const total = mistake.wrongCount + mistake.correctCount;
 
     return (
         <article

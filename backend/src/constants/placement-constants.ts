@@ -85,7 +85,7 @@ export function eapForDimension(
     return ll;
   });
 
-  const logPosterior = logLik.map((ll, idx) => ll + logPrior[idx]);
+  const logPosterior = logLik.map((ll, idx) => ll + logPrior[idx]!);
   const maxLogPosterior = Math.max(...logPosterior);
   const posterior = logPosterior.map((lp) => Math.exp(lp - maxLogPosterior));
   const normalization = posterior.reduce((sum, value) => sum + value, 0);
@@ -95,13 +95,13 @@ export function eapForDimension(
   );
 
   const estimate = THETA_GRID.reduce(
-    (sum, theta, idx) => sum + theta * normalizedPosterior[idx],
+    (sum, theta, idx) => sum + theta * normalizedPosterior[idx]!,
     0,
   );
 
   const variance = THETA_GRID.reduce((sum, theta, idx) => {
     const diff = theta - estimate;
-    return sum + diff * diff * normalizedPosterior[idx];
+    return sum + diff * diff * normalizedPosterior[idx]!;
   }, 0);
 
   return { estimate, se: Math.sqrt(variance) };

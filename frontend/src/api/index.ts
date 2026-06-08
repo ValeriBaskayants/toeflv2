@@ -6,7 +6,7 @@ export { adminApi } from './services/admin';
 export { MultipleChoiceApi } from './services/multiple-choice';
 export { readingsApi } from './services/readings';
 export { exercisesApi } from './services/exercises';
-export { vocabularyApi } from './services/vocabulary';
+export { VocabularyApi } from './services/vocabulary';
 export { grammarRulesApi } from './services/grammar-rules';
 export { writingApi } from './services/writing';
 export { listeningApi } from './services/listening';

@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/tool
 import {
   adminApi,
   exercisesApi,
-  vocabularyApi,
+  VocabularyApi,
   grammarRulesApi,
   readingsApi,
   MultipleChoiceApi,
@@ -88,7 +88,7 @@ export const importContent = createAsyncThunk<
         case 'grammarRules':
           return grammarRulesApi.bulkCreate(data);
         case 'vocabulary':
-          return vocabularyApi.bulkCreate(data);
+          return VocabularyApi.bulkCreate(data);
         case 'readings':
           return readingsApi.bulkCreate(data);
         case 'multipleChoice':

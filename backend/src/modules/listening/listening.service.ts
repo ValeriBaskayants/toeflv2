@@ -130,7 +130,7 @@ export class ListeningService {
     });
 
     const ORDER = { in_progress: 0, not_started: 1, completed: 2 };
-    return enriched.sort((a, b) => ORDER[a.userStatus] - ORDER[b.userStatus]);
+    return enriched.sort((a, b) => ORDER[a.userStatus as keyof typeof ORDER] - ORDER[b.userStatus as keyof typeof ORDER]);
   }
 
 
@@ -232,11 +232,10 @@ export class ListeningService {
 
     const isCorrect = dto.selectedIndex === question.correctIndex;
 
-    type AnswerRecord = { questionId: string };
-    const existingAnswers = (session.answers as AnswerRecord[]) ?? [];
+    const existingAnswers = (session.answers as Prisma.ListeningAnswerRecordCreateInput[]) ?? [];
     const filtered = existingAnswers.filter((a) => a.questionId !== dto.questionId);
 
-    const newAnswer = {
+    const newAnswer: Prisma.ListeningAnswerRecordCreateInput = {
       questionId: dto.questionId,
       selectedIndex: dto.selectedIndex,
       isCorrect,

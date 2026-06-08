@@ -2,7 +2,7 @@ import { Processor, WorkerHost } from '@nestjs/bullmq';
 import { Logger } from '@nestjs/common';
 import type { Job } from 'bullmq';
 import { PrismaService } from '../../prisma/prisma.service';
-import { ProgressService } from '../progress/progress.service';
+import { ProgressService } from '../../progress/progress.service';
 import {
   computeXP,
   XP_BASE,
@@ -232,7 +232,6 @@ export class WritingProcessor extends WorkerHost {
             select: { userId: true },
           }))!.userId,
           score:    overallScore,
-          xpEarned,
           timezone,
         });
       } else {

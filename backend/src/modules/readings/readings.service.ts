@@ -26,7 +26,7 @@ interface QuestionShape {
 // как суррогат истории + отдельный кеш в DailyActivity.
 // TODO для v2: добавить ReadingSession модель в Prisma для полной истории.
 
-interface SubmitResult {
+export interface SubmitResult {
   results: Array<{
     questionIdx:  number;
     isCorrect:    boolean;

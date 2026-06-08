@@ -208,7 +208,6 @@ export class VocabularyService {
           nextReviewDate: now,
           status:         'NEW' as WordLearningStatus,
         })),
-        skipDuplicates: true,
       });
     }
 
@@ -235,7 +234,7 @@ export class VocabularyService {
     const toInsert    = words.filter((w) => !existingSet.has(w.word));
 
     if (toInsert.length > 0) {
-      await this.prisma.vocabulary.createMany({ data: toInsert, skipDuplicates: true });
+      await this.prisma.vocabulary.createMany({ data: toInsert });
     }
 
     return { totalProcessed: words.length, inserted: toInsert.length, skipped: existing.length };

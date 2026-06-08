@@ -8,8 +8,10 @@
 
     "target": "ES2023",
     "outDir": "./dist",
+    "rootDir": "./src",
     "baseUrl": "./",
     "declaration": true,
+    "declarationMap": true,
     "removeComments": true,
     "sourceMap": true,
     "incremental": true,
@@ -21,12 +23,18 @@
     "strictNullChecks": true,
     "strictBindCallApply": true,
     "strictFunctionTypes": true,
+    "strictPropertyInitialization": true,
+    "noImplicitThis": true,
+    "noImplicitReturns": true,
     "noFallthroughCasesInSwitch": true,
-
-    "noUncheckedIndexedAccess": false,
+    "noImplicitOverride": true,
+    "noUncheckedIndexedAccess": true,
 
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true
-  }
+  },
+  "include": ["src/**/*"],
+  "exclude": ["node_modules", "dist", "**/*.spec.ts"]
 }
+

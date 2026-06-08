@@ -1,6 +1,6 @@
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
 import { IsOptional, IsString, MaxLength } from 'class-validator';
-import { ReadingsService } from './readings.service';
+import { ReadingsService, type SubmitResult } from './readings.service';
 import { GetReadingsDto } from './dto/get-readings.dto';
 import { BulkCreateReadingsDto } from './dto/bulk-create-reading.dto';
 import { SubmitReadingDto } from './dto/submit-reading.dto';
@@ -58,7 +58,7 @@ export class ReadingsController {
     @CurrentUser() user: JwtUserPayload,
     @Body() dto: SubmitReadingDto,
     @Query('timezone') timezone?: string,
-  ) {
+  ): Promise<SubmitResult> {
     return this.service.submitAnswers(user.id, dto, timezone);
   }
 

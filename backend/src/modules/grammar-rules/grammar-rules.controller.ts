@@ -8,7 +8,6 @@ import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 
-
 class GetGrammarRulesWithSearchDto extends GetGrammarRulesDto {
   @IsOptional()
   @IsString()
@@ -20,31 +19,20 @@ class GetGrammarRulesWithSearchDto extends GetGrammarRulesDto {
 export class GrammarRulesController {
   constructor(private readonly service: GrammarRulesService) {}
 
-  
-  
   @Get()
-  findAll(
-    @CurrentUser() user: JwtUserPayload,
-    @Query() query: GetGrammarRulesWithSearchDto,
-  ) {
+  findAll(@CurrentUser() user: JwtUserPayload, @Query() query: GetGrammarRulesWithSearchDto) {
     return this.service.findAll({
       userId: user.id,
-      level:  query.level,
+      level: query.level,
       search: query.search,
     });
   }
 
-  
-  
   @Get(':slug')
-  findBySlug(
-    @Param('slug') slug: string,
-    @CurrentUser() user: JwtUserPayload,
-  ) {
+  findBySlug(@Param('slug') slug: string, @CurrentUser() user: JwtUserPayload) {
     return this.service.findBySlug(slug, user.id);
   }
 
-  
   @Post('bulk')
   @UseGuards(RolesGuard)
   @Roles('ADMIN')

@@ -23,10 +23,7 @@ export class ExercisesController {
   // GET /api/exercises?level=A1&difficulty=EASY&topic=Present+Simple
   // userId из JWT — для userStatus обогащения
   @Get()
-  findAll(
-    @CurrentUser() user: JwtUserPayload,
-    @Query() query: GetExercisesDto,
-  ) {
+  findAll(@CurrentUser() user: JwtUserPayload, @Query() query: GetExercisesDto) {
     return this.service.findAll({ ...query, userId: user.id });
   }
 

@@ -23,7 +23,6 @@ import {
   selectGrammarRuleDetailError,
 } from '@/store/Slices/GrammarRulesSlice';
 
-// НОВЫЕ ИМПОРТЫ ДЛЯ ЗАКЛАДОК
 import { fetchBookmarks } from '@/store/Slices/BookMarksSlice';
 import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
 
@@ -35,8 +34,6 @@ import type {
 } from '@/types/grammar/Grammar.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './GrammarRulePage.module.css';
-
-// ─── Constants ────────────────────────────────────────────────────────────────
 
 const LEVEL_COLOR: Record<string, string> = {
   A1: '#22c55e',
@@ -73,8 +70,6 @@ const TABS: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
   { key: 'compare', label: 'Compare', icon: <GitCompare size={14} /> },
 ];
 
-// ─── Shared: example block ────────────────────────────────────────────────────
-
 function ExampleBlock({ examples }: { examples: GrammarExample[] }) {
   if (examples.length === 0) {
     return null;
@@ -92,8 +87,6 @@ function ExampleBlock({ examples }: { examples: GrammarExample[] }) {
     </ul>
   );
 }
-
-// ─── Accordion item ───────────────────────────────────────────────────────────
 
 function Accordion({
   title,
@@ -138,8 +131,6 @@ function Accordion({
     </div>
   );
 }
-
-// ─── Tab: Overview ────────────────────────────────────────────────────────────
 
 function OverviewTab({
   coreConcept,
@@ -193,8 +184,6 @@ function OverviewTab({
   );
 }
 
-// ─── Tab: Examples (Usages + Sections) ───────────────────────────────────────
-
 function UsagesTab({ usages, sections }: { usages: GrammarUsage[]; sections: GrammarSection[] }) {
   const hasContent = usages.length > 0 || sections.length > 0;
 
@@ -241,8 +230,6 @@ function UsagesTab({ usages, sections }: { usages: GrammarUsage[]; sections: Gra
   );
 }
 
-// ─── Tab: Common Mistakes ─────────────────────────────────────────────────────
-
 function MistakesTab({ mistakes }: { mistakes: string[] }) {
   if (mistakes.length === 0) {
     return (
@@ -270,8 +257,6 @@ function MistakesTab({ mistakes }: { mistakes: string[] }) {
     </div>
   );
 }
-
-// ─── Tab: Comparisons ─────────────────────────────────────────────────────────
 
 function CompareTab({
   comparisons,
@@ -312,8 +297,6 @@ function CompareTab({
   );
 }
 
-// ─── Sidebar ──────────────────────────────────────────────────────────────────
-
 function Sidebar({
   relatedTopics,
   onNavigate,
@@ -350,8 +333,6 @@ function Sidebar({
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
 export function GrammarRulePage() {
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
@@ -363,7 +344,6 @@ export function GrammarRulePage() {
 
   const [activeTab, setActiveTab] = useState<TabKey>('overview');
 
-  // ЗАГРУЗКА ЗАКЛАДОК НА СЛУЧАЙ ПРЯМОГО ПЕРЕХОДА НА СТРАНИЦУ
   useEffect(() => {
     void dispatch(fetchBookmarks());
   }, [dispatch]);
@@ -388,7 +368,6 @@ export function GrammarRulePage() {
     }
   }, [slug, dispatch]);
 
-  // Navigate to another rule by topic name (best-effort slug conversion)
   const handleNavigateToTopic = useCallback(
     (topic: string) => {
       const guessedSlug = topic.toLowerCase().replace(/\s+/g, '-');
@@ -425,7 +404,6 @@ export function GrammarRulePage() {
 
   const accentColor = LEVEL_COLOR[rule.level] ?? '#6366f1';
 
-  // Derive which tabs have content to show counts / disable empties
   const tabCounts: Record<TabKey, number> = {
     overview:
       (rule.coreConcept.length > 0 ? 1 : 0) +
@@ -438,19 +416,16 @@ export function GrammarRulePage() {
 
   return (
     <div className={styles['page']}>
-      {/* ── Back nav ── */}
       <button type="button" className={styles['backBtn']} onClick={handleBack}>
         <ArrowLeft size={15} /> Grammar Rules
       </button>
 
-      {/* ── Hero ── */}
       <header
         className={styles['hero']}
         style={{ '--hero-accent': accentColor } as React.CSSProperties}
       >
         <div className={styles['heroAccentLine']} />
         <div className={styles['heroInner']}>
-          {/* ОБЕРТКА ДЛЯ БЕЙДЖА И КНОПКИ ЗАКЛАДОК */}
           <div
             style={{
               display: 'flex',
@@ -465,7 +440,7 @@ export function GrammarRulePage() {
                 background: `${accentColor}1a`,
                 color: accentColor,
                 borderColor: `${accentColor}33`,
-                margin: 0, // Убираем возможный марджин, так как используем flex
+                margin: 0,
               }}
             >
               {LEVEL_DISPLAY[rule.level] ?? rule.level}
@@ -479,11 +454,8 @@ export function GrammarRulePage() {
         </div>
       </header>
 
-      {/* ── Body: tabs + sidebar ── */}
       <div className={styles['body']}>
-        {/* Main content */}
         <div className={styles['main']}>
-          {/* Tab bar */}
           <div className={styles['tabBar']} role="tablist">
             {TABS.map(({ key, label, icon }) => (
               <button
@@ -508,7 +480,6 @@ export function GrammarRulePage() {
             ))}
           </div>
 
-          {/* Tab panels */}
           {activeTab === 'overview' && (
             <OverviewTab
               coreConcept={rule.coreConcept}
@@ -523,7 +494,6 @@ export function GrammarRulePage() {
           )}
         </div>
 
-        {/* Sidebar */}
         <Sidebar relatedTopics={rule.relatedTopics} onNavigate={handleNavigateToTopic} />
       </div>
     </div>

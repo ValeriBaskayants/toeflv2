@@ -13,23 +13,22 @@ import type { GetMultipleChoiceDto } from './dto/get-multiple-choice.dto';
 import type { SubmitMCSessionDto } from './dto/submit-session.dto';
 
 const DEFAULT_LIMIT = 50;
-const MAX_LIMIT     = 100;
+const MAX_LIMIT = 100;
 
 const MIN_QUESTIONS_FOR_PROGRESS = 5;
 
 @Injectable()
 export class MultipleChoiceService {
   constructor(
-    private readonly prisma:    PrismaService,
-    private readonly progress:  ProgressService,
+    private readonly prisma: PrismaService,
+    private readonly progress: ProgressService,
   ) {}
-
 
   async findAll(query: GetMultipleChoiceDto) {
     const where: Prisma.MultipleChoiceWhereInput = {};
-    if (query.level      !== undefined) where.level      = query.level;
+    if (query.level !== undefined) where.level = query.level;
     if (query.difficulty !== undefined) where.difficulty = query.difficulty;
-    if (query.topic      !== undefined) where.topic = { contains: query.topic, mode: 'insensitive' };
+    if (query.topic !== undefined) where.topic = { contains: query.topic, mode: 'insensitive' };
 
     const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
     return this.prisma.multipleChoice.findMany({
@@ -55,24 +54,29 @@ export class MultipleChoiceService {
   }
 
   async submitSession(
-    userId:    string,
-    dto:       SubmitMCSessionDto,
+    userId: string,
+    dto: SubmitMCSessionDto,
     timezone?: string,
   ): Promise<{
-    results:       Array<{ questionId: string; isCorrect: boolean; correctIndex: number; explanation: string }>;
-    correctCount:  number;
-    totalCount:    number;
-    accuracy:      number;
-    xpEarned:      number;
+    results: Array<{
+      questionId: string;
+      isCorrect: boolean;
+      correctIndex: number;
+      explanation: string;
+    }>;
+    correctCount: number;
+    totalCount: number;
+    accuracy: number;
+    xpEarned: number;
     countedAsCompleted: boolean;
-    feedback:      string;
+    feedback: string;
   }> {
     if (dto.answers.length === 0) {
       throw new BadRequestException('At least one answer is required');
     }
 
     const user = await this.prisma.user.findUnique({
-      where:  { id: userId },
+      where: { id: userId },
       select: { currentLevel: true, streak: true },
     });
     if (user === null) throw new NotFoundException('User not found');
@@ -80,7 +84,7 @@ export class MultipleChoiceService {
     const level = user.currentLevel;
 
     const questionIds = dto.answers.map((a) => a.questionId);
-    const questions   = await this.prisma.multipleChoice.findMany({
+    const questions = await this.prisma.multipleChoice.findMany({
       where: { id: { in: questionIds } },
     });
 
@@ -91,7 +95,7 @@ export class MultipleChoiceService {
     const qMap = new Map(questions.map((q) => [q.id, q]));
 
     let correctCount = 0;
-    let totalXpBase  = 0;
+    let totalXpBase = 0;
     const mistakeOps: Promise<unknown>[] = [];
 
     const results = dto.answers
@@ -101,7 +105,8 @@ export class MultipleChoiceService {
 
         const isCorrect = a.selectedIndex === question.correctIndex;
         const difficulty = question.difficulty ?? 'EASY';
-        const diffMult   = DIFFICULTY_XP_MULTIPLIER[difficulty as keyof typeof DIFFICULTY_XP_MULTIPLIER] ?? 1.0;
+        const diffMult =
+          DIFFICULTY_XP_MULTIPLIER[difficulty as keyof typeof DIFFICULTY_XP_MULTIPLIER] ?? 1.0;
 
         if (isCorrect) {
           correctCount++;
@@ -110,30 +115,30 @@ export class MultipleChoiceService {
           mistakeOps.push(
             this.prisma.userMistake.updateMany({
               where: { userId, targetId: a.questionId },
-              data:  { correctCount: { increment: 1 } },
+              data: { correctCount: { increment: 1 } },
             }),
           );
         } else {
           mistakeOps.push(
             this.prisma.userMistake.upsert({
-              where:  { userId_targetId: { userId, targetId: a.questionId } },
+              where: { userId_targetId: { userId, targetId: a.questionId } },
               create: {
                 userId,
-                targetId:     a.questionId,
-                source:       'QUIZ',
-                topic:        question.topic ?? 'General',
-                category:     'GRAMMAR',
+                targetId: a.questionId,
+                source: 'QUIZ',
+                topic: question.topic ?? 'General',
+                category: 'GRAMMAR',
                 level,
-                wrongCount:   1,
+                wrongCount: 1,
                 correctCount: 0,
-                status:       'LEARNING',
-                nextReview:   new Date(Date.now() + 24 * 60 * 60 * 1000),
-                easeFactor:   2.5,
+                status: 'LEARNING',
+                nextReview: new Date(Date.now() + 24 * 60 * 60 * 1000),
+                easeFactor: 2.5,
                 attempts: {
                   create: {
-                    userAnswer:    String(a.selectedIndex),
+                    userAnswer: String(a.selectedIndex),
                     correctAnswer: String(question.correctIndex),
-                    isCorrect:     false,
+                    isCorrect: false,
                   },
                 },
               },
@@ -141,9 +146,9 @@ export class MultipleChoiceService {
                 wrongCount: { increment: 1 },
                 attempts: {
                   create: {
-                    userAnswer:    String(a.selectedIndex),
+                    userAnswer: String(a.selectedIndex),
                     correctAnswer: String(question.correctIndex),
-                    isCorrect:     false,
+                    isCorrect: false,
                   },
                 },
               },
@@ -152,10 +157,10 @@ export class MultipleChoiceService {
         }
 
         return {
-          questionId:   a.questionId,
+          questionId: a.questionId,
           isCorrect,
           correctIndex: question.correctIndex,
-          explanation:  question.explanation,
+          explanation: question.explanation,
         };
       })
       .filter((r): r is NonNullable<typeof r> => r !== null);
@@ -163,24 +168,21 @@ export class MultipleChoiceService {
     await Promise.all(mistakeOps);
 
     const totalCount = results.length;
-    const accuracy   = totalCount > 0
-      ? Math.round((correctCount / totalCount) * 100)
-      : 0;
+    const accuracy = totalCount > 0 ? Math.round((correctCount / totalCount) * 100) : 0;
 
     const countedAsCompleted =
-      totalCount >= MIN_QUESTIONS_FOR_PROGRESS &&
-      isSessionCountable(accuracy);
+      totalCount >= MIN_QUESTIONS_FOR_PROGRESS && isSessionCountable(accuracy);
 
     const xpEarned = computeXP({
-      base:     Math.round(totalXpBase),
-      streak:   user.streak,
+      base: Math.round(totalXpBase),
+      streak: user.streak,
       accuracy,
     });
 
     if (countedAsCompleted) {
       await this.progress.recordSkillCompletion({
         userId,
-        skill:    'quiz',
+        skill: 'quiz',
         accuracy,
         xpEarned,
         timezone,
@@ -207,22 +209,21 @@ export class MultipleChoiceService {
     };
   }
 
-
   async bulkCreate(items: CreateMultipleChoiceDto[]): Promise<{
     totalProcessed: number;
-    inserted:       number;
-    skipped:        number;
+    inserted: number;
+    skipped: number;
   }> {
     if (items.length === 0) return { totalProcessed: 0, inserted: 0, skipped: 0 };
 
     const questions = items.map((i) => i.question);
-    const existing  = await this.prisma.multipleChoice.findMany({
-      where:  { question: { in: questions } },
+    const existing = await this.prisma.multipleChoice.findMany({
+      where: { question: { in: questions } },
       select: { question: true },
     });
 
     const existingSet = new Set(existing.map((e) => e.question));
-    const toInsert    = items.filter((i) => !existingSet.has(i.question));
+    const toInsert = items.filter((i) => !existingSet.has(i.question));
 
     if (toInsert.length > 0) {
       await this.prisma.multipleChoice.createMany({ data: toInsert });
@@ -232,11 +233,10 @@ export class MultipleChoiceService {
   }
 }
 
-
 function buildQuizFeedback(
-  accuracy:           number,
-  correctCount:       number,
-  totalCount:         number,
+  accuracy: number,
+  correctCount: number,
+  totalCount: number,
   countedAsCompleted: boolean,
 ): string {
   const wrong = totalCount - correctCount;

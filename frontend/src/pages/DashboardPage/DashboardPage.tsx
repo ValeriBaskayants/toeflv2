@@ -32,8 +32,6 @@ import { FullPageSpinner } from '@/components/ui/Spinner';
 import { PlacementBanner } from '@/components/component/PlacementBanner/PlacementBanner';
 import styles from './DashboardPage.module.css';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
-
 const SKILL_CONFIGS = [
   { key: 'grammar', Icon: CheckCheck, label: 'Grammar', color: '#14b8a6' },
   { key: 'reading', Icon: BookOpen, label: 'Reading', color: '#22c55e' },
@@ -44,8 +42,6 @@ const SKILL_CONFIGS = [
 ] as const;
 
 type SkillKey = (typeof SKILL_CONFIGS)[number]['key'];
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function buildWeekDots(recentActivity: DailyActivity[]) {
   const activitySet = new Set(recentActivity.map((a) => a.date));
@@ -96,8 +92,6 @@ function getSkillDetailLabel(
   return `${breakdown.completed}/${breakdown.required} done · ${Math.round(breakdown.accuracy)}% accuracy`;
 }
 
-// ─── Sub-components ───────────────────────────────────────────────────────────
-
 function GreetingMessage({ name }: { name: string }) {
   const hour = new Date().getHours();
   const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
@@ -145,8 +139,6 @@ function ReadinessRing({ percent }: { percent: number }) {
   );
 }
 
-// ─── Main component ───────────────────────────────────────────────────────────
-
 export function DashboardPage() {
   const dispatch = useAppDispatch();
 
@@ -156,17 +148,13 @@ export function DashboardPage() {
   const error = useAppSelector(selectProgressError);
   const isLevelingUp = useAppSelector(selectIsLevelingUp);
 
-  // Placement state — читаем целиком, деструктурируем нужное
   const { showBanner, statusLoaded } = useAppSelector((state) => state.placement);
 
   useEffect(() => {
-    // Загружаем прогресс если ещё не загружен
     if (data === null && !isLoading && error === null) {
       void dispatch(fetchDashboard());
     }
 
-    // Загружаем статус placement один раз при монтировании страницы
-    // statusLoaded гарантирует что повторных запросов не будет
     if (!statusLoaded) {
       void dispatch(fetchPlacementStatus());
     }
@@ -180,7 +168,6 @@ export function DashboardPage() {
     void dispatch(requestLevelUp());
   }, [dispatch]);
 
-  // Guaranteed by ProtectedRoute
   if (user === null) {
     return null;
   }
@@ -200,13 +187,8 @@ export function DashboardPage() {
         {user.role === 'ADMIN' && <span className={styles['adminBadge']}>Admin</span>}
       </header>
 
-      {/* ── Placement banner ─────────────────────────────────────────────────
-          Показывается пока пользователь не прошёл / не пропустил placement test.
-          statusLoaded предотвращает flash до ответа API.
-      ── */}
       {showBanner && statusLoaded && <PlacementBanner />}
 
-      {/* ── Error banner ── */}
       {error !== null && (
         <div className={styles['errorBanner']}>
           <AlertCircle size={16} />
@@ -220,7 +202,6 @@ export function DashboardPage() {
 
       {data !== null && (
         <>
-          {/* ── Quick stats ── */}
           <div className={styles['statsGrid']}>
             <div className={styles['statCard']}>
               <div className={`${styles['statIcon']} ${styles['purple']}`}>
@@ -255,7 +236,6 @@ export function DashboardPage() {
             </div>
           </div>
 
-          {/* ── Next goal card ── */}
           <div className={styles['nextGoalCard']}>
             <div className={styles['nextGoalIcon']}>
               <Target size={17} />
@@ -267,7 +247,6 @@ export function DashboardPage() {
             <ArrowRight size={15} className={styles['nextGoalArrow']} />
           </div>
 
-          {/* ── Level readiness ── */}
           <section className={styles['readinessSection']}>
             <div className={styles['readinessLeft']}>
               <h2 className={styles['sectionTitle']}>Level Readiness</h2>
@@ -291,7 +270,6 @@ export function DashboardPage() {
             <ReadinessRing percent={data.readinessPercent} />
           </section>
 
-          {/* ── Weekly activity ── */}
           <section className={styles['activitySection']}>
             <div className={styles['sectionHeader']}>
               <h2 className={styles['sectionTitle']}>This Week</h2>
@@ -310,7 +288,6 @@ export function DashboardPage() {
             </div>
           </section>
 
-          {/* ── Skill mastery grid ── */}
           <section>
             <div className={styles['sectionHeader']}>
               <h2 className={styles['sectionTitle']}>Skill Mastery</h2>
@@ -371,7 +348,6 @@ export function DashboardPage() {
             </div>
           </section>
 
-          {/* ── Coming soon ── */}
           <div className={styles['comingSoonCard']}>
             <Mic size={16} />
             <span>Speaking practice — coming soon</span>

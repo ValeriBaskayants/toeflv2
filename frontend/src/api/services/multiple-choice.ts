@@ -3,20 +3,19 @@ import type {
   MultipleChoice,
   SubmitMCSessionResponse,
   SubmitMCSessionDto,
+  BulkCreateResponse,
 } from '@/types/multipleChoice/MultipleChoice.types';
 import { api } from '../client';
-import type { ImportResult } from '@/types/admin/Admin.types';
-import type { Level } from '../../types/globalTypes';
 
 export const MultipleChoiceApi = {
   getList: (params: GetMultipleChoiceQuery) =>
     api.get<MultipleChoice[]>('/multiple-choice', { params }),
 
-  submit: (payload: SubmitMCSessionDto, level: Level, timezone?: string) =>
+  submit: (payload: SubmitMCSessionDto, timezone?: string) =>
     api.post<SubmitMCSessionResponse>('/multiple-choice/submit', payload, {
-      params: { level, timezone },
+      params: timezone !== undefined ? { timezone } : undefined,
     }),
 
-  bulkCreate: (multipleChoice: unknown[]) =>
-    api.post<ImportResult>('/multiple-choice/bulk', { items: multipleChoice }),
+  bulkCreate: (items: unknown[]) =>
+    api.post<BulkCreateResponse>('/multiple-choice/bulk', { items }),
 };

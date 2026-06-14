@@ -692,3 +692,35 @@
 @media (max-width: 480px) {
   .page { padding: 1.25rem 1rem 3rem; }
 }
+
+.attemptInfo {
+  margin-bottom: 0.5rem;
+}
+
+
+.attemptBadge {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  color: var(--text-3);
+  background: var(--surface-2);
+  border: 1px solid var(--border);
+  padding: 0.3rem 0.75rem;
+  border-radius: 100px;
+}
+
+
+.attemptWarn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.4rem;
+  font-size: 0.78rem;
+  font-weight: 600;
+  color: #f59e0b;
+  background: rgba(245, 158, 11, 0.08);
+  border: 1px solid rgba(245, 158, 11, 0.25);
+  padding: 0.4rem 0.875rem;
+  border-radius: var(--radius-md);
+}

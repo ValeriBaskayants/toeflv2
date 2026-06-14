@@ -60,8 +60,7 @@ export function AppRouter() {
         <Route path="/grammar-rules" element={<GrammarRulesPage />} />
         <Route path="/grammar-rules/:slug" element={<GrammarRulesPage />} />
         <Route path="/placement" element={<PlacementPage />} />
-        <Route path="/mistakes"   element={<MistakesPage />} />
-
+        <Route path="/mistakes" element={<MistakesPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

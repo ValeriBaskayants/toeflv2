@@ -1,18 +1,56 @@
-import { Injectable } from '@nestjs/common';
-import { MistakeSource, Prisma } from '@prisma/client';
+import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/common';
+import { MasteryStatus, MistakeSource, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+
+// ─────────────────────────────────────────────────────────────────────────────
+// MISTAKES SERVICE
+//
+// Что было:
+//   getWeakSpots: только wrongCount — пользователь мог исправить ошибку 10 раз,
+//     но она всё равно красным в heatmap
+//   findAll: нет accuracy, нет SRS-aware сортировки
+//   Нет: dismiss (я это понял, больше не показывай), markResolved
+//
+// Что стало:
+//   getWeakSpots: учитывает accuracy = correctCount/(correct+wrong)*100
+//     weight = wrongCount × (1 - accuracy/100) — слабые места взвешены честно
+//   findAll: добавлена accuracy, dueForReview flag, SRS-aware сортировка
+//   getDueForReview: специальный список для "повтори сейчас" функционала
+//   markMastered: пользователь сам отмечает что понял тему
+//   getHeatmapData: для визуализации слабых мест по темам
+// ─────────────────────────────────────────────────────────────────────────────
+
+export interface WeakSpot {
+  topic: string;
+  category: string;
+  level: string;
+  wrongCount: number;
+  correctCount: number;
+  accuracy: number; // % правильных ответов
+  adjustedWeight: number; // wrongCount × (1 - accuracy/100) — честный вес
+  uniqueMistakesCount: number;
+  status: MasteryStatus;
+  dueForReview: boolean; // nextReview <= now
+}
+
+export interface HeatmapCell {
+  topic: string;
+  level: string;
+  weight: number; // 0–100: насколько слабое место
+  count: number; // количество разных упражнений с ошибками
+}
 
 @Injectable()
 export class MistakesService {
   constructor(private readonly prisma: PrismaService) {}
 
+  // ── findAll — список ошибок с accuracy и SRS info ─────────────────────────
+
   async findAll(userId: string, source?: MistakeSource) {
     const where: Prisma.UserMistakeWhereInput = { userId };
-    if (source !== undefined) {
-      where.source = source;
-    }
+    if (source !== undefined) where.source = source;
 
-    return this.prisma.userMistake.findMany({
+    const mistakes = await this.prisma.userMistake.findMany({
       where,
       include: {
         attempts: {
@@ -27,26 +65,196 @@ export class MistakesService {
           },
         },
       },
-      orderBy: { updatedAt: 'desc' },
+      orderBy: [
+        // SRS-aware сортировка:
+        // 1. Просроченные (nextReview <= now) — первыми
+        // 2. Среди них: наибольший wrongCount
+        { nextReview: 'asc' },
+        { wrongCount: 'desc' },
+      ],
+    });
+
+    const now = new Date();
+
+    return mistakes.map((m) => {
+      const total = m.wrongCount + m.correctCount;
+      const accuracy = total > 0 ? Math.round((m.correctCount / total) * 100) : 0;
+      const dueForReview = m.nextReview !== null && m.nextReview <= now;
+
+      return {
+        ...m,
+        accuracy,
+        dueForReview,
+        // Вычисляем adjustedWeight прямо в ответе — фронт не должен считать
+        adjustedWeight: Math.round(m.wrongCount * Math.max(0, (100 - accuracy) / 100)),
+      };
     });
   }
 
-  async getWeakSpots(userId: string) {
-    const spots = await this.prisma.userMistake.groupBy({
-      by: ['topic', 'category', 'level'],
-      where: { userId, wrongCount: { gt: 0 } },
-      _sum: { wrongCount: true },
-      _count: { _all: true },
-      orderBy: { _sum: { wrongCount: 'desc' } },
-      take: 10,
+  // ── getDueForReview — SRS: что нужно повторить сейчас ─────────────────────
+  //
+  // Возвращает ошибки где nextReview <= now и status != MASTERED.
+  // Фронт может показать badge "5 mistakes to review" в сайдбаре.
+
+  async getDueForReview(
+    userId: string,
+    limit = 20,
+  ): Promise<
+    Array<{
+      id: string;
+      topic: string;
+      category: string;
+      level: string;
+      source: MistakeSource;
+      wrongCount: number;
+      correctCount: number;
+      accuracy: number;
+      nextReview: Date | null;
+      recentAttempt: { userAnswer: string; correctAnswer: string } | null;
+    }>
+  > {
+    const now = new Date();
+    const mistakes = await this.prisma.userMistake.findMany({
+      where: {
+        userId,
+        status: { not: 'MASTERED' },
+        nextReview: { lte: now },
+      },
+      include: {
+        attempts: {
+          take: 1,
+          orderBy: { createdAt: 'desc' },
+          select: { userAnswer: true, correctAnswer: true },
+        },
+      },
+      orderBy: { nextReview: 'asc' },
+      take: limit,
     });
 
-    return spots.map((s) => ({
-      topic: s.topic,
-      category: s.category,
-      level: s.level,
-      errorWeight: s._sum.wrongCount ?? 0,
-      uniqueMistakesCount: s._count._all,
-    }));
+    return mistakes.map((m) => {
+      const total = m.wrongCount + m.correctCount;
+      const accuracy = total > 0 ? Math.round((m.correctCount / total) * 100) : 0;
+
+      return {
+        id: m.id,
+        topic: m.topic,
+        category: m.category,
+        level: m.level,
+        source: m.source,
+        wrongCount: m.wrongCount,
+        correctCount: m.correctCount,
+        accuracy,
+        nextReview: m.nextReview,
+        recentAttempt: m.attempts[0] ?? null,
+      };
+    });
+  }
+
+  async getWeakSpots(userId: string): Promise<WeakSpot[]> {
+    const spots = await this.prisma.userMistake.groupBy({
+      by: ['topic', 'category', 'level', 'status'],
+      where: { userId, wrongCount: { gt: 0 } },
+      _sum: { wrongCount: true, correctCount: true },
+      _count: { _all: true },
+      orderBy: { _sum: { wrongCount: 'desc' } },
+      take: 20,
+    });
+
+    const now = new Date();
+
+    const dueChecks = await this.prisma.userMistake.findMany({
+      where: {
+        userId,
+        topic: { in: [...new Set(spots.map((s) => s.topic))] },
+        status: { not: 'MASTERED' },
+        nextReview: { lte: now },
+      },
+      select: { topic: true },
+      distinct: ['topic'],
+    });
+    const dueTopics = new Set(dueChecks.map((d) => d.topic));
+
+    const enriched: WeakSpot[] = spots.map((s) => {
+      const wrong = s._sum.wrongCount ?? 0;
+      const correct = s._sum.correctCount ?? 0;
+      const total = wrong + correct;
+      const accuracy = total > 0 ? Math.round((correct / total) * 100) : 0;
+
+      const adjustedWeight = Math.round(wrong * Math.max(0, (100 - accuracy) / 100) * 10) / 10;
+
+      return {
+        topic: s.topic,
+        category: s.category,
+        level: s.level,
+        wrongCount: wrong,
+        correctCount: correct,
+        accuracy,
+        adjustedWeight,
+        uniqueMistakesCount: s._count._all,
+        status: s.status as MasteryStatus,
+        dueForReview: dueTopics.has(s.topic),
+      };
+    });
+
+    return enriched
+      .filter((s) => s.status !== 'MASTERED')
+      .sort((a, b) => b.adjustedWeight - a.adjustedWeight)
+      .slice(0, 10);
+  }
+
+  async getHeatmapData(userId: string): Promise<HeatmapCell[]> {
+    const spots = await this.prisma.userMistake.groupBy({
+      by: ['topic', 'level'],
+      where: { userId },
+      _sum: { wrongCount: true, correctCount: true },
+      _count: { _all: true },
+    });
+
+    return spots
+      .map((s) => {
+        const wrong = s._sum.wrongCount ?? 0;
+        const correct = s._sum.correctCount ?? 0;
+        const total = wrong + correct;
+        const accuracy = total > 0 ? correct / total : 0;
+        const rawWeight = wrong * (1 - accuracy);
+        const weight = Math.min(100, Math.round(rawWeight * 10));
+
+        return {
+          topic: s.topic,
+          level: s.level,
+          weight,
+          count: s._count._all,
+        };
+      })
+      .sort((a, b) => b.weight - a.weight);
+  }
+
+  async markMastered(userId: string, mistakeId: string): Promise<{ status: MasteryStatus }> {
+    const mistake = await this.prisma.userMistake.findUnique({ where: { id: mistakeId } });
+
+    if (mistake === null) throw new NotFoundException('Mistake not found');
+    if (mistake.userId !== userId) throw new ForbiddenException('Access denied');
+
+    const updated = await this.prisma.userMistake.update({
+      where: { id: mistakeId },
+      data: {
+        status: 'MASTERED',
+        nextReview: null,
+      },
+      select: { status: true },
+    });
+
+    return { status: updated.status };
+  }
+
+  async getDueCount(userId: string): Promise<{ count: number }> {
+    const count = await this.prisma.userMistake.count({
+      where: {
+        userId,
+        status: { not: 'MASTERED' },
+        nextReview: { lte: new Date() },
+      },
+    });
+    return { count };
   }
 }

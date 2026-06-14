@@ -83,8 +83,6 @@ function MaterialCard({ material }: { material: ListeningMaterialListItem }) {
           </span>
           <span className={styles['topicTag']}>#{material.topic}</span>
 
-          {/* ОБЕРТКА ДЛЯ КНОПКИ ЗАКЛАДКИ */}
-          {/* marginLeft: 'auto' прижмет её к правому краю, если cardMeta это flex-контейнер */}
           <div
             onClick={(e) => e.stopPropagation()}
             onKeyDown={(e) => e.stopPropagation()}
@@ -168,7 +166,6 @@ function FilterBar() {
         )}
       </div>
 
-      {/* Type toggle */}
       <div className={styles['typeToggle']}>
         {[null, 'LECTURE', 'CONVERSATION'].map((type) => (
           <button

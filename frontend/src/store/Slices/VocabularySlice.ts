@@ -109,7 +109,6 @@ const VocabularySlice = createSlice({
       state.wordList = [];
       state.wordListStatus = 'idle';
     },
-
     updateFlashcardStatus: (state, action: PayloadAction<{ wordId: string; status: string }>) => {
       const card = state.flashcards.find((f) => f.word.id === action.payload.wordId);
       if (card?.progress !== null && card !== undefined) {
@@ -122,7 +121,7 @@ const VocabularySlice = createSlice({
   },
   extraReducers: (builder) => {
     builder
-
+      
       .addCase(fetchFlashcards.pending, (state) => {
         state.flashcardsStatus = 'loading';
         state.flashcardsError = null;
@@ -136,6 +135,7 @@ const VocabularySlice = createSlice({
         state.flashcardsError = action.payload ?? 'Unknown error';
       })
 
+      
       .addCase(fetchWordList.pending, (state) => {
         state.wordListStatus = 'loading';
         state.wordListError = null;
@@ -149,6 +149,7 @@ const VocabularySlice = createSlice({
         state.wordListError = action.payload ?? 'Unknown error';
       })
 
+      
       .addCase(fetchVocabProgress.pending, (state) => {
         state.userProgressStatus = 'loading';
       })
@@ -160,6 +161,7 @@ const VocabularySlice = createSlice({
         state.userProgressStatus = 'error';
       })
 
+      
       .addCase(reviewWord.pending, (state) => {
         state.reviewStatus = 'loading';
         state.reviewError = null;
@@ -167,6 +169,7 @@ const VocabularySlice = createSlice({
       .addCase(reviewWord.fulfilled, (state, action) => {
         state.reviewStatus = 'success';
 
+        
         const card = state.flashcards.find((f) => f.word.id === action.payload.wordId);
         if (card !== undefined) {
           if (card.progress === null) {
@@ -191,9 +194,19 @@ const VocabularySlice = createSlice({
           }
         }
 
+        
+        
+        
+        
+        
+        
         if (action.payload.justMastered && state.userProgress !== null) {
           state.userProgress.mastered += 1;
-          state.userProgress.learned += 1;
+          
+          state.userProgress.dueToday = Math.max(0, state.userProgress.dueToday - 1);
+        } else if (state.userProgress !== null && state.userProgress.dueToday > 0) {
+          
+          state.userProgress.dueToday -= 1;
         }
       })
       .addCase(reviewWord.rejected, (state, action) => {
@@ -211,21 +224,11 @@ interface VocabRootState {
   vocabulary: VocabularyState;
 }
 
-export const selectFlashcards = (s: VocabRootState): Flashcard[] => s.vocabulary.flashcards;
-
-export const selectFlashcardsStatus = (s: VocabRootState): AsyncStatus =>
-  s.vocabulary.flashcardsStatus;
-
-export const selectFlashcardsError = (s: VocabRootState): string | null =>
-  s.vocabulary.flashcardsError;
-
-export const selectWordList = (s: VocabRootState): VocabularyWord[] => s.vocabulary.wordList;
-
-export const selectWordListStatus = (s: VocabRootState): AsyncStatus => s.vocabulary.wordListStatus;
-
-export const selectWordListError = (s: VocabRootState): string | null => s.vocabulary.wordListError;
-
-export const selectVocabProgress = (s: VocabRootState): VocabUserProgress | null =>
-  s.vocabulary.userProgress;
-
-export const selectReviewStatus = (s: VocabRootState): AsyncStatus => s.vocabulary.reviewStatus;
+export const selectFlashcards        = (s: VocabRootState): Flashcard[]           => s.vocabulary.flashcards;
+export const selectFlashcardsStatus  = (s: VocabRootState): AsyncStatus           => s.vocabulary.flashcardsStatus;
+export const selectFlashcardsError   = (s: VocabRootState): string | null         => s.vocabulary.flashcardsError;
+export const selectWordList          = (s: VocabRootState): VocabularyWord[]       => s.vocabulary.wordList;
+export const selectWordListStatus    = (s: VocabRootState): AsyncStatus           => s.vocabulary.wordListStatus;
+export const selectWordListError     = (s: VocabRootState): string | null         => s.vocabulary.wordListError;
+export const selectVocabProgress     = (s: VocabRootState): VocabUserProgress | null => s.vocabulary.userProgress;
+export const selectReviewStatus      = (s: VocabRootState): AsyncStatus           => s.vocabulary.reviewStatus;

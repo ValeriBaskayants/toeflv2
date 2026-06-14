@@ -10,36 +10,36 @@ import {
 // ─── Core types ───────────────────────────────────────────────────────────────
 
 export interface MistakeAttempt {
-  id:            ID;
-  userAnswer:    string;
+  id: ID;
+  userAnswer: string;
   correctAnswer: string;
-  isCorrect:     boolean;
-  createdAt:     ISODateString;
+  isCorrect: boolean;
+  createdAt: ISODateString;
 }
 
 export interface UserMistake {
-  id:             ID;
-  targetId:       string;
-  source:         MistakeSource;
+  id: ID;
+  targetId: string;
+  source: MistakeSource;
   grammarRuleId?: string;
-  topic:          string;
-  category:       ErrorCategory;
-  level:          Level;
-  status:         MasteryStatus;
-  nextReview?:    ISODateString;
-  easeFactor:     number;
-  wrongCount:     number;
-  correctCount:   number;
-  createdAt:      ISODateString;
-  updatedAt:      ISODateString;
-  attempts:       MistakeAttempt[];
+  topic: string;
+  category: ErrorCategory;
+  level: Level;
+  status: MasteryStatus;
+  nextReview?: ISODateString;
+  easeFactor: number;
+  wrongCount: number;
+  correctCount: number;
+  createdAt: ISODateString;
+  updatedAt: ISODateString;
+  attempts: MistakeAttempt[];
 }
 
 export interface WeakSpot {
-  topic:               string;
-  category:            ErrorCategory;
-  level:               Level;
-  errorWeight:         number;
+  topic: string;
+  category: ErrorCategory;
+  level: Level;
+  errorWeight: number;
   uniqueMistakesCount: number;
 }
 

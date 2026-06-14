@@ -1,3 +1,14 @@
+// ════════════════════════════════════════════════════════════════════════════
+// frontend/src/pages/Writingpage/Writingpage.tsx  — UPDATED
+//
+// Изменения:
+//   + PromptCard показывает userStatus (completed/in_progress/not_attempted)
+//   + PromptCard показывает userBestScore на карточке
+//   + StatsBar вверху страницы (avgScore, bestScore, trend) из getUserStats
+//   + fetchUserStats вызывается при монтировании
+//   + willCountForProgress предупреждение убрано отсюда (оно в Editor)
+// ════════════════════════════════════════════════════════════════════════════
+
 import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -14,15 +25,20 @@ import {
   Zap,
   CheckCircle2,
   XCircle,
+  TrendingUp,
+  TrendingDown,
+  Minus,
+  Star,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
   fetchPrompts,
   fetchSubmissions,
+  fetchUserStats,
   setFilter,
   clearEditor,
 } from '@/store/Slices/WritingSlice';
-import type { WritingPrompt } from '@/types/writing/Writing.types';
+import type { WritingPromptWithStatus } from '@/types/writing/Writing.types';
 import type { SubmissionWithPrompt } from '@/api/services/writing';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './WritingPage.module.css';
@@ -31,16 +47,9 @@ import styles from './WritingPage.module.css';
 
 const LEVELS = ['A1', 'A1_PLUS', 'A2', 'A2_PLUS', 'B1', 'B1_PLUS', 'B2', 'B2_PLUS', 'C1', 'C2'];
 const LEVEL_DISPLAY: Record<string, string> = {
-  A1: 'A1',
-  A1_PLUS: 'A1+',
-  A2: 'A2',
-  A2_PLUS: 'A2+',
-  B1: 'B1',
-  B1_PLUS: 'B1+',
-  B2: 'B2',
-  B2_PLUS: 'B2+',
-  C1: 'C1',
-  C2: 'C2',
+  A1: 'A1', A1_PLUS: 'A1+', A2: 'A2', A2_PLUS: 'A2+',
+  B1: 'B1', B1_PLUS: 'B1+', B2: 'B2', B2_PLUS: 'B2+',
+  C1: 'C1', C2: 'C2',
 };
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
@@ -56,15 +65,67 @@ const TYPE_COLOR: Record<string, string> = {
 };
 
 function formatDate(iso: string): string {
-  return new Date(iso).toLocaleDateString('en-US', {
-    month: 'short',
-    day: 'numeric',
-  });
+  return new Date(iso).toLocaleDateString('en-US', { month: 'short', day: 'numeric' });
+}
+
+function scoreColor(score: number): string {
+  return score >= 75 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
+}
+
+// ─── StatsBar ─────────────────────────────────────────────────────────────────
+
+function StatsBar() {
+  const { t } = useTranslation();
+  const { userStats } = useAppSelector((s) => s.writing);
+
+  if (userStats === null || userStats.totalSubmissions === 0) return null;
+
+  const TrendIcon =
+    userStats.recentTrend === 'improving' ? TrendingUp :
+    userStats.recentTrend === 'declining' ? TrendingDown : Minus;
+
+  const trendColor =
+    userStats.recentTrend === 'improving' ? '#22c55e' :
+    userStats.recentTrend === 'declining' ? '#ef4444' : 'var(--text-3)';
+
+  return (
+    <div className={styles['statsBar']}>
+      <div className={styles['statItem']}>
+        <span className={styles['statVal']}>{userStats.totalSubmissions}</span>
+        <span className={styles['statLabel']}>{t('writing.stats.total')}</span>
+      </div>
+      {userStats.avgScore !== null && (
+        <div className={styles['statItem']}>
+          <span className={styles['statVal']} style={{ color: scoreColor(userStats.avgScore) }}>
+            {Math.round(userStats.avgScore)}%
+          </span>
+          <span className={styles['statLabel']}>{t('writing.stats.avgScore')}</span>
+        </div>
+      )}
+      {userStats.bestScore !== null && (
+        <div className={styles['statItem']}>
+          <Star size={13} style={{ color: '#f59e0b' }} />
+          <span className={styles['statVal']} style={{ color: '#f59e0b' }}>
+            {Math.round(userStats.bestScore)}%
+          </span>
+          <span className={styles['statLabel']}>{t('writing.stats.bestScore')}</span>
+        </div>
+      )}
+      {userStats.recentTrend !== null && (
+        <div className={styles['statItem']} style={{ color: trendColor }}>
+          <TrendIcon size={15} />
+          <span className={styles['statLabel']} style={{ color: trendColor }}>
+            {t(`writing.stats.trend.${userStats.recentTrend}`)}
+          </span>
+        </div>
+      )}
+    </div>
+  );
 }
 
 // ─── PromptCard ───────────────────────────────────────────────────────────────
 
-function PromptCard({ prompt }: { prompt: WritingPrompt }) {
+function PromptCard({ prompt }: { prompt: WritingPromptWithStatus }) {
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
   const { t } = useTranslation();
@@ -75,18 +136,18 @@ function PromptCard({ prompt }: { prompt: WritingPrompt }) {
     navigate(`/writing/${prompt.id}`);
   };
 
+  const isCompleted = prompt.userStatus === 'completed';
+  const isInProgress = prompt.userStatus === 'in_progress';
+
   return (
     <article
-      className={styles['promptCard']}
+      className={`${styles['promptCard']} ${isCompleted ? styles['promptCardDone'] : ''}`}
       style={{ '--card-color': color } as React.CSSProperties}
       onClick={handleClick}
       role="button"
       tabIndex={0}
-      onKeyDown={(e) => {
-        if (e.key === 'Enter') handleClick();
-      }}
+      onKeyDown={(e) => { if (e.key === 'Enter') handleClick(); }}
     >
-      {/* Top accent bar animates on hover via CSS */}
       <div className={styles['promptCardHeader']}>
         <div className={styles['promptCardBadges']}>
           <span className={styles['levelBadge']}>
@@ -101,7 +162,27 @@ function PromptCard({ prompt }: { prompt: WritingPrompt }) {
           </span>
           {prompt.topic && <span className={styles['topicTag']}>#{prompt.topic}</span>}
         </div>
-        <ChevronRight size={15} className={styles['cardArrow']} />
+
+        {/* Статус пользователя — правый угол карточки */}
+        <div className={styles['promptCardStatus']}>
+          {isCompleted && (
+            <span className={styles['statusDone']}>
+              <CheckCircle2 size={12} />
+              {prompt.userBestScore !== null ? `${Math.round(prompt.userBestScore)}%` : t('writing.status.completed')}
+            </span>
+          )}
+          {isInProgress && (
+            <span className={styles['statusInProgress']}>
+              <Clock size={12} />
+              {prompt.userBestScore !== null ? `${Math.round(prompt.userBestScore)}%` : t('writing.status.inProgress')}
+            </span>
+          )}
+          {prompt.userAttemptCount > 0 && (
+            <span className={styles['attemptCount']}>
+              ×{prompt.userAttemptCount}
+            </span>
+          )}
+        </div>
       </div>
 
       <p className={styles['promptText']}>{prompt.prompt}</p>
@@ -114,6 +195,7 @@ function PromptCard({ prompt }: { prompt: WritingPrompt }) {
         {prompt.instructions && (
           <span className={styles['hasInstructions']}>{t('writing.hasInstructions')}</span>
         )}
+        <ChevronRight size={15} className={styles['cardArrow']} />
       </div>
     </article>
   );
@@ -144,12 +226,7 @@ function SubmissionCard({ sub }: { sub: SubmissionWithPrompt }) {
           {formatDate(sub.submittedAt)}
         </span>
         {isOk && score !== undefined && (
-          <span
-            className={styles['subScore']}
-            style={{
-              color: score >= 75 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444',
-            }}
-          >
+          <span className={styles['subScore']} style={{ color: scoreColor(score) }}>
             <Zap size={11} />
             {Math.round(score)}%
           </span>
@@ -175,19 +252,18 @@ export default function WritingPage() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const { prompts, promptsLoading, promptsError, submissions, filters } = useAppSelector(
-    (state) => state.writing,
+    (s) => s.writing,
   );
 
-  // Load prompts when filters change
   useEffect(() => {
     const params: Record<string, string> = {};
     if (filters.level) params['level'] = filters.level;
     void dispatch(fetchPrompts(Object.keys(params).length > 0 ? params : undefined));
   }, [dispatch, filters.level]);
 
-  // Load recent submissions once
   useEffect(() => {
     void dispatch(fetchSubmissions(undefined));
+    void dispatch(fetchUserStats());
   }, [dispatch]);
 
   const handleRetry = useCallback(() => {
@@ -198,13 +274,9 @@ export default function WritingPage() {
     return <FullPageSpinner label={t('writing.loading')} />;
   }
 
-  // Group prompts by type
-  const byType: Record<string, WritingPrompt[]> = {};
-  for (const p of prompts) {
-    if (filters.type && p.type !== filters.type) continue;
-    (byType[p.type] ??= []).push(p);
-  }
-  const filteredPrompts = filters.type ? prompts.filter((p) => p.type === filters.type) : prompts;
+  const filteredPrompts = filters.type
+    ? prompts.filter((p) => p.type === filters.type)
+    : prompts;
 
   return (
     <div className={styles['page']}>
@@ -224,9 +296,11 @@ export default function WritingPage() {
         )}
       </header>
 
+      {/* ── Stats bar (показывается только если есть история) ── */}
+      <StatsBar />
+
       {/* ── Filters ── */}
       <div className={styles['filterBar']}>
-        {/* Level chips */}
         <div className={styles['filterRow']}>
           <span className={styles['filterLabel']}>{t('writing.filters.level')}</span>
           <div className={styles['chips']}>
@@ -252,7 +326,6 @@ export default function WritingPage() {
           </div>
         </div>
 
-        {/* Type tabs */}
         <div className={styles['filterRow']}>
           <span className={styles['filterLabel']}>{t('writing.filters.type')}</span>
           <div className={styles['typeTabs']}>

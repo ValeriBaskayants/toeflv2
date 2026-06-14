@@ -4,18 +4,30 @@ import type {
   AnswerResponse,
   SkipResponse,
   RemindLaterResponse,
-} from '@/types/Placement/Placement.types';
+} from '@/types/placement/Placement.types';
 import { api } from '../client';
 
 export const placementApi = {
-  getStatus: () => api.get<PlacementStatusResponse>('/placement/status'),
+  getStatus: () =>
+    api.get<PlacementStatusResponse>('/placement/status'),
 
-  start: () => api.post<StartTestResponse>('/placement/start'),
+  start: () =>
+    api.post<StartTestResponse>('/placement/start'),
 
-  answer: (questionIndex: number, selectedIndex: number) =>
-    api.post<AnswerResponse>('/placement/answer', { questionIndex, selectedIndex }),
+  answer: (
+    questionIndex:   number,
+    selectedIndex:   number,
+    questionStartAt?: string, 
+  ) =>
+    api.post<AnswerResponse>('/placement/answer', {
+      questionIndex,
+      selectedIndex,
+      ...(questionStartAt !== undefined && { questionStartAt }),
+    }),
 
-  skip: () => api.post<SkipResponse>('/placement/skip'),
+  skip: () =>
+    api.post<SkipResponse>('/placement/skip'),
 
-  remindLater: () => api.post<RemindLaterResponse>('/placement/remind-later'),
+  remindLater: () =>
+    api.post<RemindLaterResponse>('/placement/remind-later'),
 };

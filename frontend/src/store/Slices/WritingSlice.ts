@@ -1,42 +1,59 @@
+
+
+
+
+
+
+
+
+
+
+
+
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import {
   writingApi,
   type GetPromptsParams,
   type SubmissionWithPrompt,
 } from '@/api/services/writing';
-import type { WritingPrompt, WritingSubmission } from '@/types/writing/Writing.types';
+import type {
+  WritingPromptWithStatus,
+  WritingPrompt,
+  WritingSubmission,
+  WritingUserStats,
+} from '@/types/writing/Writing.types';
 
-// ─── State ────────────────────────────────────────────────────────────────────
+
 
 interface WritingState {
-  // Prompt list
-  prompts: WritingPrompt[];
+  prompts: WritingPromptWithStatus[];
   promptsLoading: boolean;
   promptsError: string | null;
 
-  // Current prompt (editor view)
   currentPrompt: WritingPrompt | null;
   promptLoading: boolean;
   promptError: string | null;
 
-  // Editor
   draftText: string;
   submitting: boolean;
   submitError: string | null;
 
-  // Active submission being analyzed (poll target)
   pendingSubmissionId: string | null;
+  
+  willCountForProgress: boolean | null;
+  attemptNumber: number | null;
 
-  // Resolved submission (ANALYZED or ERROR)
   currentSubmission: WritingSubmission | null;
   submissionLoading: boolean;
   submissionError: string | null;
 
-  // History
   submissions: SubmissionWithPrompt[];
   submissionsLoading: boolean;
 
-  // Filters
+  
+  userStats: WritingUserStats | null;
+  userStatsLoading: boolean;
+
   filters: {
     level: string | null;
     type: string | null;
@@ -57,6 +74,9 @@ const initialState: WritingState = {
   submitError: null,
 
   pendingSubmissionId: null,
+  willCountForProgress: null,
+  attemptNumber: null,
+
   currentSubmission: null,
   submissionLoading: false,
   submissionError: null,
@@ -64,13 +84,16 @@ const initialState: WritingState = {
   submissions: [],
   submissionsLoading: false,
 
+  userStats: null,
+  userStatsLoading: false,
+
   filters: { level: null, type: null },
 };
 
-// ─── Thunks ───────────────────────────────────────────────────────────────────
+
 
 export const fetchPrompts = createAsyncThunk<
-  WritingPrompt[],
+  WritingPromptWithStatus[],
   GetPromptsParams | undefined,
   { rejectValue: string }
 >('writing/fetchPrompts', async (params, { rejectWithValue }) => {
@@ -95,19 +118,22 @@ export const fetchPromptById = createAsyncThunk<WritingPrompt, string, { rejectV
 );
 
 export const submitWriting = createAsyncThunk<
-  string, // returns submissionId
+  { submissionId: string; willCountForProgress: boolean; attemptNumber: number },
   { promptId: string; text: string },
   { rejectValue: string }
 >('writing/submit', async ({ promptId, text }, { rejectWithValue }) => {
   try {
     const { data } = await writingApi.submit({ promptId, text });
-    return data.submissionId;
+    return {
+      submissionId: data.submissionId,
+      willCountForProgress: data.willCountForProgress,
+      attemptNumber: data.attemptNumber,
+    };
   } catch (e: unknown) {
     return rejectWithValue(e instanceof Error ? e.message : 'Failed to submit');
   }
 });
 
-// Called repeatedly by polling loop in the component
 export const fetchSubmission = createAsyncThunk<WritingSubmission, string, { rejectValue: string }>(
   'writing/fetchSubmission',
   async (id, { rejectWithValue }) => {
@@ -133,7 +159,19 @@ export const fetchSubmissions = createAsyncThunk<
   }
 });
 
-// ─── Slice ────────────────────────────────────────────────────────────────────
+export const fetchUserStats = createAsyncThunk<WritingUserStats, void, { rejectValue: string }>(
+  'writing/fetchUserStats',
+  async (_, { rejectWithValue }) => {
+    try {
+      const { data } = await writingApi.getUserStats();
+      return data;
+    } catch (e: unknown) {
+      return rejectWithValue(e instanceof Error ? e.message : 'Failed to load stats');
+    }
+  },
+);
+
+
 
 export const writingSlice = createSlice({
   name: 'writing',
@@ -151,6 +189,8 @@ export const writingSlice = createSlice({
       state.draftText = '';
       state.submitError = null;
       state.pendingSubmissionId = null;
+      state.willCountForProgress = null;
+      state.attemptNumber = null;
       state.currentSubmission = null;
       state.submissionError = null;
       state.currentPrompt = null;
@@ -158,7 +198,6 @@ export const writingSlice = createSlice({
   },
 
   extraReducers: (builder) => {
-    // fetchPrompts
     builder
       .addCase(fetchPrompts.pending, (state) => {
         state.promptsLoading = true;
@@ -173,7 +212,6 @@ export const writingSlice = createSlice({
         state.promptsError = action.payload ?? 'Unknown error';
       });
 
-    // fetchPromptById
     builder
       .addCase(fetchPromptById.pending, (state) => {
         state.promptLoading = true;
@@ -188,24 +226,26 @@ export const writingSlice = createSlice({
         state.promptError = action.payload ?? 'Unknown error';
       });
 
-    // submitWriting
     builder
       .addCase(submitWriting.pending, (state) => {
         state.submitting = true;
         state.submitError = null;
         state.currentSubmission = null;
         state.pendingSubmissionId = null;
+        state.willCountForProgress = null;
+        state.attemptNumber = null;
       })
       .addCase(submitWriting.fulfilled, (state, action) => {
         state.submitting = false;
-        state.pendingSubmissionId = action.payload;
+        state.pendingSubmissionId = action.payload.submissionId;
+        state.willCountForProgress = action.payload.willCountForProgress;
+        state.attemptNumber = action.payload.attemptNumber;
       })
       .addCase(submitWriting.rejected, (state, action) => {
         state.submitting = false;
         state.submitError = action.payload ?? 'Unknown error';
       });
 
-    // fetchSubmission (polling)
     builder
       .addCase(fetchSubmission.pending, (state) => {
         state.submissionLoading = true;
@@ -214,7 +254,6 @@ export const writingSlice = createSlice({
       .addCase(fetchSubmission.fulfilled, (state, action) => {
         state.submissionLoading = false;
         state.currentSubmission = action.payload;
-        // Stop tracking pending once resolved
         if (action.payload.status !== 'PENDING') {
           state.pendingSubmissionId = null;
         }
@@ -224,7 +263,6 @@ export const writingSlice = createSlice({
         state.submissionError = action.payload ?? 'Unknown error';
       });
 
-    // fetchSubmissions (history)
     builder
       .addCase(fetchSubmissions.pending, (state) => {
         state.submissionsLoading = true;
@@ -235,6 +273,18 @@ export const writingSlice = createSlice({
       })
       .addCase(fetchSubmissions.rejected, (state) => {
         state.submissionsLoading = false;
+      });
+
+    builder
+      .addCase(fetchUserStats.pending, (state) => {
+        state.userStatsLoading = true;
+      })
+      .addCase(fetchUserStats.fulfilled, (state, action) => {
+        state.userStatsLoading = false;
+        state.userStats = action.payload;
+      })
+      .addCase(fetchUserStats.rejected, (state) => {
+        state.userStatsLoading = false;
       });
   },
 });

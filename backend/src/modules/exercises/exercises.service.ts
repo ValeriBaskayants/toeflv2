@@ -13,21 +13,17 @@ import type { GetExercisesDto } from './dto/get-exercises.dto';
 import type { SubmitExerciseDto } from './dto/submit-exercise.dto';
 
 const DEFAULT_LIMIT = 50;
-const MAX_LIMIT     = 100;
+const MAX_LIMIT = 100;
 
 type BlankShape = { position: number; answer: string; options: string[] };
 
 function normalizeAnswer(s: string): string {
-  return s
-    .trim()
-    .toLowerCase()
-    .replace(/[''`]/g, "'")   
-    .replace(/\s+/g, ' ');    
+  return s.trim().toLowerCase().replace(/[''`]/g, "'").replace(/\s+/g, ' ');
 }
 
 function isAnswerCorrect(userAnswer: string, blank: BlankShape): boolean {
   const normalized = normalizeAnswer(userAnswer);
-  const correct    = normalizeAnswer(blank.answer);
+  const correct = normalizeAnswer(blank.answer);
 
   if (normalized === correct) return true;
 
@@ -38,22 +34,20 @@ function isAnswerCorrect(userAnswer: string, blank: BlankShape): boolean {
   return false;
 }
 
-
 @Injectable()
 export class ExercisesService {
   constructor(
-    private readonly prisma:    PrismaService,
-    private readonly progress:  ProgressService,
+    private readonly prisma: PrismaService,
+    private readonly progress: ProgressService,
   ) {}
-
 
   async findAll(query: GetExercisesDto & { userId?: string }) {
     const where: Prisma.ExerciseWhereInput = {};
-    if (query.level      !== undefined) where.level      = query.level;
+    if (query.level !== undefined) where.level = query.level;
     if (query.difficulty !== undefined) where.difficulty = query.difficulty;
-    if (query.topic      !== undefined) where.topic = { contains: query.topic, mode: 'insensitive' };
+    if (query.topic !== undefined) where.topic = { contains: query.topic, mode: 'insensitive' };
 
-    const take      = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
+    const take = Math.min(query.limit ?? DEFAULT_LIMIT, MAX_LIMIT);
     const exercises = await this.prisma.exercise.findMany({
       where,
       orderBy: [{ level: 'asc' }, { difficulty: 'asc' }],
@@ -64,19 +58,18 @@ export class ExercisesService {
       return exercises;
     }
 
-    const topics     = [...new Set(exercises.map((e) => e.topic))];
+    const topics = [...new Set(exercises.map((e) => e.topic))];
     const userErrors = await this.prisma.userMistake.findMany({
-      where:  { userId: query.userId, topic: { in: topics }, source: 'QUIZ' },
+      where: { userId: query.userId, topic: { in: topics }, source: 'QUIZ' },
       select: { topic: true, status: true, wrongCount: true, correctCount: true },
     });
 
     const errorMap = new Map(userErrors.map((e) => [e.topic, e]));
 
     return exercises.map((ex) => {
-      const err    = errorMap.get(ex.topic);
-      const status = err === undefined
-        ? 'not_started'
-        : err.status === 'MASTERED' ? 'mastered' : 'in_progress';
+      const err = errorMap.get(ex.topic);
+      const status =
+        err === undefined ? 'not_started' : err.status === 'MASTERED' ? 'mastered' : 'in_progress';
 
       return { ...ex, userStatus: status };
     });
@@ -84,28 +77,24 @@ export class ExercisesService {
 
   async getTopics(level?: Level) {
     const exercises = await this.prisma.exercise.findMany({
-      where:    level !== undefined ? { level } : undefined,
-      select:   { topic: true },
+      where: level !== undefined ? { level } : undefined,
+      select: { topic: true },
       distinct: ['topic'],
     });
     return exercises.map((ex) => ex.topic).sort();
   }
 
-  async submitAnswer(
-    userId:    string,
-    dto:       SubmitExerciseDto,
-    timezone?: string,
-  ) {
+  async submitAnswer(userId: string, dto: SubmitExerciseDto, timezone?: string) {
     const [exercise, user] = await Promise.all([
       this.prisma.exercise.findUnique({ where: { id: dto.exerciseId } }),
       this.prisma.user.findUnique({
-        where:  { id: userId },
+        where: { id: userId },
         select: { streak: true, currentLevel: true },
       }),
     ]);
 
     if (exercise === null) throw new NotFoundException(`Exercise ${dto.exerciseId} not found`);
-    if (user     === null) throw new NotFoundException('User not found');
+    if (user === null) throw new NotFoundException('User not found');
 
     const blanks = exercise.blanks as BlankShape[];
 
@@ -117,34 +106,31 @@ export class ExercisesService {
 
     const results = blanks.map((blank, idx) => {
       const userAnswer = paddedAnswers[idx] ?? '';
-      const correct    = isAnswerCorrect(userAnswer, blank);
+      const correct = isAnswerCorrect(userAnswer, blank);
 
       return {
-        position:      blank.position,
+        position: blank.position,
         userAnswer,
         correctAnswer: blank.answer,
-        isCorrect:     correct,
-        hint: !correct && blank.options.length > 0
-          ? `Possible answers: ${blank.options.join(', ')}`
-          : undefined,
+        isCorrect: correct,
+        hint:
+          !correct && blank.options.length > 0
+            ? `Possible answers: ${blank.options.join(', ')}`
+            : undefined,
       };
     });
 
     const correctCount = results.filter((r) => r.isCorrect).length;
-    const totalBlanks  = blanks.length;
-    const accuracy     = totalBlanks > 0
-      ? Math.round((correctCount / totalBlanks) * 100)
-      : 0;
+    const totalBlanks = blanks.length;
+    const accuracy = totalBlanks > 0 ? Math.round((correctCount / totalBlanks) * 100) : 0;
 
     const difficulty = exercise.difficulty ?? 'EASY';
-    const xpBase     = correctCount > 0
-      ? XP_BASE.GRAMMAR_CORRECT
-      : XP_BASE.GRAMMAR_WRONG;
+    const xpBase = correctCount > 0 ? XP_BASE.GRAMMAR_CORRECT : XP_BASE.GRAMMAR_WRONG;
 
     const xpEarned = computeXP({
-      base:       xpBase,
+      base: xpBase,
       difficulty: difficulty as 'EASY' | 'MEDIUM' | 'HARD',
-      streak:     user.streak,
+      streak: user.streak,
       accuracy,
     });
 
@@ -153,7 +139,7 @@ export class ExercisesService {
     if (countedAsCompleted) {
       await this.progress.recordSkillCompletion({
         userId,
-        skill:      'grammar',
+        skill: 'grammar',
         accuracy,
         xpEarned,
         difficulty,
@@ -174,7 +160,7 @@ export class ExercisesService {
     } else if (results.length > 0) {
       await this.prisma.userMistake.updateMany({
         where: { userId, targetId: exercise.id },
-        data:  { correctCount: { increment: 1 } },
+        data: { correctCount: { increment: 1 } },
       });
     }
 
@@ -184,12 +170,12 @@ export class ExercisesService {
       xpEarned,
       countedAsCompleted,
       explanation: exercise.explanation,
-      feedback:    buildExerciseFeedback(accuracy, correctCount, totalBlanks),
+      feedback: buildExerciseFeedback(accuracy, correctCount, totalBlanks),
     };
   }
 
   private async trackGrammarMistake(
-    userId:   string,
+    userId: string,
     exercise: { id: string; topic: string; level: Level },
     wrongResults: Array<{ userAnswer: string; correctAnswer: string }>,
     level: Level,
@@ -201,21 +187,21 @@ export class ExercisesService {
       where: { userId_targetId: { userId, targetId: exercise.id } },
       create: {
         userId,
-        targetId:     exercise.id,
-        source:       'QUIZ',          
-        topic:        exercise.topic,
-        category:     'GRAMMAR',
-        level:        exercise.level,
-        wrongCount:   1,
+        targetId: exercise.id,
+        source: 'QUIZ',
+        topic: exercise.topic,
+        category: 'GRAMMAR',
+        level: exercise.level,
+        wrongCount: 1,
         correctCount: 0,
-        status:       'LEARNING',
-        nextReview:   new Date(Date.now() + 24 * 60 * 60 * 1000),
-        easeFactor:   2.5,
+        status: 'LEARNING',
+        nextReview: new Date(Date.now() + 24 * 60 * 60 * 1000),
+        easeFactor: 2.5,
         attempts: {
           create: {
-            userAnswer:    firstWrong.userAnswer,
+            userAnswer: firstWrong.userAnswer,
             correctAnswer: firstWrong.correctAnswer,
-            isCorrect:     false,
+            isCorrect: false,
           },
         },
       },
@@ -223,45 +209,47 @@ export class ExercisesService {
         wrongCount: { increment: 1 },
         attempts: {
           create: {
-            userAnswer:    firstWrong.userAnswer,
+            userAnswer: firstWrong.userAnswer,
             correctAnswer: firstWrong.correctAnswer,
-            isCorrect:     false,
+            isCorrect: false,
           },
         },
       },
     });
   }
 
-
   async bulkCreate(exercises: CreateExerciseDto[]): Promise<{
     totalProcessed: number;
-    inserted:       number;
-    skipped:        number;
+    inserted: number;
+    skipped: number;
   }> {
     if (exercises.length === 0) return { totalProcessed: 0, inserted: 0, skipped: 0 };
 
     const sentences = exercises.map((ex) => ex.sentence);
-    const existing  = await this.prisma.exercise.findMany({
-      where:  { sentence: { in: sentences } },
+    const existing = await this.prisma.exercise.findMany({
+      where: { sentence: { in: sentences } },
       select: { sentence: true },
     });
 
     const existingSet = new Set(existing.map((e) => e.sentence));
-    const toInsert    = exercises.filter((ex) => !existingSet.has(ex.sentence));
+    const toInsert = exercises.filter((ex) => !existingSet.has(ex.sentence));
 
     if (toInsert.length > 0) {
       await this.prisma.exercise.createMany({ data: toInsert });
     }
 
-    return { totalProcessed: exercises.length, inserted: toInsert.length, skipped: existing.length };
+    return {
+      totalProcessed: exercises.length,
+      inserted: toInsert.length,
+      skipped: existing.length,
+    };
   }
 }
 
-
 function buildExerciseFeedback(
-  accuracy:      number,
-  correctCount:  number,
-  totalBlanks:   number,
+  accuracy: number,
+  correctCount: number,
+  totalBlanks: number,
 ): string {
   const wrong = totalBlanks - correctCount;
 

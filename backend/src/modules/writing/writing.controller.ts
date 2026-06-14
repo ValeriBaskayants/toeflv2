@@ -20,10 +20,7 @@ export class WritingController {
   constructor(private readonly service: WritingService) {}
 
   @Get('prompts')
-  getPrompts(
-    @CurrentUser() user: JwtUserPayload,
-    @Query() query: GetPromptsDto,
-  ) {
+  getPrompts(@CurrentUser() user: JwtUserPayload, @Query() query: GetPromptsDto) {
     return this.service.getPrompts(user.id, query.level);
   }
 
@@ -47,18 +44,12 @@ export class WritingController {
   }
 
   @Get('submissions')
-  getSubmissions(
-    @CurrentUser() user: JwtUserPayload,
-    @Query() query: GetSubmissionsDto,
-  ) {
+  getSubmissions(@CurrentUser() user: JwtUserPayload, @Query() query: GetSubmissionsDto) {
     return this.service.getSubmissions(user.id, query.promptId);
   }
 
   @Get('submissions/:id')
-  getSubmission(
-    @CurrentUser() user: JwtUserPayload,
-    @Param('id') id: string,
-  ) {
+  getSubmission(@CurrentUser() user: JwtUserPayload, @Param('id') id: string) {
     return this.service.getSubmission(id, user.id);
   }
 

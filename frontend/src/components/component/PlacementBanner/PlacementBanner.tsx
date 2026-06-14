@@ -1,6 +1,7 @@
 import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Sparkles, ArrowRight, SkipForward, Bell } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { Sparkles, ArrowRight, SkipForward, Bell, RotateCcw } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
   skipPlacementTest,
@@ -9,17 +10,20 @@ import {
 } from '@/store/Slices/PlacementSlice';
 import styles from './PlacementBanner.module.css';
 
-// ─── Level preview pills ───────────────────────────────────────────────────────
-
-const LEVEL_PREVIEW = ['A1', 'A2', 'B1', 'B2', 'C1', 'C2'] as const;
-
-// ─── Component ────────────────────────────────────────────────────────────────
+const LEVEL_PREVIEW = ['A1', 'A1+', 'A2', 'A2+', 'B1', 'B1+', 'B2', 'B2+', 'C1', 'C2'] as const;
 
 export function PlacementBanner() {
+  const { t }    = useTranslation();
   const dispatch = useAppDispatch();
   const navigate = useNavigate();
 
-  const { isSkipping, isReminding } = useAppSelector((state) => state.placement);
+  const { isSkipping, isReminding, status, detectedLevel, canRetake } =
+    useAppSelector((s) => s.placement);
+
+  if (status === 'COMPLETED' && !canRetake) return null;
+
+  const isRetakeBanner = status === 'COMPLETED' && canRetake;
+  const isActing       = isSkipping || isReminding;
 
   const handleStartTest = useCallback(() => {
     dispatch(dismissBannerLocally());
@@ -34,40 +38,45 @@ export function PlacementBanner() {
     void dispatch(remindLaterPlacement());
   }, [dispatch]);
 
-  const isActing = isSkipping || isReminding;
-
   return (
-    <div className={styles['banner']}>
-      {/* Decorative background glow */}
+    <div className={`${styles['banner']} ${isRetakeBanner ? styles['bannerRetake'] : ''}`}>
       <div className={styles['glow']} aria-hidden="true" />
 
       <div className={styles['content']}>
-        {/* Left: icon + text */}
         <div className={styles['left']}>
           <div className={styles['iconWrap']} aria-hidden="true">
-            <Sparkles size={22} />
+            {isRetakeBanner ? <RotateCcw size={22} /> : <Sparkles size={22} />}
           </div>
 
           <div className={styles['text']}>
-            <h2 className={styles['title']}>Find your true starting level</h2>
+            <h2 className={styles['title']}>
+              {isRetakeBanner
+                ? t('placement.retakeNow')
+                : t('placement.bannerTitle')}
+            </h2>
             <p className={styles['subtitle']}>
-              Take a short adaptive test (5–10 min) so you start exactly where you belong — not too
-              easy, not too hard.
+              {isRetakeBanner
+                ? t('placement.alreadyCompleted')
+                : t('placement.bannerSubtitle')}
             </p>
 
-            {/* Level pills — shows the range visually */}
-            <div className={styles['levelRow']} aria-hidden="true">
-              {LEVEL_PREVIEW.map((lvl) => (
-                <span key={lvl} className={styles['levelPill']}>
-                  {lvl}
-                </span>
-              ))}
-              <span className={styles['levelArrow']}>← where will you land?</span>
-            </div>
+            {!isRetakeBanner && (
+              <div className={styles['levelRow']} aria-hidden="true">
+                {LEVEL_PREVIEW.map((lvl) => (
+                  <span key={lvl} className={styles['levelPill']}>{lvl}</span>
+                ))}
+                <span className={styles['levelArrow']}>{t('placement.bannerLevelArrow')}</span>
+              </div>
+            )}
+
+            {isRetakeBanner && detectedLevel !== null && (
+              <p className={styles['previousLevel']}>
+                {t('placement.previousLevel', { level: detectedLevel.replace('_PLUS', '+') })}
+              </p>
+            )}
           </div>
         </div>
 
-        {/* Right: actions */}
         <div className={styles['actions']}>
           <button
             type="button"
@@ -75,31 +84,41 @@ export function PlacementBanner() {
             onClick={handleStartTest}
             disabled={isActing}
           >
-            <span>Start the test</span>
+            <span>
+              {isRetakeBanner ? t('placement.retakeNow') : t('placement.startTest')}
+            </span>
             <ArrowRight size={16} />
           </button>
 
-          <button
-            type="button"
-            className={styles['secondaryBtn']}
-            onClick={handleRemindLater}
-            disabled={isActing}
-            aria-label="Remind me in 4 days"
-          >
-            {isReminding ? <span className={styles['spinner']} /> : <Bell size={14} />}
-            Remind me later
-          </button>
+          {!isRetakeBanner && (
+            <button
+              type="button"
+              className={styles['secondaryBtn']}
+              onClick={handleRemindLater}
+              disabled={isActing}
+              aria-label={t('placement.remindLater')}
+            >
+              {isReminding
+                ? <span className={styles['spinner']} />
+                : <Bell size={14} />}
+              {t('placement.remindLater')}
+            </button>
+          )}
 
-          <button
-            type="button"
-            className={styles['skipBtn']}
-            onClick={handleSkip}
-            disabled={isActing}
-            aria-label="Skip placement test and start at A1"
-          >
-            {isSkipping ? <span className={styles['spinner']} /> : <SkipForward size={13} />}
-            Skip — start at A1
-          </button>
+          {!isRetakeBanner && (
+            <button
+              type="button"
+              className={styles['skipBtn']}
+              onClick={handleSkip}
+              disabled={isActing}
+              aria-label={t('placement.skipToA1')}
+            >
+              {isSkipping
+                ? <span className={styles['spinner']} />
+                : <SkipForward size={13} />}
+              {t('placement.skipToA1')}
+            </button>
+          )}
         </div>
       </div>
     </div>

@@ -1,4 +1,4 @@
-/* ── Page shell ───────────────────────────────────────────────────────────── */
+
 .page {
   padding: 2rem 2.5rem 4rem;
   max-width: 1060px;
@@ -10,7 +10,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Back button ──────────────────────────────────────────────────────────── */
+
 .backBtn {
   display: inline-flex;
   align-items: center;
@@ -24,7 +24,7 @@
 
 .backBtn:hover { color: var(--text-1); }
 
-/* ── Hero block ───────────────────────────────────────────────────────────── */
+
 .hero {
   position: relative;
   padding: 2rem 2rem 1.75rem;
@@ -36,7 +36,7 @@
   overflow: hidden;
 }
 
-/* Left colored stripe */
+
 .heroAccentLine {
   position: absolute;
   top: 0;
@@ -79,7 +79,7 @@
   max-width: 640px;
 }
 
-/* ── Body layout ──────────────────────────────────────────────────────────── */
+
 .body {
   display: grid;
   grid-template-columns: 1fr 220px;
@@ -87,7 +87,7 @@
   align-items: start;
 }
 
-/* ── Main panel ───────────────────────────────────────────────────────────── */
+
 .main {
   background: var(--surface);
   border: 1px solid var(--border);
@@ -96,7 +96,7 @@
   overflow: hidden;
 }
 
-/* ── Tab bar ──────────────────────────────────────────────────────────────── */
+
 .tabBar {
   display: flex;
   border-bottom: 1px solid var(--border);
@@ -153,7 +153,7 @@
   color: var(--tab-color, var(--accent));
 }
 
-/* ── Tab content shell ────────────────────────────────────────────────────── */
+
 .tabContent {
   padding: 1.75rem 1.75rem 2rem;
   animation: fadeIn 0.2s ease both;
@@ -164,7 +164,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Overview tab ─────────────────────────────────────────────────────────── */
+
 .overviewSection {
   margin-bottom: 2rem;
 }
@@ -189,7 +189,7 @@
   line-height: 1.7;
 }
 
-/* Structure code block */
+
 .structureBlock {
   padding: 1rem 1.25rem;
   background: var(--surface-2);
@@ -206,7 +206,7 @@
   word-break: break-word;
 }
 
-/* Signal words */
+
 .signalWordsList {
   display: flex;
   flex-wrap: wrap;
@@ -223,7 +223,7 @@
   color: var(--text-1);
 }
 
-/* ── Examples / Usages tab ────────────────────────────────────────────────── */
+
 .groupLabel {
   font-size: 0.72rem;
   font-weight: 700;
@@ -239,7 +239,7 @@
 
 .accordionGroup:last-child { margin-bottom: 0; }
 
-/* ── Accordion ────────────────────────────────────────────────────────────── */
+
 .accordion {
   border: 1px solid var(--border);
   border-radius: var(--radius-md);
@@ -291,7 +291,7 @@
   color: var(--text-3);
   line-height: 1.4;
 
-  /* Single line clamp */
+ 
   display: -webkit-box;
   -webkit-line-clamp: 1;
   -webkit-box-orient: vertical;
@@ -328,7 +328,7 @@
   margin-bottom: 1rem;
 }
 
-/* ── Example list ─────────────────────────────────────────────────────────── */
+
 .exampleList {
   display: flex;
   flex-direction: column;
@@ -359,7 +359,7 @@
   line-height: 1.4;
 }
 
-/* ── Mistakes tab ─────────────────────────────────────────────────────────── */
+
 .mistakesBanner {
   display: flex;
   align-items: center;
@@ -414,7 +414,7 @@
   line-height: 1.6;
 }
 
-/* ── Compare tab ──────────────────────────────────────────────────────────── */
+
 .compExplanation {
   font-size: 0.9rem;
   color: var(--text-1);
@@ -435,7 +435,7 @@
 
 .compLink:hover { gap: 0.5rem; }
 
-/* ── Empty tab state ──────────────────────────────────────────────────────── */
+
 .emptyTab {
   display: flex;
   flex-direction: column;
@@ -450,7 +450,7 @@
 .emptyTab svg { opacity: 0.25; }
 .emptyTab p   { font-size: 0.875rem; }
 
-/* ── Sidebar ──────────────────────────────────────────────────────────────── */
+
 .sidebar { position: sticky; top: 1.5rem; }
 
 .sidebarCard {
@@ -502,7 +502,7 @@
 
 .relatedItem:hover .relatedArrow { color: var(--accent); }
 
-/* ── Error state ──────────────────────────────────────────────────────────── */
+
 .errorState {
   display: flex;
   flex-direction: column;
@@ -546,7 +546,7 @@
   box-shadow: var(--shadow-accent);
 }
 
-/* ── Responsive ───────────────────────────────────────────────────────────── */
+
 @media (max-width: 900px) {
   .body {
     grid-template-columns: 1fr;

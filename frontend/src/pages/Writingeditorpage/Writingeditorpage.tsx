@@ -1,3 +1,13 @@
+// ════════════════════════════════════════════════════════════════════════════
+// frontend/src/pages/Writingeditorpage/Writingeditorpage.tsx  — UPDATED
+//
+// Изменения:
+//   + Показывает willCountForProgress предупреждение (попытки > 3 → урезанный XP)
+//   + Показывает attemptNumber "Attempt 2 of 3"
+//   + Убран устаревший тип WritingPrompt → используется currentPrompt из slice
+//     (который теперь может быть WritingPromptWithStatus через fetchPromptById)
+// ════════════════════════════════════════════════════════════════════════════
+
 import { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -18,6 +28,7 @@ import {
   Target,
   Brain,
   BarChart2,
+  Info,
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
@@ -34,16 +45,9 @@ import styles from './WritingEditorPage.module.css';
 // ─── Constants ────────────────────────────────────────────────────────────────
 
 const LEVEL_DISPLAY: Record<string, string> = {
-  A1: 'A1',
-  A1_PLUS: 'A1+',
-  A2: 'A2',
-  A2_PLUS: 'A2+',
-  B1: 'B1',
-  B1_PLUS: 'B1+',
-  B2: 'B2',
-  B2_PLUS: 'B2+',
-  C1: 'C1',
-  C2: 'C2',
+  A1: 'A1', A1_PLUS: 'A1+', A2: 'A2', A2_PLUS: 'A2+',
+  B1: 'B1', B1_PLUS: 'B1+', B2: 'B2', B2_PLUS: 'B2+',
+  C1: 'C1', C2: 'C2',
 };
 
 const TYPE_ICON: Record<string, React.ReactNode> = {
@@ -55,15 +59,13 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
 const SCORE_COLOR = (s: number) => (s >= 80 ? '#22c55e' : s >= 60 ? '#f59e0b' : '#ef4444');
 
 const POLL_INTERVAL_MS = 2500;
-const POLL_MAX_ATTEMPTS = 28; // 70s max
-
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+const POLL_MAX_ATTEMPTS = 28;
 
 function countWords(text: string): number {
   return text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
 }
 
-// ─── ScoreRing (SVG) ──────────────────────────────────────────────────────────
+// ─── ScoreRing ────────────────────────────────────────────────────────────────
 
 function ScoreRing({ score }: { score: number }) {
   const r = 42;
@@ -73,42 +75,19 @@ function ScoreRing({ score }: { score: number }) {
 
   return (
     <svg viewBox="0 0 100 100" className={styles['scoreRing']} aria-label={`Score: ${score}%`}>
-      {/* Background track */}
       <circle cx="50" cy="50" r={r} fill="none" stroke="var(--border)" strokeWidth="7" />
-      {/* Filled arc */}
       <circle
-        cx="50"
-        cy="50"
-        r={r}
-        fill="none"
-        stroke={color}
-        strokeWidth="7"
+        cx="50" cy="50" r={r} fill="none" stroke={color} strokeWidth="7"
         strokeLinecap="round"
         strokeDasharray={`${filled} ${circ - filled}`}
-        strokeDashoffset={circ * 0.25} /* start at top */
+        strokeDashoffset={circ * 0.25}
         style={{ transition: 'stroke-dasharray 1s var(--ease-spring)' }}
       />
-      {/* Score text */}
-      <text
-        x="50"
-        y="47"
-        textAnchor="middle"
-        dominantBaseline="middle"
-        fill={color}
-        fontSize="20"
-        fontWeight="800"
-        fontFamily="inherit"
-      >
+      <text x="50" y="47" textAnchor="middle" dominantBaseline="middle"
+        fill={color} fontSize="20" fontWeight="800" fontFamily="inherit">
         {Math.round(score)}
       </text>
-      <text
-        x="50"
-        y="64"
-        textAnchor="middle"
-        fill="var(--text-3)"
-        fontSize="9"
-        fontFamily="inherit"
-      >
+      <text x="50" y="64" textAnchor="middle" fill="var(--text-3)" fontSize="9" fontFamily="inherit">
         / 100
       </text>
     </svg>
@@ -129,23 +108,15 @@ function ScoreBar({ label, score, icon, weight }: ScoreBarProps) {
   return (
     <div className={styles['scoreBar']}>
       <div className={styles['scoreBarHeader']}>
-        <span className={styles['scoreBarIcon']} style={{ color }}>
-          {icon}
-        </span>
+        <span className={styles['scoreBarIcon']} style={{ color }}>{icon}</span>
         <span className={styles['scoreBarLabel']}>{label}</span>
         {weight && <span className={styles['scoreBarWeight']}>{weight}</span>}
-        <span className={styles['scoreBarValue']} style={{ color }}>
-          {Math.round(score)}
-        </span>
+        <span className={styles['scoreBarValue']} style={{ color }}>{Math.round(score)}</span>
       </div>
       <div className={styles['scoreBarTrack']}>
         <div
           className={styles['scoreBarFill']}
-          style={{
-            width: `${score}%`,
-            backgroundColor: color,
-            transition: 'width 0.9s var(--ease-spring)',
-          }}
+          style={{ width: `${score}%`, backgroundColor: color, transition: 'width 0.9s var(--ease-spring)' }}
         />
       </div>
     </div>
@@ -153,7 +124,6 @@ function ScoreBar({ label, score, icon, weight }: ScoreBarProps) {
 }
 
 // ─── HighlightedText ──────────────────────────────────────────────────────────
-// Renders the submitted text with error spans highlighted by offset/length.
 
 interface HighlightedTextProps {
   text: string;
@@ -161,35 +131,23 @@ interface HighlightedTextProps {
 }
 
 function HighlightedText({ text, errors }: HighlightedTextProps) {
-  const [tooltip, setTooltip] = useState<{
-    msg: string;
-    reps: string[];
-    x: number;
-    y: number;
-  } | null>(null);
+  const [tooltip, setTooltip] = useState<{ msg: string; reps: string[]; x: number; y: number } | null>(null);
 
-  // Sort errors by offset, remove overlaps
   const sorted = useMemo(() => {
     const s = [...errors].sort((a, b) => a.offset - b.offset);
     const result: WritingError[] = [];
     let cursor = 0;
     for (const e of s) {
-      if (e.offset >= cursor) {
-        result.push(e);
-        cursor = e.offset + e.length;
-      }
+      if (e.offset >= cursor) { result.push(e); cursor = e.offset + e.length; }
     }
     return result;
   }, [errors]);
 
-  // Build parts array
   const parts = useMemo(() => {
     const out: Array<{ text: string; error?: WritingError }> = [];
     let cursor = 0;
     for (const err of sorted) {
-      if (err.offset > cursor) {
-        out.push({ text: text.slice(cursor, err.offset) });
-      }
+      if (err.offset > cursor) out.push({ text: text.slice(cursor, err.offset) });
       out.push({ text: text.slice(err.offset, err.offset + err.length), error: err });
       cursor = err.offset + err.length;
     }
@@ -206,38 +164,22 @@ function HighlightedText({ text, errors }: HighlightedTextProps) {
             className={styles['errorMark']}
             onMouseEnter={(e) => {
               const rect = (e.target as HTMLElement).getBoundingClientRect();
-              setTooltip({
-                msg: part.error!.message,
-                reps: part.error!.replacements,
-                x: rect.left,
-                y: rect.bottom + window.scrollY + 4,
-              });
+              setTooltip({ msg: part.error!.message, reps: part.error!.replacements, x: rect.left, y: rect.bottom + window.scrollY + 4 });
             }}
             onMouseLeave={() => setTooltip(null)}
           >
             {part.text}
           </mark>
         ) : (
-          <span key={i} style={{ whiteSpace: 'pre-wrap' }}>
-            {part.text}
-          </span>
+          <span key={i} style={{ whiteSpace: 'pre-wrap' }}>{part.text}</span>
         ),
       )}
-
-      {/* Tooltip */}
       {tooltip !== null && (
-        <div
-          className={styles['errorTooltip']}
-          style={{ position: 'fixed', left: tooltip.x, top: tooltip.y }}
-        >
+        <div className={styles['errorTooltip']} style={{ position: 'fixed', left: tooltip.x, top: tooltip.y }}>
           <p className={styles['tooltipMsg']}>{tooltip.msg}</p>
           {tooltip.reps.length > 0 && (
             <div className={styles['tooltipReps']}>
-              {tooltip.reps.map((r) => (
-                <span key={r} className={styles['tooltipRep']}>
-                  {r}
-                </span>
-              ))}
+              {tooltip.reps.map((r) => <span key={r} className={styles['tooltipRep']}>{r}</span>)}
             </div>
           )}
         </div>
@@ -258,35 +200,14 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
   const [tab, setTab] = useState<'scores' | 'errors' | 'text'>('scores');
 
   const metrics: ScoreBarProps[] = [
-    {
-      label: t('writing.analysis.grammar'),
-      score: analysis.grammarScore,
-      icon: <CheckCircle2 size={14} />,
-      weight: '35%',
-    },
-    {
-      label: t('writing.analysis.task'),
-      score: analysis.taskScore,
-      icon: <Target size={14} />,
-      weight: '30%',
-    },
-    {
-      label: t('writing.analysis.vocabulary'),
-      score: analysis.vocabularyScore,
-      icon: <Brain size={14} />,
-      weight: '20%',
-    },
-    {
-      label: t('writing.analysis.coherence'),
-      score: analysis.coherenceScore,
-      icon: <BarChart2 size={14} />,
-      weight: '15%',
-    },
+    { label: t('writing.analysis.grammar'),    score: analysis.grammarScore,    icon: <CheckCircle2 size={14} />, weight: '35%' },
+    { label: t('writing.analysis.task'),       score: analysis.taskScore,       icon: <Target size={14} />,       weight: '30%' },
+    { label: t('writing.analysis.vocabulary'), score: analysis.vocabularyScore, icon: <Brain size={14} />,        weight: '20%' },
+    { label: t('writing.analysis.coherence'),  score: analysis.coherenceScore,  icon: <BarChart2 size={14} />,    weight: '15%' },
   ];
 
   return (
     <div className={styles['analysisPanel']}>
-      {/* Score hero row */}
       <div className={styles['scoreHero']}>
         <div className={styles['scoreRingWrap']}>
           <ScoreRing score={analysis.overallScore} />
@@ -300,17 +221,13 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
             )}
           </div>
         </div>
-
         <div className={styles['quickStats']}>
           <div className={styles['quickStat']}>
             <span className={styles['quickStatVal']}>{analysis.wordCount}</span>
             <span className={styles['quickStatLabel']}>{t('writing.words')}</span>
           </div>
           <div className={styles['quickStat']}>
-            <span
-              className={styles['quickStatVal']}
-              style={{ color: analysis.errorCount > 0 ? '#ef4444' : '#22c55e' }}
-            >
+            <span className={styles['quickStatVal']} style={{ color: analysis.errorCount > 0 ? '#ef4444' : '#22c55e' }}>
               {analysis.errorCount}
             </span>
             <span className={styles['quickStatLabel']}>{t('writing.analysis.errors')}</span>
@@ -318,7 +235,6 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
         </div>
       </div>
 
-      {/* Tabs */}
       <div className={styles['analysisTabs']}>
         {(['scores', 'errors', 'text'] as const).map((tb) => (
           <button
@@ -332,15 +248,11 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
         ))}
       </div>
 
-      {/* Tab: Scores */}
       {tab === 'scores' && (
         <div className={styles['tabContent']}>
           <div className={styles['scoreBars']}>
-            {metrics.map((m) => (
-              <ScoreBar key={m.label} {...m} />
-            ))}
+            {metrics.map((m) => <ScoreBar key={m.label} {...m} />)}
           </div>
-
           {analysis.feedback && (
             <div className={styles['feedbackCard']}>
               <div className={styles['feedbackHeader']}>
@@ -353,7 +265,6 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
         </div>
       )}
 
-      {/* Tab: Errors */}
       {tab === 'errors' && (
         <div className={styles['tabContent']}>
           {analysis.errors.length === 0 ? (
@@ -372,14 +283,8 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
                   {err.context && <p className={styles['errorContext']}>"…{err.context}…"</p>}
                   {err.replacements.length > 0 && (
                     <div className={styles['errorReps']}>
-                      <span className={styles['errorRepsLabel']}>
-                        {t('writing.analysis.suggestions')}:
-                      </span>
-                      {err.replacements.map((r) => (
-                        <span key={r} className={styles['errorRep']}>
-                          {r}
-                        </span>
-                      ))}
+                      <span className={styles['errorRepsLabel']}>{t('writing.analysis.suggestions')}:</span>
+                      {err.replacements.map((r) => <span key={r} className={styles['errorRep']}>{r}</span>)}
                     </div>
                   )}
                 </div>
@@ -389,7 +294,6 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
         </div>
       )}
 
-      {/* Tab: Annotated text */}
       {tab === 'text' && (
         <div className={styles['tabContent']}>
           <p className={styles['textTabHint']}>{t('writing.analysis.hoverErrors')}</p>
@@ -402,20 +306,12 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
 
 // ─── WordCountBar ─────────────────────────────────────────────────────────────
 
-interface WordCountBarProps {
-  count: number;
-  min: number;
-  max: number;
-}
-
-function WordCountBar({ count, min, max }: WordCountBarProps) {
+function WordCountBar({ count, min, max }: { count: number; min: number; max: number }) {
   const { t } = useTranslation();
-
   const pct = Math.min(100, (count / max) * 100);
   const tooShort = count < Math.floor(min * 0.5);
   const belowMin = count < min && !tooShort;
   const inRange = count >= min && count <= max;
-
   const color = tooShort ? '#ef4444' : belowMin ? '#f59e0b' : inRange ? '#22c55e' : '#f59e0b';
 
   const label = tooShort
@@ -429,25 +325,12 @@ function WordCountBar({ count, min, max }: WordCountBarProps) {
   return (
     <div className={styles['wordCountBar']}>
       <div className={styles['wordCountTrack']}>
-        {/* Min marker */}
         <div className={styles['wordCountMarker']} style={{ left: `${(min / max) * 100}%` }} />
-        {/* Fill */}
-        <div
-          className={styles['wordCountFill']}
-          style={{
-            width: `${pct}%`,
-            backgroundColor: color,
-            transition: 'width .2s ease, background-color .3s ease',
-          }}
-        />
+        <div className={styles['wordCountFill']} style={{ width: `${pct}%`, backgroundColor: color, transition: 'width .2s ease, background-color .3s ease' }} />
       </div>
       <div className={styles['wordCountMeta']}>
-        <span className={styles['wordCountLabel']} style={{ color }}>
-          {label}
-        </span>
-        <span className={styles['wordCountRange']}>
-          {min}–{max} {t('writing.words')}
-        </span>
+        <span className={styles['wordCountLabel']} style={{ color }}>{label}</span>
+        <span className={styles['wordCountRange']}>{min}–{max} {t('writing.words')}</span>
       </div>
     </div>
   );
@@ -471,33 +354,26 @@ export default function WritingEditorPage() {
     submitError,
     pendingSubmissionId,
     currentSubmission,
-  } = useAppSelector((state) => state.writing);
+    willCountForProgress,
+    attemptNumber,
+  } = useAppSelector((s) => s.writing);
 
-  // Polling ref
   const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const pollCount = useRef(0);
 
-  // ── Load prompt ──────────────────────────────────────────────────────────
   useEffect(() => {
     if (!promptId) return;
     void dispatch(fetchPromptById(promptId));
-
-    // If a submissionId is in the URL, load it directly
     const subId = searchParams.get('submission');
-    if (subId) {
-      void dispatch(fetchSubmission(subId));
-    }
-
+    if (subId) void dispatch(fetchSubmission(subId));
     return () => {
       dispatch(clearEditor());
       if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [promptId, dispatch, searchParams]);
 
-  // ── Polling ──────────────────────────────────────────────────────────────
   useEffect(() => {
     if (!pendingSubmissionId) return;
-
     pollCount.current = 0;
     pollRef.current = setInterval(async () => {
       pollCount.current += 1;
@@ -506,19 +382,13 @@ export default function WritingEditorPage() {
         return;
       }
       const result = await dispatch(fetchSubmission(pendingSubmissionId));
-      if (fetchSubmission.fulfilled.match(result)) {
-        if (result.payload.status !== 'PENDING') {
-          if (pollRef.current) clearInterval(pollRef.current);
-        }
+      if (fetchSubmission.fulfilled.match(result) && result.payload.status !== 'PENDING') {
+        if (pollRef.current) clearInterval(pollRef.current);
       }
     }, POLL_INTERVAL_MS);
-
-    return () => {
-      if (pollRef.current) clearInterval(pollRef.current);
-    };
+    return () => { if (pollRef.current) clearInterval(pollRef.current); };
   }, [pendingSubmissionId, dispatch]);
 
-  // ── Handlers ─────────────────────────────────────────────────────────────
   const handleSubmit = useCallback(async () => {
     if (!promptId || draftText.trim().length === 0) return;
     await dispatch(submitWriting({ promptId, text: draftText.trim() }));
@@ -529,7 +399,6 @@ export default function WritingEditorPage() {
     if (promptId) void dispatch(fetchPromptById(promptId));
   }, [dispatch, promptId]);
 
-  // ── Derived ───────────────────────────────────────────────────────────────
   const wordCount = countWords(draftText);
   const minWords = currentPrompt?.minWords ?? 50;
   const maxWords = currentPrompt?.maxWords ?? 200;
@@ -538,8 +407,6 @@ export default function WritingEditorPage() {
   const isPending = pendingSubmissionId !== null || currentSubmission?.status === 'PENDING';
   const isAnalyzed = currentSubmission?.status === 'ANALYZED';
   const isError = currentSubmission?.status === 'ERROR';
-
-  // ── Render ────────────────────────────────────────────────────────────────
 
   if (promptLoading) return <FullPageSpinner label={t('writing.loading')} />;
 
@@ -556,49 +423,34 @@ export default function WritingEditorPage() {
   }
 
   const typeColor =
-    currentPrompt.type === 'SENTENCE'
-      ? '#14b8a6'
-      : currentPrompt.type === 'PARAGRAPH'
-        ? '#6366f1'
-        : '#ec4899';
+    currentPrompt.type === 'SENTENCE' ? '#14b8a6' :
+    currentPrompt.type === 'PARAGRAPH' ? '#6366f1' : '#ec4899';
 
   return (
     <div className={styles['page']}>
-      {/* ── Back link ── */}
       <button type="button" className={styles['backLink']} onClick={() => navigate('/writing')}>
         <ArrowLeft size={15} />
         {t('writing.backToPrompts')}
       </button>
 
-      {/* ── Two-column layout ── */}
       <div className={styles['layout']}>
-        {/* ══ LEFT: Prompt panel ══ */}
+        {/* ── Левая панель — задание ── */}
         <aside className={styles['promptPanel']}>
           <div className={styles['promptPanelInner']}>
-            {/* Badges */}
             <div className={styles['promptBadges']}>
-              <span className={styles['levelBadge']}>
-                {LEVEL_DISPLAY[currentPrompt.level] ?? currentPrompt.level}
-              </span>
-              <span
-                className={styles['typeBadge']}
-                style={{ '--type-color': typeColor } as React.CSSProperties}
-              >
+              <span className={styles['levelBadge']}>{LEVEL_DISPLAY[currentPrompt.level] ?? currentPrompt.level}</span>
+              <span className={styles['typeBadge']} style={{ '--type-color': typeColor } as React.CSSProperties}>
                 {TYPE_ICON[currentPrompt.type]}
                 {currentPrompt.type.charAt(0) + currentPrompt.type.slice(1).toLowerCase()}
               </span>
-              {currentPrompt.topic && (
-                <span className={styles['topicTag']}>#{currentPrompt.topic}</span>
-              )}
+              {currentPrompt.topic && <span className={styles['topicTag']}>#{currentPrompt.topic}</span>}
             </div>
 
-            {/* Prompt text */}
             <div className={styles['promptLabel']}>{t('writing.prompt')}</div>
             <blockquote className={styles['promptQuote']} style={{ borderColor: typeColor }}>
               {currentPrompt.prompt}
             </blockquote>
 
-            {/* Instructions */}
             {currentPrompt.instructions && (
               <div className={styles['instructionsCard']}>
                 <div className={styles['instructionsHeader']}>
@@ -609,7 +461,6 @@ export default function WritingEditorPage() {
               </div>
             )}
 
-            {/* Word target */}
             <div className={styles['wordTarget']}>
               <span className={styles['wordTargetLabel']}>{t('writing.target')}</span>
               <span className={styles['wordTargetVal']}>
@@ -619,9 +470,25 @@ export default function WritingEditorPage() {
           </div>
         </aside>
 
-        {/* ══ RIGHT: Editor / Analysis ══ */}
+        {/* ── Правая панель — редактор / результат ── */}
         <main className={styles['editorPanel']}>
-          {/* ── State: not yet submitted ── */}
+
+          {/* Бейдж попытки — показывается до отправки */}
+          {attemptNumber !== null && !isPending && !isAnalyzed && (
+            <div className={styles['attemptInfo']}>
+              {willCountForProgress === false ? (
+                <div className={styles['attemptWarn']}>
+                  <Info size={13} />
+                  {t('writing.attempt.bonusOnly', { n: attemptNumber })}
+                </div>
+              ) : (
+                <div className={styles['attemptBadge']}>
+                  {t('writing.attempt.counted', { n: attemptNumber })}
+                </div>
+              )}
+            </div>
+          )}
+
           {!isPending && !isAnalyzed && !isError && (
             <>
               <div className={styles['editorHeader']}>
@@ -643,10 +510,8 @@ export default function WritingEditorPage() {
                 autoFocus
               />
 
-              {/* Word count bar */}
               <WordCountBar count={wordCount} min={minWords} max={maxWords} />
 
-              {/* Submit */}
               <button
                 type="button"
                 className={styles['submitBtn']}
@@ -654,30 +519,19 @@ export default function WritingEditorPage() {
                 disabled={!canSubmit || submitting}
               >
                 {submitting ? (
-                  <>
-                    <Loader2 size={16} className={styles['spin']} />
-                    {t('writing.submitting')}
-                  </>
+                  <><Loader2 size={16} className={styles['spin']} />{t('writing.submitting')}</>
                 ) : (
-                  <>
-                    <Send size={16} />
-                    {t('writing.submit')}
-                  </>
+                  <><Send size={16} />{t('writing.submit')}</>
                 )}
               </button>
             </>
           )}
 
-          {/* ── State: PENDING (analyzing) ── */}
           {isPending && (
             <div className={styles['pendingState']}>
-              <div className={styles['pendingSpinner']}>
-                <Loader2 size={40} className={styles['spin']} />
-              </div>
+              <div className={styles['pendingSpinner']}><Loader2 size={40} className={styles['spin']} /></div>
               <h3 className={styles['pendingTitle']}>{t('writing.analyzing')}</h3>
               <p className={styles['pendingHint']}>{t('writing.analyzingHint')}</p>
-
-              {/* Show the submitted text while waiting */}
               {currentSubmission?.text && (
                 <div className={styles['pendingPreview']}>
                   <div className={styles['pendingPreviewLabel']}>{t('writing.yourResponse')}</div>
@@ -687,7 +541,6 @@ export default function WritingEditorPage() {
             </div>
           )}
 
-          {/* ── State: ERROR ── */}
           {isError && (
             <div className={styles['errorState']}>
               <XCircle size={40} className={styles['errorStateIcon']} />
@@ -699,7 +552,6 @@ export default function WritingEditorPage() {
             </div>
           )}
 
-          {/* ── State: ANALYZED ── */}
           {isAnalyzed && currentSubmission?.analysis && (
             <>
               <div className={styles['analyzedHeader']}>
@@ -712,7 +564,6 @@ export default function WritingEditorPage() {
                   {t('writing.writeAgain')}
                 </button>
               </div>
-
               <AnalysisPanel analysis={currentSubmission.analysis} text={currentSubmission.text} />
             </>
           )}

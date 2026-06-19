@@ -184,10 +184,10 @@ export function GrammarRulesPage() {
 
   // Fetch when level changes immediately; search is debounced below
   useEffect(() => {
-    void dispatch(fetchGrammarRules({
-      level:  activeLevel ?? undefined,
-      search: search.trim().length > 0 ? search.trim() : undefined,
-    }));
+    const params: any = {};
+    if (activeLevel) params.level = activeLevel;
+    if (search.trim().length > 0) params.search = search.trim();
+    void dispatch(fetchGrammarRules(params));
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [activeLevel, dispatch]);
 
@@ -202,10 +202,10 @@ export function GrammarRulesPage() {
     // Debounced server-side fetch so backend also filters (especially for big lists)
     if (debounceRef.current !== null) { clearTimeout(debounceRef.current); }
     debounceRef.current = setTimeout(() => {
-      void dispatch(fetchGrammarRules({
-        level:  activeLevel ?? undefined,
-        search: value.trim().length > 0 ? value.trim() : undefined,
-      }));
+      const params: any = {};
+      if (activeLevel) params.level = activeLevel;
+      if (value.trim().length > 0) params.search = value.trim();
+      void dispatch(fetchGrammarRules(params));
     }, SEARCH_DEBOUNCE_MS);
   }, [dispatch, activeLevel]);
 
@@ -214,10 +214,10 @@ export function GrammarRulesPage() {
   }, [navigate]);
 
   const handleRetry = useCallback(() => {
-    void dispatch(fetchGrammarRules({
-      level:  activeLevel ?? undefined,
-      search: search.trim().length > 0 ? search.trim() : undefined,
-    }));
+    const params: any = {};
+    if (activeLevel) params.level = activeLevel;
+    if (search.trim().length > 0) params.search = search.trim();
+    void dispatch(fetchGrammarRules(params));
   }, [activeLevel, search, dispatch]);
 
   if (isLoading && rules.length === 0) {

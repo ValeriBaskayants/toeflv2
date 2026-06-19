@@ -1,41 +1,41 @@
 export const mistakes = {
-  title:    'Im sakhmanner',
-  subtitle: 'Verakandeq sakhmmannery ev hetekel tema vory pityoum en aveli mamum',
-  loading:  'Bervum en sakhmmannery…',
-  error:    'Chi hajhoghvel bernyl sakhmmannery',
-  retry:    'Krkin porcel',
-  total:    'sakhmanner',
+  title:    'Իմ սխալները',
+  subtitle: 'Վերլուծեք ձեր սխալները և հետևեք, թե որ թեմաներն ունեն լրացուցիչ պրակտիկայի կարիք:',
+  loading:  'Սխալները բեռնվում են…',
+  error:    'Չհաջողվեց բեռնել սխալները',
+  retry:    'Կրկին փորձել',
+  total:    'սխալ',
 
   stats: {
-    total:     'Ytnjapur',
-    dueReview: 'Krknel',
-    mastered:  'Tirapetats',
-    accuracy:  'Chshtutuyun',
+    total:     'Ընդհանուր',
+    dueReview: 'Կրկնության ենթակա',
+    mastered:  'Յուրացված',
+    accuracy:  'Ճշգրտություն',
   },
 
   weakSpots: {
-    title:  'Thuyl kety',
-    errors: 'sakhmanner',
+    title:  'Թույլ կողմեր',
+    errors: 'սխալ',
   },
 
   filters: {
-    source:            'Akbyor',
-    category:          'Khumb',
-    status:            'Ktakoum',
-    all:               'Bolor',
-    reset:             'Zarkel filtere',
-    searchPlaceholder: 'Orononel temayov…',
-    noResults:         'Filterin hamapataskhann sakhmanner chka',
+    source:            'Աղբյուր',
+    category:          'Կատեգորիա',
+    status:            'Կարգավիճակ',
+    all:               'Բոլորը',
+    reset:             'Մաքրել ֆիլտրերը',
+    searchPlaceholder: 'Որոնել ըստ թեմայի…',
+    noResults:         'Այս ֆիլտրերով սխալներ չեն գտնվել',
   },
 
   card: {
-    dueNow:         'Pityoum e krknel',
-    recentAttempts: 'Verjin porcery',
-    noAttempts:     'Porcery derevan chka',
+    dueNow:         'Ժամանակն է կրկնելու',
+    recentAttempts: 'Վերջին փորձերը',
+    noAttempts:     'Առայժմ փորձեր չկան',
   },
 
   empty: {
-    title: 'Sakhmanner derevan chka — shnorhavoravor!',
-    hint:  'Kvizeri, grotyun, ynthercum ev lsoghutyun sakhmanner kayerevi er aysteghy.',
+    title: 'Սխալներ դեռ չկան. հիանալի է:',
+    hint:  'Թեստերի, գրավոր խոսքի, ընթերցանության և ունկնդրման ընթացքում թույլ տրված սխալները կհայտնվեն այստեղ:',
   },
 };

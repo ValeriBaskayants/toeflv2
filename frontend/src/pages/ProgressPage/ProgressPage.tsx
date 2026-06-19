@@ -18,7 +18,7 @@ import {
   fetchRoadmap, selectRoadmapData,
   selectRoadmapLoading, selectRoadmapError,
 } from '@/store/Slices/RoadmapSlice';
-import type { RoadmapLevelNode, SkillTask, ExternalResource } from '@/types/roadmap/Roadmap.types';
+import type { RoadmapLevelNode, } from '@/types/roadmap/Roadmap.types';
 import type { DailyActivity } from '@/types/progress/Progress.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './ProgressPage.module.css';
@@ -205,7 +205,6 @@ function SkillBreakdown({ node }: { node: RoadmapLevelNode }) {
       </h2>
       <div className={styles['bdGrid']}>
         {node.skills.map((sk) => {
-          const Icon = SKILL_ICON[sk.skill];
           const sc   = SKILL_COLOR[sk.skill] ?? '#6366f1';
           return (
             <div key={sk.skill}

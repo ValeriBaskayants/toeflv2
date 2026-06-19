@@ -14,6 +14,21 @@ import type {
   SessionHistoryItem,
 } from '@/types/listening/Listening.types';
 
+
+
+export interface TtsSuccessResponse {
+  audioBase64: string;
+  cached: boolean;
+  fallback: false;
+}
+
+export interface TtsFallbackResponse {
+  fallback: true;
+  reason?: string;
+}
+
+export type TtsResponse = TtsSuccessResponse | TtsFallbackResponse;
+
 export const listeningApi = {
   bulkCreate: (listening: unknown[]) =>
     api.post<ImportResult>('/listening/bulk', { items: listening }),
@@ -30,7 +45,10 @@ export const listeningApi = {
     api.post<PlayResponse>(`/listening/sessions/${sessionId}/play`),
 
   saveNotes: (sessionId: string, payload: SaveNotesPayload) =>
-    api.patch<{ id: string; notes: unknown[] }>(`/listening/sessions/${sessionId}/notes`, payload),
+    api.patch<{ id: string; notes: unknown[] }>(
+      `/listening/sessions/${sessionId}/notes`,
+      payload,
+    ),
 
   submitAnswer: (sessionId: string, payload: SubmitAnswerPayload) =>
     api.post<SubmitAnswerResponse>(`/listening/sessions/${sessionId}/answers`, payload),
@@ -42,4 +60,7 @@ export const listeningApi = {
     api.get<SessionHistoryItem[]>('/listening/sessions', {
       params: materialId ? { materialId } : undefined,
     }),
+
+  tts: (materialId: string, text: string, rate?: number) =>
+    api.post<TtsResponse>('/listening/tts', { materialId, text, rate }),
 };

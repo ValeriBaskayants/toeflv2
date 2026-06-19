@@ -16,7 +16,7 @@ import {
   clearPlacementError,
 } from '@/store/Slices/PlacementSlice';
 import { clearProgress } from '@/store/Slices/ProgressSlice';
-import type { Dimension, DimensionResult } from '@/types/placement/Placement.types';
+import type { Dimension, DimensionResult } from '@/types/Placement/Placement.types';
 import styles from './Placementpage.module.css';
 
 
@@ -620,7 +620,7 @@ export function PlacementPage() {
   }
 
   // ── Основной тест ──────────────────────────────────────────────────────────
-  const meta                  = DIMENSION_META[currentQuestion.dimension];
+  const meta                  = DIMENSION_META[currentQuestion.dimension as Dimension];
   const isInteractionDisabled = isAnswering || feedback !== 'idle';
 
   return (
@@ -656,7 +656,7 @@ export function PlacementPage() {
         </div>
 
         <div className={styles['optionsGrid']} key={`opts-${currentQuestion.index}`}>
-          {currentQuestion.options.map((option, idx) => (
+          {currentQuestion.options.map((option:string, idx:number) => (
             <OptionButton
               key={idx}
               label={OPTION_LABELS[idx] ?? String(idx + 1)}

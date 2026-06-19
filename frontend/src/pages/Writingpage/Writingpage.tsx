@@ -1,13 +1,13 @@
-// ════════════════════════════════════════════════════════════════════════════
-// frontend/src/pages/Writingpage/Writingpage.tsx  — UPDATED
-//
-// Изменения:
-//   + PromptCard показывает userStatus (completed/in_progress/not_attempted)
-//   + PromptCard показывает userBestScore на карточке
-//   + StatsBar вверху страницы (avgScore, bestScore, trend) из getUserStats
-//   + fetchUserStats вызывается при монтировании
-//   + willCountForProgress предупреждение убрано отсюда (оно в Editor)
-// ════════════════════════════════════════════════════════════════════════════
+
+
+
+
+
+
+
+
+
+
 
 import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
@@ -43,7 +43,7 @@ import type { SubmissionWithPrompt } from '@/api/services/writing';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './WritingPage.module.css';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+
 
 const LEVELS = ['A1', 'A1_PLUS', 'A2', 'A2_PLUS', 'B1', 'B1_PLUS', 'B2', 'B2_PLUS', 'C1', 'C2'];
 const LEVEL_DISPLAY: Record<string, string> = {
@@ -72,7 +72,7 @@ function scoreColor(score: number): string {
   return score >= 75 ? '#22c55e' : score >= 50 ? '#f59e0b' : '#ef4444';
 }
 
-// ─── StatsBar ─────────────────────────────────────────────────────────────────
+
 
 function StatsBar() {
   const { t } = useTranslation();
@@ -123,7 +123,7 @@ function StatsBar() {
   );
 }
 
-// ─── PromptCard ───────────────────────────────────────────────────────────────
+
 
 function PromptCard({ prompt }: { prompt: WritingPromptWithStatus }) {
   const navigate = useNavigate();
@@ -201,7 +201,7 @@ function PromptCard({ prompt }: { prompt: WritingPromptWithStatus }) {
   );
 }
 
-// ─── SubmissionCard ───────────────────────────────────────────────────────────
+
 
 function SubmissionCard({ sub }: { sub: SubmissionWithPrompt }) {
   const navigate = useNavigate();
@@ -246,7 +246,7 @@ function SubmissionCard({ sub }: { sub: SubmissionWithPrompt }) {
   );
 }
 
-// ─── WritingPage ──────────────────────────────────────────────────────────────
+
 
 export default function WritingPage() {
   const { t } = useTranslation();

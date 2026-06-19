@@ -5,6 +5,9 @@ import { listening }  from './listening';
 import { writing }    from './writing';
 import { vocabulary } from './vocabulary';
 import { mistakes }   from './mistakes';
+import { quiz } from './quiz';
+import { placement } from './placement';
+import { exercises } from './exercises';
 
 export const hy = {
   translation: {
@@ -19,5 +22,8 @@ export const hy = {
     writing,
     vocabulary,
     mistakes,
+    quiz,
+    placement,
+    exercises
   },
 } as const;

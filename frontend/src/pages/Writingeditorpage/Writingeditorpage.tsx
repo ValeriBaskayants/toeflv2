@@ -1,13 +1,3 @@
-// ════════════════════════════════════════════════════════════════════════════
-// frontend/src/pages/Writingeditorpage/Writingeditorpage.tsx  — UPDATED
-//
-// Изменения:
-//   + Показывает willCountForProgress предупреждение (попытки > 3 → урезанный XP)
-//   + Показывает attemptNumber "Attempt 2 of 3"
-//   + Убран устаревший тип WritingPrompt → используется currentPrompt из slice
-//     (который теперь может быть WritingPromptWithStatus через fetchPromptById)
-// ════════════════════════════════════════════════════════════════════════════
-
 import { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { useParams, useSearchParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -40,9 +30,9 @@ import {
 } from '@/store/Slices/WritingSlice';
 import type { WritingError, WritingAnalysis } from '@/types/writing/Writing.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
-import styles from './WritingEditorPage.module.css';
+import styles from './WritingeditorPage.module.css';
 
-// ─── Constants ────────────────────────────────────────────────────────────────
+
 
 const LEVEL_DISPLAY: Record<string, string> = {
   A1: 'A1', A1_PLUS: 'A1+', A2: 'A2', A2_PLUS: 'A2+',
@@ -65,7 +55,7 @@ function countWords(text: string): number {
   return text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
 }
 
-// ─── ScoreRing ────────────────────────────────────────────────────────────────
+
 
 function ScoreRing({ score }: { score: number }) {
   const r = 42;
@@ -94,7 +84,7 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-// ─── ScoreBar ─────────────────────────────────────────────────────────────────
+
 
 interface ScoreBarProps {
   label: string;
@@ -123,7 +113,7 @@ function ScoreBar({ label, score, icon, weight }: ScoreBarProps) {
   );
 }
 
-// ─── HighlightedText ──────────────────────────────────────────────────────────
+
 
 interface HighlightedTextProps {
   text: string;
@@ -188,7 +178,7 @@ function HighlightedText({ text, errors }: HighlightedTextProps) {
   );
 }
 
-// ─── AnalysisPanel ────────────────────────────────────────────────────────────
+
 
 interface AnalysisPanelProps {
   analysis: WritingAnalysis;
@@ -304,7 +294,7 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
   );
 }
 
-// ─── WordCountBar ─────────────────────────────────────────────────────────────
+
 
 function WordCountBar({ count, min, max }: { count: number; min: number; max: number }) {
   const { t } = useTranslation();
@@ -336,7 +326,7 @@ function WordCountBar({ count, min, max }: { count: number; min: number; max: nu
   );
 }
 
-// ─── WritingEditorPage ────────────────────────────────────────────────────────
+
 
 export default function WritingEditorPage() {
   const { promptId } = useParams<{ promptId: string }>();

@@ -12,7 +12,6 @@ import { bookmarksReducer } from './Slices/BookMarksSlice';
 import { writingSlice } from './Slices/WritingSlice';
 import { vocabularySlice } from './Slices/VocabularySlice';
 import { mistakesSlice } from './Slices/MistakesSlice';
-import { roadmap } from '@/i18n/locales/en/common';
 import { roadmapSlice } from './Slices/RoadmapSlice';
 
 export const store = configureStore({

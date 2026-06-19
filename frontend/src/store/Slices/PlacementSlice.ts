@@ -4,7 +4,7 @@ import type {
   PlacementStatus,
   PublicQuestion,
   DimensionResult,
-} from '@/types/placement/Placement.types';
+} from '@/types/Placement/Placement.types';
 
 
 

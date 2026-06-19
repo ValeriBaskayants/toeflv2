@@ -11,10 +11,10 @@ import {
   goToQuestion, nextQuestion, prevQuestion, exitQuiz,
   type QuizSetup,
 } from '@/store/Slices/QuizSlice';
-import styles from './Quizpage.module.css';
+import styles from './QuizPage.module.css';
 import { Level, Difficulty } from '@/types/globalTypes';
 
-// ─── Constants ─────────────────────────────────────────────────────────────
+
 
 const LEVELS: Level[] = [
   Level.A1, Level.A1_PLUS, Level.A2, Level.A2_PLUS,
@@ -55,7 +55,7 @@ const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 function levelColor(l: Level) { return LEVEL_COLOR[l] ?? '#6366f1'; }
 
-// ─── SetupPhase ─────────────────────────────────────────────────────────────
+
 
 function SetupPhase() {
   const { t } = useTranslation();
@@ -164,7 +164,7 @@ function SetupPhase() {
   );
 }
 
-// ─── PlayingPhase ────────────────────────────────────────────────────────────
+
 
 function PlayingPhase() {
   const { t } = useTranslation();
@@ -196,7 +196,7 @@ function PlayingPhase() {
     }));
   }, [dispatch, answers]);
 
-  // Keyboard nav
+  
   useEffect(() => {
     const onKey = (e: KeyboardEvent) => {
       if (e.key === 'ArrowRight') dispatch(nextQuestion());
@@ -315,7 +315,7 @@ function PlayingPhase() {
   );
 }
 
-// ─── ResultsPhase ────────────────────────────────────────────────────────────
+
 
 function ResultsPhase() {
   const { t } = useTranslation();
@@ -331,7 +331,7 @@ function ResultsPhase() {
   const lc   = levelColor(lv);
   const pct  = accuracy ?? 0;
 
-  // SVG ring — r=54, circumference ≈ 339.3
+  
   const R = 54;
   const CIRC = 2 * Math.PI * R;
   const ringOffset = CIRC * (1 - pct / 100);
@@ -466,7 +466,7 @@ function ResultsPhase() {
   );
 }
 
-// ─── Root ─────────────────────────────────────────────────────────────────────
+
 
 export default function QuizPage() {
   const { phase } = useAppSelector((s) => s.quiz);

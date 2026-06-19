@@ -2,11 +2,7 @@ import { BadRequestException, Injectable, NotFoundException } from '@nestjs/comm
 import { Level, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
-import {
-  computeXP,
-  isSessionCountable,
-  XP_BASE,
-} from '../../constants/level-requirements';
+import { computeXP, isSessionCountable, XP_BASE } from '../../constants/level-requirements';
 import type { CreateReadingDto } from './dto/bulk-create-reading.dto';
 import type { SubmitReadingDto } from './dto/submit-reading.dto';
 import slugify from 'slugify';
@@ -17,7 +13,6 @@ interface QuestionShape {
   options:      Array<{ text: string; isCorrect: boolean }>;
 }
 
-
 export interface SubmitResult {
   results: Array<{
     questionIdx:  number;
@@ -25,17 +20,13 @@ export interface SubmitResult {
     correctIdx:   number;
     explanation?: string;
   }>;
-  accuracy:         number;
-  xpEarned:         number;
+  accuracy:           number;
+  xpEarned:           number;
   countedAsCompleted: boolean;  
-  bestAccuracy:     number;     
-  attemptNumber:    number;     
-  feedback:         string;     
+  bestAccuracy:       number;     
+  attemptNumber:      number;     
+  feedback:           string;     
 }
-
-
-
-
 
 const LIST_SELECT = {
   id:               true,
@@ -51,12 +42,7 @@ const LIST_SELECT = {
   createdAt:        true,
 } satisfies Prisma.ReadingMaterialSelect;
 
-
 const REREAD_XP_MULTIPLIER = 0.3;
-
-
-
-
 
 @Injectable()
 export class ReadingsService {
@@ -65,29 +51,36 @@ export class ReadingsService {
     private readonly progress: ProgressService,
   ) {}
 
-
-
   async findMany(params: {
     userId:  string;
     level?:  Level;
     topic?:  string;
+    search?: string; 
   }) {
     const where: Prisma.ReadingMaterialWhereInput = {};
+    
     if (params.level !== undefined) where.level = params.level;
     if (params.topic !== undefined) {
       where.topic = { contains: params.topic, mode: 'insensitive' };
+    }
+    
+    
+    if (params.search) {
+      where.OR = [
+        { title: { contains: params.search, mode: 'insensitive' } },
+        { description: { contains: params.search, mode: 'insensitive' } },
+      ];
     }
 
     const materials = await this.prisma.readingMaterial.findMany({
       where,
       select: LIST_SELECT,
       orderBy: { createdAt: 'desc' },
-      take: 100,
+      take: 50, 
     });
 
     if (materials.length === 0) return [];
 
-    
     const userHistory = await this.prisma.userMistake.findMany({
       where: {
         userId:   params.userId,
@@ -95,10 +88,10 @@ export class ReadingsService {
         targetId: { in: materials.map((m) => m.id) },
       },
       select: {
-        targetId:    true,
+        targetId:     true,
         correctCount: true,
-        wrongCount:  true,
-        status:      true,
+        wrongCount:   true,
+        status:       true,
       },
     });
 
@@ -106,36 +99,38 @@ export class ReadingsService {
 
     const enriched = materials.map((m) => {
       const history = historyMap.get(m.id);
-      const total   = history !== undefined
-        ? (history.correctCount + history.wrongCount)
-        : 0;
-      const bestAccuracy = total > 0
-        ? Math.round((history!.correctCount / total) * 100)
-        : null;
+      
+      
+      
+      const total = history ? (history.correctCount + history.wrongCount) : 0;
+      const currentAccuracy = total > 0 ? Math.round((history!.correctCount / total) * 100) : 0;
+      
+      let userStatus: 'not_started' | 'attempted' | 'completed' = 'not_started';
+      if (history) {
+        userStatus = history.status === 'MASTERED' ? 'completed' : 'attempted';
+      }
 
       return {
         ...m,
-        userStatus:   history === undefined ? 'not_started' : (bestAccuracy !== null && bestAccuracy >= 70 ? 'completed' : 'attempted') as 'not_started' | 'attempted' | 'completed',
-        bestAccuracy,
-        attemptCount: history !== undefined ? 1 : 0,
+        userStatus,
+        bestAccuracy: history ? currentAccuracy : null,
+        
+        attemptCount: history ? 1 : 0, 
       };
     });
 
     
     return enriched.sort((a, b) => {
       const order = { not_started: 0, attempted: 1, completed: 2 };
-      const diff  = order[a.userStatus] - order[b.userStatus];
-      if (diff !== 0) return diff;
-      
-      if (a.bestAccuracy !== null && b.bestAccuracy !== null) {
-        return a.bestAccuracy - b.bestAccuracy;
-      }
-      return 0;
+      return order[a.userStatus] - order[b.userStatus];
     });
   }
 
   async findBySlug(slug: string) {
-    const result = await this.prisma.readingMaterial.findUnique({ where: { slug } });
+    
+    const result = await this.prisma.readingMaterial.findUnique({ 
+      where: { slug } 
+    });
     if (result === null) throw new NotFoundException(`Reading "${slug}" not found`);
     return result;
   }
@@ -146,22 +141,11 @@ export class ReadingsService {
     return result;
   }
 
-  
-  
-  
-  
-  
-  
-  
-  
-  
-
   async submitAnswers(
     userId:    string,
     dto:       SubmitReadingDto,
     timezone?: string,
   ): Promise<SubmitResult> {
-    
     if (dto.answers.length === 0) {
       throw new BadRequestException('At least one answer is required');
     }
@@ -172,7 +156,6 @@ export class ReadingsService {
         where:  { id: userId },
         select: { streak: true },
       }),
-      
       this.prisma.userMistake.findUnique({
         where: { userId_targetId: { userId, targetId: dto.materialId } },
       }),
@@ -183,7 +166,6 @@ export class ReadingsService {
     }
 
     const questions = material.questions as QuestionShape[];
-
     if (questions.length === 0) {
       throw new BadRequestException('This reading material has no questions yet');
     }
@@ -197,10 +179,10 @@ export class ReadingsService {
 
     
     const results = dto.answers.map((a) => {
-      const question      = questions[a.questionIdx]!;
-      const correctIdx    = question.options.findIndex((o) => o.isCorrect);
+      const question       = questions[a.questionIdx]!;
+      const correctIdx     = question.options.findIndex((o) => o.isCorrect);
       const selectedOption = question.options[a.selectedOptionIdx];
-      const isCorrect     = selectedOption?.isCorrect === true;
+      const isCorrect      = selectedOption?.isCorrect === true;
 
       return {
         questionIdx:  a.questionIdx,
@@ -210,27 +192,19 @@ export class ReadingsService {
       };
     });
 
-    const correctCount  = results.filter((r) => r.isCorrect).length;
-    const accuracy      = Math.round((correctCount / results.length) * 100);
+    const correctCount = results.filter((r) => r.isCorrect).length;
+    const accuracy     = Math.round((correctCount / results.length) * 100);
     const isFirstAttempt = existingHistory === null;
 
     
-    const prevBest = existingHistory !== null
-      ? (() => {
-          const total = existingHistory.correctCount + existingHistory.wrongCount;
-          return total > 0 ? Math.round((existingHistory.correctCount / total) * 100) : 0;
-        })()
-      : 0;
-    const bestAccuracy  = Math.max(accuracy, prevBest);
-    const attemptNumber = existingHistory !== null
-      ? (existingHistory.correctCount + existingHistory.wrongCount > 0 ? 2 : 1)
-      : 1;
-
+    const prevBest = existingHistory ? Math.round((existingHistory.correctCount / (existingHistory.correctCount + existingHistory.wrongCount)) * 100) : 0;
+    const bestAccuracy = Math.max(accuracy, prevBest);
     
+    
+    const attemptNumber = existingHistory ? 2 : 1; 
+
     const countedAsCompleted = isFirstAttempt && isSessionCountable(accuracy);
 
-    
-    
     
     const baseXP = isFirstAttempt
       ? XP_BASE.READING_COMPLETED
@@ -242,7 +216,6 @@ export class ReadingsService {
       accuracy,
     });
 
-    
     if (countedAsCompleted) {
       await this.progress.recordSkillCompletion({
         userId,
@@ -252,39 +225,39 @@ export class ReadingsService {
         timezone,
       });
     } else {
-      
       await this.progress.recordActivity({
         userId,
-        xpEarned: Math.max(1, Math.round(xpEarned * 0.2)),
+        xpEarned:     Math.max(1, Math.round(xpEarned * 0.2)),
         minutesSpent: material.estimatedMinutes,
         timezone,
       });
     }
 
     
+    const isMastered = bestAccuracy >= 70;
     
     await this.prisma.userMistake.upsert({
       where: { userId_targetId: { userId, targetId: dto.materialId } },
       create: {
         userId,
-        targetId:    dto.materialId,
-        source:      'READING',
-        topic:       material.topic,
-        category:    'LOGIC',
-        level:       material.level,
+        targetId:     dto.materialId,
+        source:       'READING',
+        topic:        material.topic,
+        category:     'LOGIC',
+        level:        material.level,
         correctCount,
-        wrongCount:  results.length - correctCount,
-        status:      accuracy >= 70 ? 'MASTERED' : 'LEARNING',
+        wrongCount:   results.length - correctCount,
+        status:       isMastered ? 'MASTERED' : 'LEARNING',
       },
       update: {
-        correctCount: { increment: correctCount },
-        wrongCount:   { increment: results.length - correctCount },
-        status:       accuracy >= 70 ? 'MASTERED' : 'LEARNING',
+        
+        correctCount: isFirstAttempt || accuracy > prevBest ? correctCount : undefined,
+        wrongCount:   isFirstAttempt || accuracy > prevBest ? results.length - correctCount : undefined,
+        status:       isMastered ? 'MASTERED' : 'LEARNING',
         updatedAt:    new Date(),
       },
     });
 
-    
     const feedback = buildReadingFeedback(accuracy, isFirstAttempt, correctCount, results.length);
 
     return {
@@ -298,16 +271,7 @@ export class ReadingsService {
     };
   }
 
-  
-  
-
-  async getUserHistory(userId: string): Promise<Array<{
-    materialId:  string;
-    topic:       string;
-    level:       string;
-    bestAccuracy: number;
-    status:      string;
-  }>> {
+  async getUserHistory(userId: string) {
     const history = await this.prisma.userMistake.findMany({
       where:   { userId, source: 'READING' },
       select:  { targetId: true, topic: true, level: true, correctCount: true, wrongCount: true, status: true },
@@ -315,7 +279,7 @@ export class ReadingsService {
     });
 
     return history.map((h) => {
-      const total       = h.correctCount + h.wrongCount;
+      const total = h.correctCount + h.wrongCount;
       const bestAccuracy = total > 0 ? Math.round((h.correctCount / total) * 100) : 0;
       return {
         materialId:   h.targetId,
@@ -327,13 +291,7 @@ export class ReadingsService {
     });
   }
 
-  
-
-  async bulkCreate(readings: CreateReadingDto[]): Promise<{
-    totalProcessed: number;
-    inserted:       number;
-    skipped:        number;
-  }> {
+  async bulkCreate(readings: CreateReadingDto[]) {
     if (readings.length === 0) return { totalProcessed: 0, inserted: 0, skipped: 0 };
 
     const prepared = readings.map((r) => {
@@ -375,35 +333,10 @@ export class ReadingsService {
 }
 
 
-
-
-
-
-function buildReadingFeedback(
-  accuracy:       number,
-  isFirstAttempt: boolean,
-  correctCount:   number,
-  totalCount:     number,
-): string {
-  const wrong = totalCount - correctCount;
-
-  if (accuracy === 100) {
-    return isFirstAttempt
-      ? 'Perfect score! You understood everything on the first try. Excellent comprehension!'
-      : 'Perfect this time! Great improvement from your previous attempt.';
-  }
-
-  if (accuracy >= 80) {
-    return `Strong result — ${correctCount}/${totalCount} correct. ${wrong > 0 ? `Review the ${wrong} missed question${wrong > 1 ? 's' : ''} in the explanation panel.` : ''}`;
-  }
-
-  if (accuracy >= 60) {
-    return `Good effort — ${correctCount}/${totalCount} correct. Focus on re-reading the paragraphs related to the ${wrong} incorrect answer${wrong > 1 ? 's' : ''}.`;
-  }
-
-  if (accuracy >= 40) {
-    return `${correctCount}/${totalCount} correct. Try reading the text again before re-attempting — pay attention to topic sentences in each paragraph.`;
-  }
-
-  return `${correctCount}/${totalCount} correct. Read the text carefully once more. Look for keywords in each question and scan the relevant paragraph.`;
+function buildReadingFeedback(accuracy: number, isFirstAttempt: boolean, correct: number, total: number): string {
+  const wrong = total - correct;
+  if (accuracy === 100) return isFirstAttempt ? 'Perfect score! Excellent comprehension!' : 'Perfect this time! Great improvement.';
+  if (accuracy >= 80) return `Strong result — ${correct}/${total} correct. Review the ${wrong} missed questions.`;
+  if (accuracy >= 60) return `Good effort — ${correct}/${total} correct. Focus on re-reading dense paragraphs.`;
+  return `${correct}/${total} correct. Take your time and focus on scanning key vocabulary.`;
 }

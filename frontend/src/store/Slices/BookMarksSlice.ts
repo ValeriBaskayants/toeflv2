@@ -198,6 +198,7 @@ export const selectBookmarksListError = (s: BookmarksRootState): string | null =
 export const selectToggleStatus = (s: BookmarksRootState): AsyncStatus =>
   s.bookmarks.toggleStatus;
 
+export const selectDeleteStatus = (s: BookmarksRootState): AsyncStatus =>
   s.bookmarks.deleteStatus;
 
 export const selectDeletingId = (s: BookmarksRootState): string | null =>

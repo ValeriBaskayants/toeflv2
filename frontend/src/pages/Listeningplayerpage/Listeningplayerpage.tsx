@@ -45,7 +45,7 @@ import {
 import { useTTS } from '@/hooks/useTTS/useTTS';
 import type { ListeningQuestion, ListeningNote } from '@/types/listening/Listening.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
-import styles from './Listeningplayerpage.module.css';
+import styles from './ListeningplayerPage.module.css';
 import type { Difficulty } from '@/types/globalTypes';
 
 
@@ -643,9 +643,11 @@ export default function ListeningPlayerPage() {
 
   const tts = useTTS({
     segments: currentMaterial?.segments ?? [],
-    rate:     effectiveRate,
-    pitch:    currentMaterial?.speakerPitch ?? 1.0,
-    lang:     currentMaterial?.speakerLang  ?? 'en-US',
+    rate: effectiveRate,
+    pitch: currentMaterial?.speakerPitch ?? 1.0,
+    lang: currentMaterial?.speakerLang ?? 'en-US',
+    fullText: '',
+    materialId: ''
   });
 
   

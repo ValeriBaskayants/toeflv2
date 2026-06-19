@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useId } from 'react';
+import { useState, useEffect, useCallback, useId, useRef } from 'react';
 import {
   ShieldAlert,
   Users,
@@ -19,6 +19,7 @@ import {
   AlertCircle,
   BarChart2,
   TerminalSquare,
+  type LucideIcon,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/store';
 import { selectUser } from '@/store/Slices/AuthSlice';
@@ -42,7 +43,7 @@ interface ContentConfig {
   key: ContentType;
   label: string;
   short: string;
-  Icon: React.ComponentType<any>;
+  Icon: LucideIcon;
   color: string;
 }
 
@@ -77,16 +78,29 @@ function ImportTerminal() {
   const cfg = CONTENT_CONFIGS.find((c) => c.key === activeType)!;
   const isLoading = slot.status === 'loading';
 
-  const handleTypeSwitch = useCallback((type: ContentType) => {
-    setActiveType(type);
-    setParseError(null);
-  }, []);
+  
+  
+  
+  const hasResetForCurrentEdit = useRef(false);
+
+  const handleTypeSwitch = useCallback(
+    (type: ContentType) => {
+      setActiveType(type);
+      setParseError(null);
+      hasResetForCurrentEdit.current = false;
+    },
+    [],
+  );
 
   const handleJsonChange = useCallback(
     (val: string) => {
       setJson(val);
       setParseError(null);
-      if (slot.status !== 'idle') {
+
+      
+      
+      if (slot.status !== 'idle' && !hasResetForCurrentEdit.current) {
+        hasResetForCurrentEdit.current = true;
         dispatch(resetImportState(activeType));
       }
     },
@@ -102,6 +116,7 @@ function ImportTerminal() {
   const handleLoadExample = useCallback(() => {
     setJson(EXAMPLES[activeType]);
     setParseError(null);
+    hasResetForCurrentEdit.current = false;
     dispatch(resetImportState(activeType));
   }, [activeType, dispatch]);
 
@@ -127,12 +142,14 @@ function ImportTerminal() {
     const result = await dispatch(importContent({ type: activeType, data: parsed }));
     if (importContent.fulfilled.match(result)) {
       setJson('');
+      hasResetForCurrentEdit.current = false;
     }
   }, [json, activeType, dispatch]);
 
   const handleClear = useCallback(() => {
     setJson('');
     setParseError(null);
+    hasResetForCurrentEdit.current = false;
     dispatch(resetImportState(activeType));
   }, [activeType, dispatch]);
 
@@ -197,7 +214,6 @@ function ImportTerminal() {
             <pre className={styles['examplePre']}>{EXAMPLES[activeType]}</pre>
           </div>
         </div>
-
         <div className={styles['splitDivider']} />
 
         <div className={styles['pane']}>
@@ -219,6 +235,8 @@ function ImportTerminal() {
               placeholder={'[\n  {\n    "key": "value"\n  }\n]'}
               spellCheck={false}
               disabled={isLoading}
+              aria-invalid={hasError}
+              aria-describedby={hasError ? `${textareaId}-error` : undefined}
             />
           </div>
         </div>
@@ -227,12 +245,12 @@ function ImportTerminal() {
       <div className={styles['termFooter']}>
         <div className={styles['footerLeft']}>
           {parseError !== null && (
-            <span className={styles['fErr']}>
+            <span id={`${textareaId}-error`} className={styles['fErr']} role="alert">
               <AlertCircle size={14} /> {parseError}
             </span>
           )}
           {slot.status === 'error' && slot.error !== null && parseError === null && (
-            <span className={styles['fErr']}>
+            <span id={`${textareaId}-error`} className={styles['fErr']} role="alert">
               <AlertCircle size={14} /> {slot.error}
             </span>
           )}
@@ -291,15 +309,23 @@ export default function AdminPage() {
   const totalInserted = useAppSelector(selectTotalInserted);
   const errorCount = useAppSelector(selectErrorCount);
 
-  if (user === null || user.role !== 'ADMIN') {
-    return null;
-  }
+  const isAdmin = user !== null && user.role === 'ADMIN';
 
+  
+  
+  
+  
+  
+  
   useEffect(() => {
-    if (statsStatus === 'idle') {
+    if (isAdmin && statsStatus === 'idle') {
       void dispatch(fetchAdminStats());
     }
-  }, [statsStatus, dispatch]);
+  }, [isAdmin, statsStatus, dispatch]);
+
+  if (!isAdmin) {
+    return null;
+  }
 
   return (
     <div className={styles['page']}>
@@ -356,7 +382,7 @@ export default function AdminPage() {
           </div>
           <div>
             <div className={styles['statVal']}>{errorCount}</div>
-            <div className={styles['statLbl']}>Errors</div>
+            <div className={styles['statLbl']}>Errors (this session)</div>
           </div>
         </div>
       </div>
@@ -379,7 +405,6 @@ export default function AdminPage() {
               </button>
             )}
           </div>
-
           <div className={styles['logList']}>
             {log.length === 0 && <p className={styles['logEmpty']}>No imports yet.</p>}
             {log.map((entry) => {

@@ -1,24 +1,30 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
+import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { BookmarksApi } from '@/api/services/bookmarks';
 import type {
-  Bookmark,
+  EnrichedBookmark,
   BookmarkType,
   ToggleBookmarkDto,
   ToggleBookmarkResponse,
   DeleteBookmarkResponse,
+  BookmarksFilterType,
 } from '@/types/bookmarks/Bookmarks.types';
 
-export const fetchBookmarks = createAsyncThunk<Bookmark[], void, { rejectValue: string }>(
-  'bookmarks/fetchAll',
-  async (_, { rejectWithValue }) => {
-    try {
-      const { data } = await BookmarksApi.getAll();
-      return data;
-    } catch (error: unknown) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to load bookmarks');
-    }
-  },
-);
+
+
+export const fetchBookmarks = createAsyncThunk<
+  EnrichedBookmark[],
+  BookmarkType | undefined,
+  { rejectValue: string }
+>('bookmarks/fetchAll', async (type, { rejectWithValue }) => {
+  try {
+    const { data } = await BookmarksApi.getAllEnriched(type);
+    return data;
+  } catch (error: unknown) {
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to load bookmarks',
+    );
+  }
+});
 
 export const toggleBookmark = createAsyncThunk<
   ToggleBookmarkResponse & { dto: ToggleBookmarkDto },
@@ -29,7 +35,9 @@ export const toggleBookmark = createAsyncThunk<
     const { data } = await BookmarksApi.toggle(dto);
     return { ...data, dto };
   } catch (error: unknown) {
-    return rejectWithValue(error instanceof Error ? error.message : 'Failed to toggle bookmark');
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to toggle bookmark',
+    );
   }
 });
 
@@ -42,14 +50,18 @@ export const deleteBookmark = createAsyncThunk<
     const { data } = await BookmarksApi.remove(id);
     return { ...data, id };
   } catch (error: unknown) {
-    return rejectWithValue(error instanceof Error ? error.message : 'Failed to delete bookmark');
+    return rejectWithValue(
+      error instanceof Error ? error.message : 'Failed to delete bookmark',
+    );
   }
 });
+
+
 
 type AsyncStatus = 'idle' | 'loading' | 'success' | 'error';
 
 interface BookmarksState {
-  list: Bookmark[];
+  list: EnrichedBookmark[];
   listStatus: AsyncStatus;
   listError: string | null;
 
@@ -57,7 +69,10 @@ interface BookmarksState {
   toggleError: string | null;
 
   deleteStatus: AsyncStatus;
+  deletingId: string | null; 
   deleteError: string | null;
+
+  activeFilter: BookmarksFilterType;
 }
 
 const initialState: BookmarksState = {
@@ -69,18 +84,32 @@ const initialState: BookmarksState = {
   toggleError: null,
 
   deleteStatus: 'idle',
+  deletingId: null,
   deleteError: null,
+
+  activeFilter: 'ALL',
 };
+
+
 
 const bookmarksSlice = createSlice({
   name: 'bookmarks',
   initialState,
   reducers: {
     clearBookmarksState: () => initialState,
+
+    setActiveFilter(state, action: PayloadAction<BookmarksFilterType>) {
+      state.activeFilter = action.payload;
+    },
+
+    
+    optimisticRemove(state, action: PayloadAction<string>) {
+      state.list = state.list.filter((b) => b.id !== action.payload);
+    },
   },
   extraReducers: (builder) => {
+    
     builder
-
       .addCase(fetchBookmarks.pending, (state) => {
         state.listStatus = 'loading';
         state.listError = null;
@@ -92,80 +121,122 @@ const bookmarksSlice = createSlice({
       .addCase(fetchBookmarks.rejected, (state, action) => {
         state.listStatus = 'error';
         state.listError = action.payload ?? 'Unknown error';
-      })
+      });
 
+    
+    builder
       .addCase(toggleBookmark.pending, (state) => {
         state.toggleStatus = 'loading';
         state.toggleError = null;
       })
       .addCase(toggleBookmark.fulfilled, (state, action) => {
         state.toggleStatus = 'success';
+        const { bookmarked, bookmarkId, dto } = action.payload;
 
-        const { bookmarked, dto, bookmark } = action.payload;
-
-        if (bookmarked) {
-          state.list.push(
-            bookmark ?? {
-              id: `local_${dto.targetId}_${dto.type}`,
-              targetId: dto.targetId,
-              type: dto.type,
-              createdAt: new Date().toISOString(),
-            },
-          );
+        if (bookmarked && bookmarkId !== null) {
+          
+          const placeholder: EnrichedBookmark = {
+            id: bookmarkId,
+            targetId: dto.targetId,
+            type: dto.type,
+            createdAt: new Date().toISOString(),
+            data: null,
+          };
+          state.list.unshift(placeholder);
         } else {
+          
           state.list = state.list.filter(
-            (item) => !(item.targetId === dto.targetId && item.type === dto.type),
+            (b) => !(b.targetId === dto.targetId && b.type === dto.type),
           );
         }
       })
       .addCase(toggleBookmark.rejected, (state, action) => {
         state.toggleStatus = 'error';
         state.toggleError = action.payload ?? 'Unknown error';
-      })
+      });
 
-      .addCase(deleteBookmark.pending, (state) => {
+    
+    builder
+      .addCase(deleteBookmark.pending, (state, action) => {
         state.deleteStatus = 'loading';
+        state.deletingId = action.meta.arg; 
         state.deleteError = null;
       })
       .addCase(deleteBookmark.fulfilled, (state, action) => {
         state.deleteStatus = 'success';
-        state.list = state.list.filter((item) => item.id !== action.payload.id);
+        state.deletingId = null;
+        
+        state.list = state.list.filter((b) => b.id !== action.payload.id);
       })
       .addCase(deleteBookmark.rejected, (state, action) => {
         state.deleteStatus = 'error';
+        state.deletingId = null;
         state.deleteError = action.payload ?? 'Unknown error';
       });
   },
 });
 
-export const { clearBookmarksState } = bookmarksSlice.actions;
+export const { clearBookmarksState, setActiveFilter, optimisticRemove } = bookmarksSlice.actions;
 
 export const bookmarksReducer = bookmarksSlice;
+
+
 
 interface BookmarksRootState {
   bookmarks: BookmarksState;
 }
 
-export const selectBookmarksList = (state: BookmarksRootState): Bookmark[] => state.bookmarks.list;
+export const selectBookmarksList = (s: BookmarksRootState): EnrichedBookmark[] =>
+  s.bookmarks.list;
 
-export const selectBookmarksListStatus = (state: BookmarksRootState): AsyncStatus =>
-  state.bookmarks.listStatus;
+export const selectBookmarksListStatus = (s: BookmarksRootState): AsyncStatus =>
+  s.bookmarks.listStatus;
 
-export const selectBookmarksListError = (state: BookmarksRootState): string | null =>
-  state.bookmarks.listError;
+export const selectBookmarksListError = (s: BookmarksRootState): string | null =>
+  s.bookmarks.listError;
 
-export const selectToggleStatus = (state: BookmarksRootState): AsyncStatus =>
-  state.bookmarks.toggleStatus;
+export const selectToggleStatus = (s: BookmarksRootState): AsyncStatus =>
+  s.bookmarks.toggleStatus;
 
-export const selectDeleteStatus = (state: BookmarksRootState): AsyncStatus =>
-  state.bookmarks.deleteStatus;
+  s.bookmarks.deleteStatus;
 
+export const selectDeletingId = (s: BookmarksRootState): string | null =>
+  s.bookmarks.deletingId;
+
+export const selectActiveFilter = (s: BookmarksRootState): BookmarksFilterType =>
+  s.bookmarks.activeFilter;
+
+/** True if targetId+type combo exists in the list */
 export const selectIsBookmarked =
   (targetId: string, type: BookmarkType) =>
-  (state: BookmarksRootState): boolean =>
-    state.bookmarks.list.some((b) => b.targetId === targetId && b.type === type);
+  (s: BookmarksRootState): boolean =>
+    s.bookmarks.list.some((b) => b.targetId === targetId && b.type === type);
 
+/** All bookmarks of a given type */
 export const selectBookmarksByType =
   (type: BookmarkType) =>
-  (state: BookmarksRootState): Bookmark[] =>
-    state.bookmarks.list.filter((b) => b.type === type);
+  (s: BookmarksRootState): EnrichedBookmark[] =>
+    s.bookmarks.list.filter((b) => b.type === type);
+
+/** Filtered list based on activeFilter */
+export const selectFilteredBookmarks = (s: BookmarksRootState): EnrichedBookmark[] => {
+  const { list, activeFilter } = s.bookmarks;
+  return activeFilter === 'ALL' ? list : list.filter((b) => b.type === activeFilter);
+};
+
+/** Count per type — for filter tabs and stats */
+export const selectCountByType = (
+  s: BookmarksRootState,
+): Record<BookmarkType, number> => {
+  const counts = {
+    GRAMMAR_RULE: 0,
+    VOCABULARY: 0,
+    READING: 0,
+    WRITING_PROMPT: 0,
+    LISTENING: 0,
+  };
+  for (const b of s.bookmarks.list) {
+    counts[b.type] += 1;
+  }
+  return counts;
+};

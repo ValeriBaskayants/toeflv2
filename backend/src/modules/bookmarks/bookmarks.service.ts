@@ -2,19 +2,6 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { PrismaService } from '../prisma/prisma.service';
 import { BookmarkType, Prisma } from '@prisma/client';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// BOOKMARKS SERVICE
-//
-// Что было:
-//   findAll → только { id, targetId, type, createdAt }
-//   Фронт получает ID без данных → нужно делать N запросов чтобы показать title
-//
-// Что стало:
-//   findAll           → базовый список (быстрый, для проверки "bookmarked?" state)
-//   findAllEnriched   → список с реальными данными по каждому типу
-//   Фильтр по type    → пользователь смотрит только "Мои Grammar" или "Мои Reading"
-// ─────────────────────────────────────────────────────────────────────────────
-
 const BASE_SELECT = {
   id: true,
   targetId: true,
@@ -22,13 +9,13 @@ const BASE_SELECT = {
   createdAt: true,
 } satisfies Prisma.BookmarkSelect;
 
-// Обогащённый item — фронт получает всё для рендера в одном запросе
+
 export interface EnrichedBookmark {
   id: string;
   targetId: string;
   type: BookmarkType;
   createdAt: Date;
-  // Данные самого объекта (null если объект удалён из БД)
+  
   data: {
     title: string;
     level?: string;
@@ -41,10 +28,6 @@ export interface EnrichedBookmark {
 export class BookmarksService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── findAll — быстрый базовый список ──────────────────────────────────────
-  // Используется для проверки isBookmarked на страницах контента
-  // (просто набор targetId — без лишних JOIN'ов)
-
   async findAll(userId: string, type?: BookmarkType) {
     const where: Prisma.BookmarkWhereInput = { userId };
     if (type !== undefined) where.type = type;
@@ -55,18 +38,6 @@ export class BookmarksService {
       orderBy: { createdAt: 'desc' },
     });
   }
-
-  // ── findAllEnriched — список с данными объектов ───────────────────────────
-  //
-  // Алгоритм:
-  //   1. Загружаем все закладки пользователя
-  //   2. Группируем targetId по типу
-  //   3. Делаем параллельные запросы для каждого типа
-  //   4. Собираем enriched объекты
-  //
-  // Почему не через JOIN?
-  //   В MongoDB + Prisma нет cross-collection JOIN.
-  //   Делаем 4 параллельных запроса (по одному на тип) — это O(4) а не O(N).
 
   async findAllEnriched(userId: string, type?: BookmarkType): Promise<EnrichedBookmark[]> {
     const where: Prisma.BookmarkWhereInput = { userId };
@@ -80,14 +51,14 @@ export class BookmarksService {
 
     if (bookmarks.length === 0) return [];
 
-    // Группируем по типу
+    
     const byType: Partial<Record<BookmarkType, string[]>> = {};
     for (const b of bookmarks) {
       if (byType[b.type] === undefined) byType[b.type] = [];
       byType[b.type]!.push(b.targetId);
     }
 
-    // Параллельно загружаем данные для каждого типа
+    
     const [grammarRules, vocabularies, readings, writingPrompts, listeningMaterials] =
       await Promise.all([
         byType['GRAMMAR_RULE'] !== undefined
@@ -126,7 +97,7 @@ export class BookmarksService {
           : Promise.resolve([]),
       ]);
 
-    // Строим Map для O(1) lookup
+    
     const dataMap = new Map<string, EnrichedBookmark['data']>();
 
     for (const r of grammarRules) {
@@ -139,7 +110,7 @@ export class BookmarksService {
       dataMap.set(r.id, { title: r.title, level: r.level, topic: r.topic, slug: r.slug });
     }
     for (const w of writingPrompts) {
-      // Для промптов показываем первые 60 символов как title
+      
       dataMap.set(w.id, {
         title: w.prompt.slice(0, 60) + (w.prompt.length > 60 ? '…' : ''),
         level: w.level,
@@ -156,10 +127,6 @@ export class BookmarksService {
     }));
   }
 
-  // ── isBookmarked — быстрая проверка для UI кнопок ─────────────────────────
-  // Используется на страницах контента: грамматика, чтение и т.д.
-  // Возвращает Set<targetId> для O(1) проверки на фронте.
-
   async getBookmarkedIds(userId: string, type: BookmarkType): Promise<string[]> {
     const bookmarks = await this.prisma.bookmark.findMany({
       where: { userId, type },
@@ -167,9 +134,6 @@ export class BookmarksService {
     });
     return bookmarks.map((b) => b.targetId);
   }
-
-  // ── toggle ─────────────────────────────────────────────────────────────────
-  // Идемпотентный toggle: если есть → удаляем, нет → создаём.
 
   async toggle(
     userId: string,
@@ -191,8 +155,6 @@ export class BookmarksService {
     });
     return { bookmarked: true, bookmarkId: created.id };
   }
-
-  // ── remove — удаление по bookmarkId ───────────────────────────────────────
 
   async remove(userId: string, bookmarkId: string): Promise<{ deleted: boolean }> {
     const bookmark = await this.prisma.bookmark.findUnique({ where: { id: bookmarkId } });

@@ -12,6 +12,8 @@ import { bookmarksReducer } from './Slices/BookMarksSlice';
 import { writingSlice } from './Slices/WritingSlice';
 import { vocabularySlice } from './Slices/VocabularySlice';
 import { mistakesSlice } from './Slices/MistakesSlice';
+import { roadmap } from '@/i18n/locales/en/common';
+import { roadmapSlice } from './Slices/RoadmapSlice';
 
 export const store = configureStore({
   reducer: {
@@ -27,6 +29,7 @@ export const store = configureStore({
     writing: writingSlice.reducer,
     vocabulary: vocabularySlice.reducer,
     mistakes: mistakesSlice.reducer,
+    roadmap:roadmapSlice.reducer
   },
 });
 

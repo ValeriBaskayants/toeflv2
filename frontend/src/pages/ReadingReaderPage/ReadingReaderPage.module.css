@@ -863,3 +863,72 @@
     font-size: 0.85rem;
   }
 }
+
+
+/* ─── Extra styles for upgraded ReaderPage ───────────────── */
+
+.articleTitleRow {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 0.5rem 0 1.25rem;
+}
+
+.articleTitle { margin: 0; }
+
+/* Results top layout */
+.resultsTop {
+  display: flex;
+  align-items: center;
+  gap: 2rem;
+  margin-bottom: 1.5rem;
+  padding: 1.5rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 14px;
+}
+
+.resultsMeta {
+  display: flex;
+  flex-direction: column;
+  gap: 0.625rem;
+}
+
+.completedBanner {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+  padding: 0.35rem 0.75rem;
+  background: rgba(34, 197, 94, 0.1);
+  border: 1px solid rgba(34, 197, 94, 0.25);
+  border-radius: 8px;
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: #22c55e;
+  width: fit-content;
+}
+
+.feedbackBox {
+  padding: 1rem 1.25rem;
+  background: rgba(99, 102, 241, 0.05);
+  border: 1px solid rgba(99, 102, 241, 0.18);
+  border-radius: 10px;
+  font-size: 0.875rem;
+  color: var(--text-2);
+  line-height: 1.65;
+  margin-bottom: 1.5rem;
+}
+
+.iconGreen { color: #22c55e; flex-shrink: 0; }
+.iconRed   { color: #ef4444; flex-shrink: 0; }
+.iconAmber { color: #f59e0b; flex-shrink: 0; }
+
+@media (max-width: 600px) {
+  .resultsTop {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+}

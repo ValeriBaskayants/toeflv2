@@ -171,14 +171,6 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
   },
 } as const;
 
-/**
- * EMA accuracy update.
- *
- * Медленный alpha (0.15) означает:
- *   - 1 плохая попытка не обрушивает накопленную статистику
- *   - последние ~13 сессий вносят основной вклад
- *   - пользователь видит честный тренд, а не шум
- */
 export function emaAccuracy(
   currentCompleted: number,
   historicalAccuracy: number,
@@ -191,21 +183,6 @@ export function emaAccuracy(
   return Math.round(alpha * newAccuracy + (1 - alpha) * historicalAccuracy);
 }
 
-/**
- * SMS (Skill Mastery Score) — GATE MODEL.
- *
- * quantity_gate:
- *   Сколько упражнений сделано относительно требуемого. Максимум 100.
- *
- * quality_multiplier:
- *   Если accuracy >= accuracyMin: множитель = 1.0 (полный score).
- *   Если accuracy < accuracyMin: множитель = max(FLOOR, accuracy/accuracyMin).
- *   FLOOR = 0.3 — чтобы новичок с нулевой accuracy всё равно видел прогресс.
- *
- * Итог: SMS = quantity_gate × quality_multiplier.
- *   100 SMS = сделал всё + достиг accuracy порога.
- *   Нельзя "срезать путь" только через количество или только через качество.
- */
 export function computeSkillSMS(
   completed: number,
   required: number,
@@ -222,9 +199,6 @@ export function computeSkillSMS(
   return Math.round(quantityGate * qualityMultiplier);
 }
 
-/**
- * Writing SMS — то же что computeSkillSMS, но качество = avgScore vs avgScoreMin.
- */
 export function computeWritingSMS(
   completed: number,
   required: number,
@@ -234,14 +208,6 @@ export function computeWritingSMS(
   return computeSkillSMS(completed, required, avgScore, avgScoreMin);
 }
 
-/**
- * Adaptive XP calculation.
- *
- * @param base        - базовый XP за действие (из XP_BASE)
- * @param difficulty  - 'EASY' | 'MEDIUM' | 'HARD' | undefined
- * @param streak      - текущий streak пользователя
- * @param accuracy    - точность в этой сессии (0-100), undefined если неприменимо
- */
 export function computeXP(params: {
   base: number;
   difficulty?: 'EASY' | 'MEDIUM' | 'HARD';
@@ -261,10 +227,6 @@ export function computeXP(params: {
   return Math.round(params.base * diffMult * streakMult * accuracyBonus);
 }
 
-/**
- * Проверяет, засчитывать ли сессию как "completed".
- * Anti-gaming: минимум 40% accuracy, иначе completed не растёт.
- */
 export function isSessionCountable(accuracy: number): boolean {
   return accuracy >= MIN_SESSION_ACCURACY_FOR_COMPLETION;
 }

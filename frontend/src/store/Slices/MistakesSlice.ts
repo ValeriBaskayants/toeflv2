@@ -2,7 +2,7 @@ import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/tool
 import { mistakesApi } from '@/api/services/mistakes';
 import type { UserMistake, WeakSpot } from '@/types/mistakes/Mistakes.types';
 
-// ─── State ────────────────────────────────────────────────────────────────────
+
 
 interface MistakesState {
   mistakes: UserMistake[];
@@ -11,12 +11,12 @@ interface MistakesState {
   weakSpotsLoading: boolean;
   error: string | null;
 
-  // All filtering is done client-side to avoid multiple API calls
+  
   filters: {
-    source: string | null; // QUIZ | WRITING | READING | LISTENING | null
-    category: string | null; // GRAMMAR | VOCABULARY | SPELLING | LOGIC | null
-    status: string | null; // LEARNING | REVIEWING | MASTERED | null
-    search: string; // free-text match on topic
+    source: string | null; 
+    category: string | null; 
+    status: string | null; 
+    search: string; 
   };
 }
 
@@ -34,7 +34,7 @@ const initialState: MistakesState = {
   },
 };
 
-// ─── Thunks ───────────────────────────────────────────────────────────────────
+
 
 export const fetchMistakes = createAsyncThunk<UserMistake[], void, { rejectValue: string }>(
   'mistakes/fetchAll',
@@ -60,7 +60,7 @@ export const fetchWeakSpots = createAsyncThunk<WeakSpot[], void, { rejectValue: 
   },
 );
 
-// ─── Slice ────────────────────────────────────────────────────────────────────
+
 
 export const mistakesSlice = createSlice({
   name: 'mistakes',
@@ -117,7 +117,7 @@ export const mistakesSlice = createSlice({
 
 export const { setFilter, resetFilters } = mistakesSlice.actions;
 
-// ─── Derived selector — filtered mistakes ─────────────────────────────────────
+
 
 import type { RootState } from '@/store/store';
 import { isDueForReview } from '@/types/mistakes/Mistakes.types';

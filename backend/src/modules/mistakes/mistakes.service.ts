@@ -2,49 +2,31 @@ import { Injectable, NotFoundException, ForbiddenException } from '@nestjs/commo
 import { MasteryStatus, MistakeSource, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// MISTAKES SERVICE
-//
-// Что было:
-//   getWeakSpots: только wrongCount — пользователь мог исправить ошибку 10 раз,
-//     но она всё равно красным в heatmap
-//   findAll: нет accuracy, нет SRS-aware сортировки
-//   Нет: dismiss (я это понял, больше не показывай), markResolved
-//
-// Что стало:
-//   getWeakSpots: учитывает accuracy = correctCount/(correct+wrong)*100
-//     weight = wrongCount × (1 - accuracy/100) — слабые места взвешены честно
-//   findAll: добавлена accuracy, dueForReview flag, SRS-aware сортировка
-//   getDueForReview: специальный список для "повтори сейчас" функционала
-//   markMastered: пользователь сам отмечает что понял тему
-//   getHeatmapData: для визуализации слабых мест по темам
-// ─────────────────────────────────────────────────────────────────────────────
-
 export interface WeakSpot {
   topic: string;
   category: string;
   level: string;
   wrongCount: number;
   correctCount: number;
-  accuracy: number; // % правильных ответов
-  adjustedWeight: number; // wrongCount × (1 - accuracy/100) — честный вес
+  accuracy: number; 
+  adjustedWeight: number; 
   uniqueMistakesCount: number;
   status: MasteryStatus;
-  dueForReview: boolean; // nextReview <= now
+  dueForReview: boolean; 
 }
 
 export interface HeatmapCell {
   topic: string;
   level: string;
-  weight: number; // 0–100: насколько слабое место
-  count: number; // количество разных упражнений с ошибками
+  weight: number; 
+  count: number; 
 }
 
 @Injectable()
 export class MistakesService {
   constructor(private readonly prisma: PrismaService) {}
 
-  // ── findAll — список ошибок с accuracy и SRS info ─────────────────────────
+  
 
   async findAll(userId: string, source?: MistakeSource) {
     const where: Prisma.UserMistakeWhereInput = { userId };
@@ -66,9 +48,9 @@ export class MistakesService {
         },
       },
       orderBy: [
-        // SRS-aware сортировка:
-        // 1. Просроченные (nextReview <= now) — первыми
-        // 2. Среди них: наибольший wrongCount
+        
+        
+        
         { nextReview: 'asc' },
         { wrongCount: 'desc' },
       ],
@@ -85,16 +67,16 @@ export class MistakesService {
         ...m,
         accuracy,
         dueForReview,
-        // Вычисляем adjustedWeight прямо в ответе — фронт не должен считать
+        
         adjustedWeight: Math.round(m.wrongCount * Math.max(0, (100 - accuracy) / 100)),
       };
     });
   }
 
-  // ── getDueForReview — SRS: что нужно повторить сейчас ─────────────────────
-  //
-  // Возвращает ошибки где nextReview <= now и status != MASTERED.
-  // Фронт может показать badge "5 mistakes to review" в сайдбаре.
+  
+  
+  
+  
 
   async getDueForReview(
     userId: string,

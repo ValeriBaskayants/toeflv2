@@ -7,6 +7,7 @@ export type BookmarkType =
   | 'WRITING_PROMPT'
   | 'LISTENING';
 
+
 export interface Bookmark {
   id: ID;
   targetId: string;
@@ -14,16 +15,36 @@ export interface Bookmark {
   createdAt: ISODateString;
 }
 
+
+
+
+export interface BookmarkData {
+  title: string;
+  level?: string;
+  topic?: string;
+  slug?: string;
+}
+
+export interface EnrichedBookmark extends Bookmark {
+  data: BookmarkData | null;
+}
+
+
+
 export interface ToggleBookmarkDto {
   targetId: string;
   type: BookmarkType;
 }
 
 export interface ToggleBookmarkResponse {
-  bookmark: Bookmark;
   bookmarked: boolean;
+  bookmarkId: string | null;
 }
 
 export interface DeleteBookmarkResponse {
   deleted: boolean;
 }
+
+
+
+export type BookmarksFilterType = 'ALL' | BookmarkType;

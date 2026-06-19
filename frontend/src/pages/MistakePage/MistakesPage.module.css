@@ -9,7 +9,7 @@
   to   { opacity: 1; transform: translateY(0); }
 }
 
-/* ── Header ──────────────────────────────────────────────────────────────── */
+
 
 .header {
   display: flex;
@@ -46,7 +46,7 @@
   margin-top: 0.5rem;
 }
 
-/* ── Error banner ────────────────────────────────────────────────────────── */
+
 
 .errorBanner {
   display: flex;
@@ -75,7 +75,7 @@
 }
 .retryBtn:hover { background: var(--danger); color: #fff; }
 
-/* ── Stats row ───────────────────────────────────────────────────────────── */
+
 
 .statsRow {
   display: grid;
@@ -122,7 +122,7 @@
 .statVal  { font-size: 1.2rem; font-weight: 800; color: var(--text-1); line-height: 1.2; }
 .statLabel { font-size: 0.68rem; color: var(--text-3); font-weight: 500; }
 
-/* ── Weak spots chart ────────────────────────────────────────────────────── */
+
 
 .weakSpots {
   background: var(--surface);
@@ -227,7 +227,7 @@
   text-align: right;
 }
 
-/* ── Filter bar ──────────────────────────────────────────────────────────── */
+
 
 .filterBar {
   background: var(--surface);
@@ -241,7 +241,7 @@
   gap: 0.875rem;
 }
 
-/* Search */
+
 .searchWrap {
   display: flex;
   align-items: center;
@@ -274,7 +274,7 @@
 .searchClear { color: var(--text-3); font-size: 1.1rem; line-height: 1; }
 .searchClear:hover { color: var(--danger); }
 
-/* Filter rows */
+
 .filterRow {
   display: flex;
   align-items: center;
@@ -305,7 +305,7 @@
   min-width: 56px;
 }
 
-/* Source tabs */
+
 .sourceTabs {
   display: flex;
   gap: 0.25rem;
@@ -334,7 +334,7 @@
   box-shadow: var(--shadow-sm);
 }
 
-/* Chips */
+
 .chips {
   display: flex;
   gap: 0.3rem;
@@ -359,7 +359,7 @@
   color: #fff !important;
 }
 
-/* Reset button */
+
 .resetBtn {
   display: flex;
   align-items: center;
@@ -375,7 +375,7 @@
 }
 .resetBtn:hover { color: var(--danger); border-color: var(--danger); }
 
-/* ── Empty / no results ──────────────────────────────────────────────────── */
+
 
 .emptyState {
   display: flex;
@@ -402,7 +402,7 @@
 }
 .noResultsIcon { opacity: .35; margin-bottom: 0.25rem; }
 
-/* ── Mistakes list ───────────────────────────────────────────────────────── */
+
 
 .mistakesList {
   display: flex;
@@ -410,7 +410,7 @@
   gap: 0.875rem;
 }
 
-/* ── Mistake card ────────────────────────────────────────────────────────── */
+
 
 .card {
   background: var(--surface);
@@ -429,7 +429,7 @@
   background: rgba(239,68,68,.02);
 }
 
-/* Card head */
+
 .cardHead {
   display: flex;
   align-items: flex-start;
@@ -535,7 +535,7 @@
 .expandChevron { transition: transform var(--duration-fast) ease; }
 .expandChevronOpen { transform: rotate(180deg); }
 
-/* Card stats */
+
 .cardStats {
   display: flex;
   align-items: center;
@@ -568,7 +568,7 @@
   color: #22c55e;
 }
 
-/* Accuracy */
+
 .accuracyWrap {
   display: flex;
   align-items: center;
@@ -600,7 +600,7 @@
   text-align: right;
 }
 
-/* Next review */
+
 .nextReview {
   display: flex;
   align-items: center;
@@ -620,7 +620,7 @@
   margin-left: auto;
 }
 
-/* Attempts section */
+
 .attemptsSection {
   margin-top: 1rem;
   padding-top: 1rem;
@@ -688,7 +688,7 @@
   border-top: 1px solid var(--border);
 }
 
-/* ── Mobile ──────────────────────────────────────────────────────────────── */
+
 
 @media (max-width: 768px) {
   .page { padding: 1.5rem 1.25rem 3rem; }

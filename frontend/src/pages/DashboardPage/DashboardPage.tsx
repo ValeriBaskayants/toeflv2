@@ -1,21 +1,22 @@
 import { useEffect, useCallback } from 'react';
 import {
-  TrendingUp,
   Flame,
   Zap,
+  Target,
+  RefreshCw,
+  AlertCircle,
+  ArrowRight,
+  ChevronRight,
   BookOpen,
   PenLine,
   Headphones,
-  Mic,
   CheckCheck,
   Layers,
-  Trophy,
-  RefreshCw,
-  AlertCircle,
-  Target,
-  ArrowRight,
   Brain,
+  Trophy,
 } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
+import { useNavigate } from 'react-router-dom';
 import { useAppSelector, useAppDispatch } from '@/store/store';
 import { selectUser } from '@/store/Slices/AuthSlice';
 import {
@@ -32,16 +33,14 @@ import { FullPageSpinner } from '@/components/ui/Spinner';
 import { PlacementBanner } from '@/components/component/PlacementBanner/PlacementBanner';
 import styles from './DashboardPage.module.css';
 
-const SKILL_CONFIGS = [
-  { key: 'grammar', Icon: CheckCheck, label: 'Grammar', color: '#14b8a6' },
-  { key: 'reading', Icon: BookOpen, label: 'Reading', color: '#22c55e' },
-  { key: 'listening', Icon: Headphones, label: 'Listening', color: '#f59e0b' },
-  { key: 'vocabulary', Icon: Layers, label: 'Vocabulary', color: '#8b5cf6' },
-  { key: 'writing', Icon: PenLine, label: 'Writing', color: '#ec4899' },
-  { key: 'quiz', Icon: Brain, label: 'Quiz', color: '#6366f1' },
+const SECTION_CARDS = [
+  { key: 'grammar',    Icon: CheckCheck, color: '#14b8a6', to: '/grammar' },
+  { key: 'reading',   Icon: BookOpen,   color: '#22c55e', to: '/reading' },
+  { key: 'listening', Icon: Headphones, color: '#f59e0b', to: '/listening' },
+  { key: 'writing',   Icon: PenLine,    color: '#ec4899', to: '/writing' },
+  { key: 'vocabulary',Icon: Layers,     color: '#8b5cf6', to: '/vocabulary' },
+  { key: 'quiz',      Icon: Brain,      color: '#6366f1', to: '/quiz' },
 ] as const;
-
-type SkillKey = (typeof SKILL_CONFIGS)[number]['key'];
 
 function buildWeekDots(recentActivity: DailyActivity[]) {
   const activitySet = new Set(recentActivity.map((a) => a.date));
@@ -59,132 +58,104 @@ function buildWeekDots(recentActivity: DailyActivity[]) {
   });
 }
 
-function getStreakMessage(streak: number): string {
-  if (streak === 0) {
-    return 'Start your streak today!';
-  }
-  if (streak === 1) {
-    return 'Great start — come back tomorrow!';
-  }
-  if (streak < 7) {
-    return `${streak} days strong. Keep it up!`;
-  }
-  if (streak < 30) {
-    return `${streak} days 🔥 You're on fire!`;
-  }
-  return `${streak} days — Legendary!`;
-}
-
-function getSmsColor(_sms: number, baseColor: string): string {
-  return baseColor;
-}
-
-function getSkillDetailLabel(
-  key: SkillKey,
-  breakdown: { completed: number; required: number; accuracy: number } | undefined,
-): string {
-  if (breakdown === undefined) {
-    return '—';
-  }
-  if (key === 'vocabulary') {
-    return `${breakdown.completed} / ${breakdown.required} words`;
-  }
-  return `${breakdown.completed}/${breakdown.required} done · ${Math.round(breakdown.accuracy)}% accuracy`;
-}
-
 function GreetingMessage({ name }: { name: string }) {
+  const { t } = useTranslation();
   const hour = new Date().getHours();
-  const greeting = hour < 12 ? 'Good morning' : hour < 18 ? 'Good afternoon' : 'Good evening';
+  const key = hour < 12 ? 'dashboard.morning'
+    : hour < 18 ? 'dashboard.afternoon'
+    : 'dashboard.evening';
   const firstName = name.split(' ')[0] ?? name;
 
   return (
     <div className={styles['greetingBlock']}>
       <h1 className={styles['greeting']}>
-        {greeting}, <span className={styles['greetingName']}>{firstName}</span>
+        {t(key)}, <span className={styles['greetingName']}>{firstName}</span>
       </h1>
-      <p className={styles['greetingSubtitle']}>Ready to level up your English today?</p>
+      <p className={styles['greetingSubtitle']}>{t('dashboard.subtitle')}</p>
     </div>
   );
 }
 
-function ReadinessRing({ percent }: { percent: number }) {
-  const radius = 40;
-  const circumference = 2 * Math.PI * radius;
-  const offset = circumference - (percent / 100) * circumference;
-  const isReady = percent >= 100;
+function LevelBadge({ level, readiness }: { level: string; readiness: number }) {
+  const { t } = useTranslation();
+  const radius = 22;
+  const circ = 2 * Math.PI * radius;
+  const offset = circ - (readiness / 100) * circ;
 
   return (
-    <div className={styles['ringWrapper']}>
-      <svg width="100" height="100" viewBox="0 0 100 100">
-        <circle cx="50" cy="50" r={radius} fill="none" stroke="var(--surface-2)" strokeWidth="8" />
+    <div className={styles['levelBadge']}>
+      <svg width="58" height="58" viewBox="0 0 58 58">
+        <circle cx="29" cy="29" r={radius} fill="none" stroke="var(--surface-2)" strokeWidth="5" />
         <circle
-          cx="50"
-          cy="50"
-          r={radius}
+          cx="29" cy="29" r={radius}
           fill="none"
-          stroke={isReady ? '#22c55e' : 'var(--accent)'}
-          strokeWidth="8"
+          stroke={readiness >= 100 ? '#22c55e' : 'var(--accent)'}
+          strokeWidth="5"
           strokeLinecap="round"
-          strokeDasharray={circumference}
+          strokeDasharray={circ}
           strokeDashoffset={offset}
-          transform="rotate(-90 50 50)"
-          className={styles['ringProgress']}
+          transform="rotate(-90 29 29)"
+          style={{ transition: 'stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1)' }}
         />
       </svg>
-      <div className={styles['ringLabel']}>
-        <span className={styles['ringPercent']}>{percent}%</span>
-        <span className={styles['ringCaption']}>ready</span>
+      <div className={styles['levelBadgeInner']}>
+        <span className={styles['levelBadgeText']}>{level}</span>
       </div>
+      <span className={styles['levelBadgeHint']}>{readiness}% {t('dashboard.ready')}</span>
     </div>
   );
 }
 
 export function DashboardPage() {
+  const { t } = useTranslation();
   const dispatch = useAppDispatch();
+  const navigate = useNavigate();
 
   const user = useAppSelector(selectUser);
   const data = useAppSelector(selectProgressData);
   const isLoading = useAppSelector(selectProgressIsLoading);
   const error = useAppSelector(selectProgressError);
   const isLevelingUp = useAppSelector(selectIsLevelingUp);
-
   const { showBanner, statusLoaded } = useAppSelector((state) => state.placement);
 
   useEffect(() => {
     if (data === null && !isLoading && error === null) {
       void dispatch(fetchDashboard());
     }
-
     if (!statusLoaded) {
       void dispatch(fetchPlacementStatus());
     }
   }, [data, isLoading, error, statusLoaded, dispatch]);
 
-  const handleRetry = useCallback(() => {
-    void dispatch(fetchDashboard());
-  }, [dispatch]);
+  const handleRetry = useCallback(() => { void dispatch(fetchDashboard()); }, [dispatch]);
+  const handleLevelUp = useCallback(() => { void dispatch(requestLevelUp()); }, [dispatch]);
 
-  const handleLevelUp = useCallback(() => {
-    void dispatch(requestLevelUp());
-  }, [dispatch]);
-
-  if (user === null) {
-    return null;
-  }
-
-  if (isLoading && data === null) {
-    return <FullPageSpinner label="Loading your progress…" />;
-  }
+  if (user === null) return null;
+  if (isLoading && data === null) return <FullPageSpinner label={t('auth.sessionRestored')} />;
 
   const weekDots = data !== null ? buildWeekDots(data.recentActivity) : [];
-  const activeDaysThisWeek = weekDots.filter((d) => d.active).length;
+  const activeDays = weekDots.filter((d) => d.active).length;
+
+  const weakestSkill = data?.skillBreakdown
+    ? Object.entries(data.skillBreakdown).reduce(
+        (a, [k, v]) => (v.sms < a[1] ? ([k, v.sms] as [string, number]) : a),
+        ['grammar', 101] as [string, number],
+      )[0]
+    : null;
 
   return (
     <div className={styles['page']}>
-      {/* ── Header ── */}
+      {/* Header */}
       <header className={styles['header']}>
         <GreetingMessage name={user.name} />
-        {user.role === 'ADMIN' && <span className={styles['adminBadge']}>Admin</span>}
+        <div className={styles['headerRight']}>
+          {user.role === 'ADMIN' && (
+            <span className={styles['adminBadge']}>{t('dashboard.admin')}</span>
+          )}
+          {data !== null && (
+            <LevelBadge level={data.currentLevel} readiness={data.readinessPercent} />
+          )}
+        </div>
       </header>
 
       {showBanner && statusLoaded && <PlacementBanner />}
@@ -195,89 +166,71 @@ export function DashboardPage() {
           <span>{error}</span>
           <button type="button" onClick={handleRetry} className={styles['retryBtn']}>
             <RefreshCw size={14} />
-            Retry
+            {t('common.retry')}
           </button>
         </div>
       )}
 
       {data !== null && (
         <>
-          <div className={styles['statsGrid']}>
-            <div className={styles['statCard']}>
-              <div className={`${styles['statIcon']} ${styles['purple']}`}>
-                <TrendingUp size={18} />
-              </div>
-              <div className={styles['statInfo']}>
-                <span className={styles['statValue']}>{data.currentLevel}</span>
-                <span className={styles['statLabel']}>Current Level</span>
-              </div>
+          {/* Quick Stats Row */}
+          <div className={styles['statsRow']}>
+            <div className={`${styles['statPill']} ${data.streak >= 7 ? styles['streakHot'] : ''}`}>
+              <Flame size={16} className={styles['statPillIcon']} />
+              <span className={styles['statPillValue']}>{data.streak}</span>
+              <span className={styles['statPillLabel']}>{t('dashboard.statStreak')}</span>
             </div>
-
-            <div className={`${styles['statCard']} ${data.streak >= 7 ? styles['streakHot'] : ''}`}>
-              <div className={`${styles['statIcon']} ${styles['amber']}`}>
-                <Flame size={18} />
-              </div>
-              <div className={styles['statInfo']}>
-                <span className={styles['statValue']}>{data.streak}</span>
-                <span className={styles['statLabel']}>
-                  {data.streak >= 7 ? '🔥 Day streak' : 'Day streak'}
-                </span>
-              </div>
+            <div className={styles['statPill']}>
+              <Zap size={16} className={styles['statPillIcon']} />
+              <span className={styles['statPillValue']}>{data.totalXp.toLocaleString()}</span>
+              <span className={styles['statPillLabel']}>{t('dashboard.statXp')}</span>
             </div>
-
-            <div className={styles['statCard']}>
-              <div className={`${styles['statIcon']} ${styles['green']}`}>
-                <Zap size={18} />
-              </div>
-              <div className={styles['statInfo']}>
-                <span className={styles['statValue']}>{data.totalXp.toLocaleString()}</span>
-                <span className={styles['statLabel']}>Total XP</span>
-              </div>
+            <div className={styles['statPill']}>
+              <Target size={16} className={styles['statPillIcon']} />
+              <span className={styles['statPillValue']}>{activeDays}/7</span>
+              <span className={styles['statPillLabel']}>{t('dashboard.statWeek')}</span>
             </div>
           </div>
 
-          <div className={styles['nextGoalCard']}>
-            <div className={styles['nextGoalIcon']}>
-              <Target size={17} />
+          {/* Next Goal Banner */}
+          <button
+            type="button"
+            className={styles['goalBanner']}
+            onClick={() => navigate('/progress')}
+          >
+            <div className={styles['goalBannerIcon']}>
+              {data.testUnlocked ? <Trophy size={16} /> : <Target size={16} />}
             </div>
-            <div className={styles['nextGoalContent']}>
-              <span className={styles['nextGoalLabel']}>Next Goal</span>
-              <p className={styles['nextGoalText']}>{data.nextMilestone}</p>
+            <div className={styles['goalBannerContent']}>
+              <span className={styles['goalBannerLabel']}>
+                {data.testUnlocked ? t('dashboard.testReady') : t('dashboard.nextGoal')}
+              </span>
+              <p className={styles['goalBannerText']}>{data.nextMilestone}</p>
             </div>
-            <ArrowRight size={15} className={styles['nextGoalArrow']} />
-          </div>
+            <ArrowRight size={15} className={styles['goalBannerArrow']} />
+          </button>
 
-          <section className={styles['readinessSection']}>
-            <div className={styles['readinessLeft']}>
-              <h2 className={styles['sectionTitle']}>Level Readiness</h2>
-              <p className={styles['readinessHint']}>
-                {data.testUnlocked
-                  ? 'All skills unlocked — take the test!'
-                  : `Focus on ${data.weakestSkill} to progress faster.`}
-              </p>
-              {data.testUnlocked && (
-                <button
-                  type="button"
-                  className={styles['levelUpBtn']}
-                  onClick={handleLevelUp}
-                  disabled={isLevelingUp}
-                >
-                  <Trophy size={15} />
-                  {isLevelingUp ? 'Leveling up…' : 'Take the Level Test'}
-                </button>
-              )}
-            </div>
-            <ReadinessRing percent={data.readinessPercent} />
-          </section>
+          {/* Test unlock CTA */}
+          {data.testUnlocked && (
+            <button
+              type="button"
+              className={styles['levelUpCta']}
+              onClick={handleLevelUp}
+              disabled={isLevelingUp}
+            >
+              <Trophy size={16} />
+              {isLevelingUp ? t('dashboard.levelingUp') : t('dashboard.takeTest')}
+            </button>
+          )}
 
-          <section className={styles['activitySection']}>
-            <div className={styles['sectionHeader']}>
-              <h2 className={styles['sectionTitle']}>This Week</h2>
-              <span className={styles['sectionMeta']}>
-                {activeDaysThisWeek === 7 ? '🏆 Perfect week!' : `${activeDaysThisWeek} / 7 days`}
+          {/* Weekly Activity */}
+          <section className={styles['weekSection']}>
+            <div className={styles['weekHeader']}>
+              <h2 className={styles['sectionTitle']}>{t('dashboard.weeklyGoal')}</h2>
+              <span className={styles['weekMeta']}>
+                {activeDays === 7 ? t('dashboard.perfectWeek') : `${activeDays} / 7 ${t('dashboard.days')}`}
               </span>
             </div>
-            <div className={styles['streakMessage']}>{getStreakMessage(data.streak)}</div>
             <div className={styles['weekDots']}>
               {weekDots.map(({ date, label, active }) => (
                 <div key={date} className={styles['weekDot']}>
@@ -288,70 +241,73 @@ export function DashboardPage() {
             </div>
           </section>
 
-          <section>
-            <div className={styles['sectionHeader']}>
-              <h2 className={styles['sectionTitle']}>Skill Mastery</h2>
-              <span className={styles['sectionMeta']}>SMS = mastery score 0–100</span>
+          {/* Weak skill nudge */}
+          {weakestSkill !== null && (data.skillBreakdown[weakestSkill]?.sms ?? 100) < 80 && (
+            <div className={styles['focusNudge']}>
+              <span className={styles['focusNudgeEmoji']}>💡</span>
+              <div className={styles['focusNudgeText']}>
+                <strong>{t('dashboard.focusOn')} {t(`skills.${weakestSkill}`)}</strong>
+                <span> — {t('dashboard.focusHint')}</span>
+              </div>
+              <button
+                type="button"
+                className={styles['focusNudgeBtn']}
+                onClick={() => navigate(`/${weakestSkill}`)}
+              >
+                {t('dashboard.practice')} <ChevronRight size={13} />
+              </button>
             </div>
-            <div className={styles['skillGrid']}>
-              {SKILL_CONFIGS.map(({ key, Icon, label, color }) => {
+          )}
+
+          {/* Practice Areas */}
+          <section>
+            <div className={styles['weekHeader']}>
+              <h2 className={styles['sectionTitle']}>{t('dashboard.practiceAreas')}</h2>
+              <button
+                type="button"
+                className={styles['viewAllBtn']}
+                onClick={() => navigate('/progress')}
+              >
+                {t('dashboard.viewProgress')} →
+              </button>
+            </div>
+            <div className={styles['sectionGrid']}>
+              {SECTION_CARDS.map(({ key, Icon, color, to }) => {
                 const breakdown = data.skillBreakdown?.[key];
                 const sms = breakdown?.sms ?? 0;
-                const isWeakest = data.weakestSkill === key;
-                const hasAccuracyGap = (breakdown?.accuracyGap ?? 0) > 0;
-                const detailLabel = getSkillDetailLabel(
-                  key,
-                  breakdown as
-                    | { completed: number; required: number; accuracy: number }
-                    | undefined,
-                );
+                const isWeak = data.weakestSkill === key;
 
                 return (
-                  <div
+                  <button
                     key={key}
-                    className={`${styles['skillCard']} ${isWeakest ? styles['skillCardWeak'] : ''}`}
+                    type="button"
+                    className={`${styles['sectionCard']} ${isWeak ? styles['sectionCardWeak'] : ''}`}
                     style={{ '--card-color': color } as React.CSSProperties}
+                    onClick={() => navigate(to)}
                   >
-                    <div className={styles['skillCardTop']}>
-                      <div className={styles['skillIconWrap']}>
-                        <Icon size={17} />
+                    <div className={styles['sectionCardTop']}>
+                      <div className={styles['sectionIconWrap']}>
+                        <Icon size={18} />
                       </div>
-                      {isWeakest && <span className={styles['weakBadge']}>Focus here</span>}
+                      {isWeak && (
+                        <span className={styles['weakTag']}>{t('dashboard.focusTag')}</span>
+                      )}
                     </div>
-
-                    <h3 className={styles['skillName']}>{label}</h3>
-                    <div className={styles['smsRow']}>
-                      <span className={styles['smsScore']}>{sms}</span>
-                      <span className={styles['smsUnit']}>/100</span>
+                    <h3 className={styles['sectionName']}>{t(`skills.${key}`)}</h3>
+                    <div className={styles['sectionBar']}>
+                      <div className={styles['sectionBarTrack']}>
+                        <div
+                          className={styles['sectionBarFill']}
+                          style={{ width: `${sms}%` }}
+                        />
+                      </div>
+                      <span className={styles['sectionBarLabel']}>{sms}</span>
                     </div>
-
-                    <div className={styles['skillTrack']}>
-                      <div
-                        className={styles['skillFill']}
-                        style={{
-                          width: `${sms}%`,
-                          background: getSmsColor(sms, color),
-                        }}
-                      />
-                    </div>
-
-                    <p className={styles['skillDetail']}>{detailLabel}</p>
-
-                    {hasAccuracyGap && (
-                      <p className={styles['skillGap']}>
-                        ↑ {Math.round(breakdown?.accuracyGap ?? 0)}% accuracy needed
-                      </p>
-                    )}
-                  </div>
+                  </button>
                 );
               })}
             </div>
           </section>
-
-          <div className={styles['comingSoonCard']}>
-            <Mic size={16} />
-            <span>Speaking practice — coming soon</span>
-          </div>
         </>
       )}
     </div>

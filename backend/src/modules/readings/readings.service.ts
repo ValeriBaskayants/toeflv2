@@ -11,20 +11,12 @@ import type { CreateReadingDto } from './dto/bulk-create-reading.dto';
 import type { SubmitReadingDto } from './dto/submit-reading.dto';
 import slugify from 'slugify';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// TYPES
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface QuestionShape {
   text:         string;
   explanation?: string;
   options:      Array<{ text: string; isCorrect: boolean }>;
 }
 
-// ReadingSession: хранится в DailyActivity notes или отдельном документе.
-// Так как у нас нет отдельной ReadingSession модели, используем UserMistake
-// как суррогат истории + отдельный кеш в DailyActivity.
-// TODO для v2: добавить ReadingSession модель в Prisma для полной истории.
 
 export interface SubmitResult {
   results: Array<{
@@ -35,15 +27,15 @@ export interface SubmitResult {
   }>;
   accuracy:         number;
   xpEarned:         number;
-  countedAsCompleted: boolean;  // false если anti-gaming сработал
-  bestAccuracy:     number;     // лучший результат за все попытки
-  attemptNumber:    number;     // номер попытки (1, 2, 3...)
-  feedback:         string;     // человекочитаемый фидбек
+  countedAsCompleted: boolean;  
+  bestAccuracy:     number;     
+  attemptNumber:    number;     
+  feedback:         string;     
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// CONSTANTS
-// ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 const LIST_SELECT = {
   id:               true,
@@ -59,12 +51,12 @@ const LIST_SELECT = {
   createdAt:        true,
 } satisfies Prisma.ReadingMaterialSelect;
 
-// Повторное прочтение даёт XP, но меньше (не демотивируем, но и не злоупотреблять)
+
 const REREAD_XP_MULTIPLIER = 0.3;
 
-// ─────────────────────────────────────────────────────────────────────────────
-// SERVICE
-// ─────────────────────────────────────────────────────────────────────────────
+
+
+
 
 @Injectable()
 export class ReadingsService {
@@ -73,12 +65,7 @@ export class ReadingsService {
     private readonly progress: ProgressService,
   ) {}
 
-  // ── findMany — список материалов с прогрессом пользователя ───────────────
-  //
-  // Новое:
-  //   1. Возвращает userProgress (читал / лучший результат) для UI badges
-  //   2. Параллельный запрос (не N+1)
-  //   3. Сортировка: непрочитанные первыми, потом низкий score, потом прочитанные
+
 
   async findMany(params: {
     userId:  string;
@@ -100,7 +87,7 @@ export class ReadingsService {
 
     if (materials.length === 0) return [];
 
-    // Получаем историю попыток из UserMistake (суррогат ReadingSession)
+    
     const userHistory = await this.prisma.userMistake.findMany({
       where: {
         userId:   params.userId,
@@ -134,12 +121,12 @@ export class ReadingsService {
       };
     });
 
-    // Сортировка: not_started → attempted (низкий score) → completed
+    
     return enriched.sort((a, b) => {
       const order = { not_started: 0, attempted: 1, completed: 2 };
       const diff  = order[a.userStatus] - order[b.userStatus];
       if (diff !== 0) return diff;
-      // В рамках одного статуса: лучший score вниз (мотивируем улучшать)
+      
       if (a.bestAccuracy !== null && b.bestAccuracy !== null) {
         return a.bestAccuracy - b.bestAccuracy;
       }
@@ -159,22 +146,22 @@ export class ReadingsService {
     return result;
   }
 
-  // ── submitAnswers — ГЛАВНАЯ ЛОГИКА ────────────────────────────────────────
-  //
-  // Исправлено:
-  //   1. Anti-gaming: completed++ только при accuracy >= 40%
-  //   2. Дедупликация: повторное прочтение не двигает completed (но даёт XP×0.3)
-  //   3. Adaptive XP: base × streak × accuracy_bonus (без difficulty — у reading нет)
-  //   4. Пустой массив ответов = BadRequest (не 100%)
-  //   5. Best score трекинг через UserMistake (суррогат до добавления ReadingSession)
-  //   6. Человекочитаемый feedback с конкретными советами
+  
+  
+  
+  
+  
+  
+  
+  
+  
 
   async submitAnswers(
     userId:    string,
     dto:       SubmitReadingDto,
     timezone?: string,
   ): Promise<SubmitResult> {
-    // Валидация: нельзя сабмитить без ответов
+    
     if (dto.answers.length === 0) {
       throw new BadRequestException('At least one answer is required');
     }
@@ -185,7 +172,7 @@ export class ReadingsService {
         where:  { id: userId },
         select: { streak: true },
       }),
-      // Ищем предыдущую попытку (для дедупликации и best score)
+      
       this.prisma.userMistake.findUnique({
         where: { userId_targetId: { userId, targetId: dto.materialId } },
       }),
@@ -201,14 +188,14 @@ export class ReadingsService {
       throw new BadRequestException('This reading material has no questions yet');
     }
 
-    // Валидация: нельзя ответить на несуществующий вопрос
+    
     for (const a of dto.answers) {
       if (a.questionIdx >= questions.length) {
         throw new BadRequestException(`Question index ${a.questionIdx} is out of range`);
       }
     }
 
-    // Подсчёт результатов
+    
     const results = dto.answers.map((a) => {
       const question      = questions[a.questionIdx]!;
       const correctIdx    = question.options.findIndex((o) => o.isCorrect);
@@ -227,7 +214,7 @@ export class ReadingsService {
     const accuracy      = Math.round((correctCount / results.length) * 100);
     const isFirstAttempt = existingHistory === null;
 
-    // Best score — берём лучшее из всех попыток
+    
     const prevBest = existingHistory !== null
       ? (() => {
           const total = existingHistory.correctCount + existingHistory.wrongCount;
@@ -239,12 +226,12 @@ export class ReadingsService {
       ? (existingHistory.correctCount + existingHistory.wrongCount > 0 ? 2 : 1)
       : 1;
 
-    // Anti-gaming: completed++ только первая попытка + минимум 40% accuracy
+    
     const countedAsCompleted = isFirstAttempt && isSessionCountable(accuracy);
 
-    // Adaptive XP
-    // Первая попытка: полный XP
-    // Повторная: 30% от базового (поощряем, но не злоупотребление)
+    
+    
+    
     const baseXP = isFirstAttempt
       ? XP_BASE.READING_COMPLETED
       : Math.round(XP_BASE.READING_COMPLETED * REREAD_XP_MULTIPLIER);
@@ -255,7 +242,7 @@ export class ReadingsService {
       accuracy,
     });
 
-    // Записываем прогресс только если считается (первая попытка + anti-gaming)
+    
     if (countedAsCompleted) {
       await this.progress.recordSkillCompletion({
         userId,
@@ -265,7 +252,7 @@ export class ReadingsService {
         timezone,
       });
     } else {
-      // Даже если не считается как completed — XP за попытку даём (мотивация)
+      
       await this.progress.recordActivity({
         userId,
         xpEarned: Math.max(1, Math.round(xpEarned * 0.2)),
@@ -274,8 +261,8 @@ export class ReadingsService {
       });
     }
 
-    // Обновляем UserMistake как суррогат истории
-    // (correctCount и wrongCount накапливаем суммарно по всем попыткам)
+    
+    
     await this.prisma.userMistake.upsert({
       where: { userId_targetId: { userId, targetId: dto.materialId } },
       create: {
@@ -297,7 +284,7 @@ export class ReadingsService {
       },
     });
 
-    // Человекочитаемый feedback
+    
     const feedback = buildReadingFeedback(accuracy, isFirstAttempt, correctCount, results.length);
 
     return {
@@ -311,8 +298,8 @@ export class ReadingsService {
     };
   }
 
-  // ── getUserHistory — история прочтений для UI ──────────────────────────────
-  // Новый endpoint: пользователь видит что читал и с каким результатом
+  
+  
 
   async getUserHistory(userId: string): Promise<Array<{
     materialId:  string;
@@ -340,7 +327,7 @@ export class ReadingsService {
     });
   }
 
-  // ── bulkCreate ─────────────────────────────────────────────────────────────
+  
 
   async bulkCreate(readings: CreateReadingDto[]): Promise<{
     totalProcessed: number;
@@ -387,10 +374,10 @@ export class ReadingsService {
   }
 }
 
-// ─────────────────────────────────────────────────────────────────────────────
-// HELPER: buildReadingFeedback
-// Конкретный, actionable фидбек — не абстрактное "good job"
-// ─────────────────────────────────────────────────────────────────────────────
+
+
+
+
 
 function buildReadingFeedback(
   accuracy:       number,

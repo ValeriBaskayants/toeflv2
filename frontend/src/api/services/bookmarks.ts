@@ -1,5 +1,6 @@
 import type {
-  Bookmark,
+  EnrichedBookmark,
+  BookmarkType,
   ToggleBookmarkDto,
   ToggleBookmarkResponse,
   DeleteBookmarkResponse,
@@ -7,9 +8,16 @@ import type {
 import { api } from '../client';
 
 export const BookmarksApi = {
-  getAll: () => api.get<Bookmark[]>('/bookmarks'),
+  getAllEnriched: (type?: BookmarkType) =>
+    api.get<EnrichedBookmark[]>('/bookmarks/enriched', {
+      params: type ? { type } : undefined,
+    }),
 
-  toggle: (payload: ToggleBookmarkDto) => api.post<ToggleBookmarkResponse>('/bookmarks', payload),
+  getBookmarkedIds: (type: BookmarkType) =>
+    api.get<string[]>('/bookmarks/ids', { params: { type } }),
+
+  toggle: (payload: ToggleBookmarkDto) =>
+    api.post<ToggleBookmarkResponse>('/bookmarks', payload),
 
   remove: (id: string) => api.delete<DeleteBookmarkResponse>(`/bookmarks/${id}`),
 };

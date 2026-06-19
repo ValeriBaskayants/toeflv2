@@ -1,21 +1,53 @@
 export const reading = {
-  title:          'Reading',
-  subtitle:       'Improve comprehension across all CEFR levels',
-  allLevels:      'All',
+  title:    'Reading',
+  subtitle: 'Improve comprehension across all CEFR levels',
+
+  
+  allLevels:         'All',
   searchPlaceholder: 'Search by topic or title…',
-  retry:          'Retry',
-  noResults:      'No readings found for this filter.',
-  vocabulary:     'Vocabulary',
-  questions:      'Comprehension Check',
-  accuracy:       'accuracy',
-  correct:        'correct',
-  yourAnswer:     'Your answer',
-  correctAnswer:  'Correct',
-  tryAgain:       'Try Again',
+  noResults:         'No readings match this filter.',
+  noResultsSearch:   'No results for "{{query}}"',
+
+  
+  min:   'min',
+  words: 'words',
+
+  
+  status: {
+    not_started: 'New',
+    attempted:   'Attempted',
+    completed:   'Completed',
+  },
+
+  
+  vocabulary:  'Vocabulary',
+  questions:   'Comprehension Check',
+
+  
+  answersLeft:    '{{count}} remaining',
+  readyToSubmit:  'All questions answered',
   submit:         'Submit Answers',
   submitting:     'Submitting…',
-  readyToSubmit:  'All questions answered',
-  loading:        'Loading article…',
-  notFound:       'Article not found.',
-  backToList:     'Back',
+
+  
+  accuracy:      'accuracy',
+  correct:       'correct',
+  xpEarned:      '+{{xp}} XP earned',
+  yourAnswer:    'Your answer',
+  correctAnswer: 'Correct',
+  tryAgain:      'Try Again',
+  attempt:       'Attempt {{n}}',
+  bestScore:     'Best score',
+  firstAttempt:  'First attempt',
+
+  
+  feedbackPerfectFirst: 'Perfect score on the first try!',
+  feedbackPerfectRetry: 'Perfect this time! Great improvement.',
+
+  
+  loading:  'Loading article…',
+  notFound: 'Article not found.',
+  backToList: 'Back',
+  retry:    'Retry',
+  error:    'Something went wrong.',
 };

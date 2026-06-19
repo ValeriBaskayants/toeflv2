@@ -20,6 +20,7 @@ import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PlacementModule } from './modules/placement/placement.module';
 import { BullModule } from '@nestjs/bullmq';
+import { RoadmapModule } from './modules/roadmap/roadmap.module';
 
 @Module({
   imports: [
@@ -61,6 +62,7 @@ import { BullModule } from '@nestjs/bullmq';
     MistakeModule,
     BookmarksModule,
     PlacementModule,
+    RoadmapModule
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

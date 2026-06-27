@@ -3,7 +3,6 @@ import { useTranslation } from 'react-i18next';
 import clsx from 'clsx';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/store';
-import type { GetExercisesParams } from '@/types/exercises/Exercise.types';
 
 import { FullPageSpinner   } from '@/components/ui/Spinner';
 import styles from './ExercisesPage.module.css';
@@ -29,27 +28,26 @@ export function ExercisesPage() {
 
   
   useEffect(() => {
-    void dispatch(fetchExercises({ level: activeLevel ?? undefined }));
+    // only include `level` when it's defined to satisfy strict optional property types
+    void dispatch(fetchExercises(activeLevel != null ? { level: activeLevel } : {}));
     void dispatch(fetchExerciseTopics(activeLevel ?? undefined));
-  
-  }, [dispatch]);
+
+  }, [dispatch, activeLevel]);
 
   
+  const getExercisesFetchParams = useCallback(() => ({
+    ...(activeLevel != null ? { level: activeLevel } : {}),
+    ...(activeDiff != null ? { difficulty: activeDiff } : {}),
+    ...(activeTopic != null ? { topic: activeTopic } : {}),
+  }), [activeLevel, activeDiff, activeTopic]);
+
   useEffect(() => {
-    void dispatch(fetchExercises({
-      level:      activeLevel ?? undefined,
-      difficulty: activeDiff  ?? undefined,
-      topic:      activeTopic ?? undefined,
-    }));
-  }, [activeLevel, activeDiff, activeTopic, dispatch]);
+    void dispatch(fetchExercises(getExercisesFetchParams()));
+  }, [activeLevel, activeDiff, activeTopic, dispatch, getExercisesFetchParams]);
 
   const handleRetryLoad = useCallback(() => {
-    void dispatch(fetchExercises({
-      level:      activeLevel ?? undefined,
-      difficulty: activeDiff  ?? undefined,
-      topic:      activeTopic ?? undefined,
-    }));
-  }, [activeLevel, activeDiff, activeTopic, dispatch]);
+    void dispatch(fetchExercises(getExercisesFetchParams()));
+  }, [dispatch, getExercisesFetchParams]);
 
   if (isLoading && allExercises.length === 0) {
     return <FullPageSpinner label={t('loading')} />;

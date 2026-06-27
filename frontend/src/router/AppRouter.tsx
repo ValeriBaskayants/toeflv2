@@ -17,6 +17,7 @@ import { BookmarksPage } from '@/pages/Bookmarkspage/Bookmarkspage';
 import WritingEditorPage from '@/pages/Writingeditorpage/Writingeditorpage';
 import WritingPage from '@/pages/Writingpage/Writingpage';
 import MistakesPage from '@/pages/MistakePage/MistakesPage';
+import { VocabularyPage } from '@/pages/VocabularyPage/VocabularyPage';
 
 function ComingSoonPage({ title }: { title: string }) {
   return (
@@ -57,7 +58,7 @@ export function AppRouter() {
         <Route path="/grammar-rules" element={<GrammarRulesPage />} />
         <Route path="/grammar-rules/:slug" element={<GrammarRulesPage />} />
 
-        <Route path="/vocabulary" element={<ComingSoonPage title="Vocabulary" />} />
+        <Route path="/vocabulary" element={<VocabularyPage/>} />
 
         <Route path="/speaking" element={<ComingSoonPage title="Speaking" />} />
 

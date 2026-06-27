@@ -7,19 +7,45 @@ export const EXAMPLES: Record<ContentType, string> = {
         topic: 'Present Simple',
         level: 'A1',
         difficulty: 'EASY',
+
         sentence: 'She _____ to school every day.',
-        blanks: [{ position: 0, answer: 'goes', options: ['go', 'goes', 'going', 'gone'] }],
+
+        blanks: [
+          {
+            position: 0,
+            answer: 'goes',
+            options: ['go', 'goes', 'going', 'gone'],
+          },
+        ],
+
         explanation: 'Use -s/-es with he/she/it in Present Simple.',
         tags: ['a1', 'present-simple'],
+
+        isAvailableForPlacement: false,
+        difficultyRating: null,
+        discriminationRating: null,
       },
       {
         topic: 'Past Simple',
         level: 'A2',
         difficulty: 'MEDIUM',
+
         sentence: 'They _____ dinner before the movie started.',
-        blanks: [{ position: 0, answer: 'ate', options: ['eat', 'ate', 'eaten', 'eating'] }],
+
+        blanks: [
+          {
+            position: 0,
+            answer: 'ate',
+            options: ['eat', 'ate', 'eaten', 'eating'],
+          },
+        ],
+
         explanation: 'Past Simple uses the past form of the verb.',
         tags: ['a2', 'past-simple'],
+
+        isAvailableForPlacement: false,
+        difficultyRating: null,
+        discriminationRating: null,
       },
     ],
     null,
@@ -32,9 +58,11 @@ export const EXAMPLES: Record<ContentType, string> = {
         topic: 'Present Simple',
         slug: 'present-simple',
         level: 'A1',
+
         summary: 'Used for habits, routines, facts and general truths.',
         coreConcept: 'Subject + base verb (+ s/es for he/she/it)',
         structure: 'I/You/We/They + V1 | He/She/It + V1+s/es',
+
         usages: [
           {
             title: 'Habits & Routines',
@@ -49,24 +77,49 @@ export const EXAMPLES: Record<ContentType, string> = {
           {
             title: 'General Truths',
             explanation: 'Facts that are always true.',
-            examples: [{ sentence: 'Water boils at 100°C.' }],
-          },
-        ],
-        sections: [
-          {
-            title: 'Negative form',
-            content: "Use do not (don't) or does not (doesn't) + base verb.",
             examples: [
-              { sentence: 'He does not play tennis.' },
-              { sentence: "They don't watch TV." },
+              {
+                sentence: 'Water boils at 100°C.',
+              },
             ],
           },
         ],
+
+        sections: [
+          {
+            title: 'Negative Form',
+            content: "Use do not (don't) or does not (doesn't) + base verb.",
+            examples: [
+              {
+                sentence: 'He does not play tennis.',
+              },
+              {
+                sentence: "They don't watch TV.",
+              },
+            ],
+          },
+        ],
+
+        comparisons: [
+          {
+            compareWith: 'Present Continuous',
+            explanation:
+              'Present Simple describes habits and facts, while Present Continuous describes actions happening now.',
+            examples: [
+              {
+                sentence: 'She works every day. / She is working now.',
+              },
+            ],
+          },
+        ],
+
         commonMistakes: [
           'She go to school. ✗ → She goes to school. ✓',
           "He don't like it. ✗ → He doesn't like it. ✓",
         ],
+
         signalWords: ['always', 'usually', 'often', 'every day', 'never'],
+
         relatedTopics: ['present-continuous', 'past-simple'],
       },
     ],
@@ -80,15 +133,21 @@ export const EXAMPLES: Record<ContentType, string> = {
         word: 'accomplish',
         level: 'B1',
         type: 'VERB',
+
         pronunciation: '/əˈkɒmplɪʃ/',
         definition: 'To succeed in doing something difficult.',
         definitionRu: 'Достигать, выполнять',
+
         examples: [
           'She accomplished her goal in record time.',
           'The team accomplished what seemed impossible.',
         ],
+
         synonyms: ['achieve', 'complete', 'fulfill'],
         antonyms: ['fail', 'abandon'],
+
+        imageUrl: null,
+
         forms: {
           base: 'accomplish',
           past: 'accomplished',
@@ -96,18 +155,30 @@ export const EXAMPLES: Record<ContentType, string> = {
           thirdPerson: 'accomplishes',
           presentParticiple: 'accomplishing',
         },
+
         isIrregularVerb: false,
       },
       {
         word: 'innovative',
         level: 'B2',
         type: 'ADJECTIVE',
+
         pronunciation: '/ˈɪnəveɪtɪv/',
         definition: 'Featuring new methods; advanced and original.',
         definitionRu: 'Инновационный, передовой',
-        examples: ['The company is known for its innovative products.'],
+
+        examples: [
+          'The company is known for its innovative products.',
+        ],
+
         synonyms: ['creative', 'original', 'pioneering'],
         antonyms: ['conventional', 'traditional'],
+
+        imageUrl: null,
+
+        forms: null,
+
+        isIrregularVerb: false,
       },
     ],
     null,
@@ -118,31 +189,60 @@ export const EXAMPLES: Record<ContentType, string> = {
     [
       {
         title: 'The Water Cycle',
+        slug: 'the-water-cycle',
+
         level: 'A2',
         topic: 'Science',
+
         description: 'A short passage about how water moves through nature.',
+
         content:
           'Water is constantly moving around Earth in a process called the water cycle. The sun heats water in rivers, lakes, and oceans, causing it to evaporate and rise into the atmosphere. As the water vapor rises, it cools and condenses to form clouds. When enough droplets gather, precipitation occurs as rain or snow.',
+
         tags: ['science', 'nature'],
+
+        coverImageUrl: null,
+
         questions: [
           {
+            type: 'MULTIPLE_CHOICE',
+
             text: 'What causes water to evaporate?',
-            explanation: 'The sun provides heat energy that turns liquid water into vapor.',
+
+            explanation:
+              'The sun provides heat energy that turns liquid water into vapor.',
+
             options: [
-              { text: 'Heat from the sun', isCorrect: true },
-              { text: 'Strong winds', isCorrect: false },
-              { text: 'Cold temperatures', isCorrect: false },
-              { text: 'Ocean currents', isCorrect: false },
+              {
+                text: 'Heat from the sun',
+                isCorrect: true,
+              },
+              {
+                text: 'Strong winds',
+                isCorrect: false,
+              },
+              {
+                text: 'Cold temperatures',
+                isCorrect: false,
+              },
+              {
+                text: 'Ocean currents',
+                isCorrect: false,
+              },
             ],
           },
         ],
+
         vocabulary: [
           {
             word: 'evaporate',
             translation: 'испаряться',
             contextSentence: 'Water evaporates when heated.',
           },
-          { word: 'precipitation', translation: 'осадки' },
+          {
+            word: 'precipitation',
+            translation: 'осадки',
+          },
         ],
       },
     ],
@@ -154,27 +254,52 @@ export const EXAMPLES: Record<ContentType, string> = {
     [
       {
         question: 'Which tense describes an action happening right now?',
-        options: ['Present Simple', 'Past Simple', 'Present Continuous', 'Future Simple'],
+
+        options: [
+          'Present Simple',
+          'Past Simple',
+          'Present Continuous',
+          'Future Simple',
+        ],
+
         correctIndex: 2,
+
         explanation:
           'Present Continuous (am/is/are + -ing) describes actions currently in progress.',
+
         topic: 'Tenses',
+        category: 'GRAMMAR',
+
         level: 'A1',
         difficulty: 'EASY',
+
+        isAvailableForPlacement: false,
+        difficultyRating: null,
+        discriminationRating: null,
       },
       {
         question: 'Choose the correct sentence:',
+
         options: [
           "She don't like coffee.",
           "She doesn't likes coffee.",
           "She doesn't like coffee.",
           'She not like coffee.',
         ],
+
         correctIndex: 2,
-        explanation: 'With he/she/it use "doesn\'t" + base verb.',
+
+        explanation: `With he/she/it use "doesn't" + base verb.`,
+
         topic: 'Present Simple',
+        category: 'GRAMMAR',
+
         level: 'A1',
         difficulty: 'EASY',
+
+        isAvailableForPlacement: false,
+        difficultyRating: null,
+        discriminationRating: null,
       },
     ],
     null,

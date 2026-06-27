@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useRef, useState } from 'react';
+import { useEffect, useCallback, useRef, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
 import {
@@ -6,6 +6,7 @@ import {
   CheckCircle2, XCircle, Zap, RefreshCw, AlertCircle,
   Loader2, Trophy, Star,
 } from 'lucide-react';
+
 import { useAppDispatch, useAppSelector as useAppSelectorBase } from '@/store/store';
 import type { ReadingsRootState } from '@/store/Slices/ReadingsSlice';
 import {
@@ -32,8 +33,9 @@ import {
   selectCountedAsCompleted,
 } from '@/store/Slices/ReadingsSlice';
 import { fetchBookmarks } from '@/store/Slices/BookMarksSlice';
+
 import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
-import { getLevelColor, LEVEL_DISPLAY } from '@/constants/level';
+import { getLevelConfig } from '@/constants/reading-meta'; // Обновленный импорт
 import type { VocabularyEmbedded, Question } from '@/types/reading/Reading.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './ReadingReaderPage.module.css';
@@ -46,23 +48,43 @@ const useAppSelector = useAppSelectorBase as unknown as <T>(
 
 function VocabWord({ word, entry }: { word: string; entry: VocabularyEmbedded }) {
   const [open, setOpen] = useState(false);
-  const ref = useRef<HTMLSpanElement>(null);
+  const ref = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     if (!open) return;
-    const handler = (e: MouseEvent) => {
-      if (ref.current && !ref.current.contains(e.target as Node)) setOpen(false);
+    
+    const handleClickOutside = (e: MouseEvent) => {
+      if (ref.current && !ref.current.contains(e.target as Node)) {
+        setOpen(false);
+      }
     };
-    document.addEventListener('mousedown', handler);
-    return () => document.removeEventListener('mousedown', handler);
+    
+    const handleEscape = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') setOpen(false);
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    document.addEventListener('keydown', handleEscape);
+    
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
   }, [open]);
 
   return (
-    <span ref={ref} className={styles['vocabTrigger']} onClick={() => setOpen((p) => !p)}>
+    <button
+      type="button"
+      ref={ref}
+      className={styles['vocabTrigger']}
+      onClick={() => setOpen((p) => !p)}
+      aria-expanded={open}
+      aria-haspopup="dialog"
+    >
       {word}
       <span className={styles['vocabDot']} />
       {open && (
-        <span className={styles['vocabTooltip']}>
+        <span className={styles['vocabTooltip']} role="dialog">
           <span className={styles['tooltipWord']}>{entry.word}</span>
           <span className={styles['tooltipTrans']}>{entry.translation}</span>
           {entry.contextSentence !== undefined && (
@@ -70,7 +92,7 @@ function VocabWord({ word, entry }: { word: string; entry: VocabularyEmbedded })
           )}
         </span>
       )}
-    </span>
+    </button>
   );
 }
 
@@ -79,17 +101,24 @@ function VocabWord({ word, entry }: { word: string; entry: VocabularyEmbedded })
 function ArticleContent({ content, vocabulary }: { content: string; vocabulary: VocabularyEmbedded[] }) {
   const paragraphs = content.split(/\n+/).filter(Boolean);
 
-  if (vocabulary.length === 0) {
+  // Оптимизация: компилируем RegExp и собираем Map только при изменении словаря
+  const { vocabMap, regex } = useMemo(() => {
+    if (vocabulary.length === 0) return { vocabMap: new Map(), regex: null };
+    
+    const map = new Map(vocabulary.map((v) => [v.word.toLowerCase(), v]));
+    const escaped = vocabulary.map((v) => v.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
+    const rx = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
+    
+    return { vocabMap: map, regex: rx };
+  }, [vocabulary]);
+
+  if (!regex) {
     return (
       <div className={styles['articleBody']}>
         {paragraphs.map((p, i) => <p key={i}>{p}</p>)}
       </div>
     );
   }
-
-  const vocabMap = new Map(vocabulary.map((v) => [v.word.toLowerCase(), v]));
-  const escaped  = vocabulary.map((v) => v.word.replace(/[.*+?^${}()|[\]\\]/g, '\\$&'));
-  const regex    = new RegExp(`\\b(${escaped.join('|')})\\b`, 'gi');
 
   return (
     <div className={styles['articleBody']}>
@@ -115,6 +144,7 @@ function ArticleContent({ content, vocabulary }: { content: string; vocabulary: 
 function VocabPanel({ vocabulary }: { vocabulary: VocabularyEmbedded[] }) {
   const { t } = useTranslation('reading');
   const [open, setOpen] = useState(false);
+  
   if (vocabulary.length === 0) return null;
 
   return (
@@ -231,7 +261,6 @@ function QuizSection({ questions, materialId }: { questions: Question[]; materia
 
     return (
       <div className={styles['results']}>
-        {/* Score + XP */}
         <div className={styles['resultsTop']}>
           <ScoreRing pct={pct} />
           <div className={styles['resultsMeta']}>
@@ -258,15 +287,13 @@ function QuizSection({ questions, materialId }: { questions: Question[]; materia
           </div>
         </div>
 
-        {/* Backend feedback */}
         {feedback !== null && (
           <div className={styles['feedbackBox']}>{feedback}</div>
         )}
 
-        {/* Per-question review */}
         <div className={styles['reviewList']}>
           {results.map((res) => {
-            const q       = questions[res.questionIdx];
+            const q = questions[res.questionIdx];
             if (q === undefined) return null;
             const userOpt    = q.options[quizAnswers[res.questionIdx] ?? -1];
             const correctOpt = q.options[res.correctIdx];
@@ -399,14 +426,25 @@ export default function ReadingReaderPage() {
     return () => { dispatch(clearCurrent()); };
   }, [slug, dispatch]);
 
+  // Оптимизация: requestAnimationFrame для плавного прогресс-бара без лагов
   useEffect(() => {
+    let ticking = false;
+    
     const handler = () => {
-      const el = articleRef.current;
-      if (el === null) return;
-      const { top, height } = el.getBoundingClientRect();
-      const visible = Math.max(0, window.innerHeight - top);
-      setScrollPct(Math.min(100, Math.round((visible / height) * 100)));
+      if (!ticking) {
+        window.requestAnimationFrame(() => {
+          const el = articleRef.current;
+          if (el !== null) {
+            const { top, height } = el.getBoundingClientRect();
+            const visible = Math.max(0, window.innerHeight - top);
+            setScrollPct(Math.min(100, Math.round((visible / height) * 100)));
+          }
+          ticking = false;
+        });
+        ticking = true;
+      }
     };
+    
     window.addEventListener('scroll', handler, { passive: true });
     return () => window.removeEventListener('scroll', handler);
   }, []);
@@ -427,7 +465,8 @@ export default function ReadingReaderPage() {
     );
   }
 
-  const levelColor = getLevelColor(article.level);
+  // Обновленное использование конфигурации уровня
+  const { color: levelColor, label: levelLabel } = getLevelConfig(article.level);
   const questions  = (article.questions ?? []) as Question[];
   const vocabulary = (article.vocabulary ?? []) as VocabularyEmbedded[];
 
@@ -450,7 +489,7 @@ export default function ReadingReaderPage() {
         </div>
         <div className={styles['headerRight']}>
           <span className={styles['levelChip']} style={{ background: levelColor }}>
-            {LEVEL_DISPLAY[article.level] ?? article.level}
+            {levelLabel ?? article.level}
           </span>
           <span className={styles['metaChip']}>
             <Clock size={11} /> {article.estimatedMinutes} {t('min')}

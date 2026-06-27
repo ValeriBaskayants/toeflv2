@@ -19,12 +19,11 @@ import type {
   GrammarRuleSummary,
   GrammarUserStatus,
 } from '@/types/grammar/Grammar.types';
-import { FullPageSpinner } from '@/components/ui/Spinner';
 import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
 import styles from './GrammarRulesPage.module.css';
 import { Level } from '@/types/globalTypes';
 
-// ─── Constants ─────────────────────────────────────────────────────────────────
+
 
 const LEVELS: Array<{ value: Level | null; label: string }> = [
   { value: null,           label: 'All'  },
@@ -52,7 +51,6 @@ const LEVEL_DISPLAY: Record<string, string> = {
   C1: 'C1', C2: 'C2',
 };
 
-// User progress status config
 const STATUS_CONFIG: Record<GrammarUserStatus, {
   icon:    React.ElementType;
   label:   string;
@@ -65,7 +63,7 @@ const STATUS_CONFIG: Record<GrammarUserStatus, {
 
 const SEARCH_DEBOUNCE_MS = 350;
 
-// ─── Sub-components ────────────────────────────────────────────────────────────
+
 
 function LevelBadge({ level }: { level: Level }) {
   const color = LEVEL_COLOR[level] ?? '#6366f1';
@@ -82,13 +80,30 @@ function LevelBadge({ level }: { level: Level }) {
 function UserStatusBadge({ status }: { status: GrammarUserStatus }) {
   const cfg = STATUS_CONFIG[status];
   const Icon = cfg.icon;
-  // Don't render a badge for not_started — it's the default state
   if (status === 'not_started') { return null; }
   return (
     <span className={styles['statusBadge']} style={{ color: cfg.color }}>
       <Icon size={12} />
       {cfg.label}
     </span>
+  );
+}
+
+
+function CardSkeleton() {
+  return (
+    <div className={`${styles['card']} ${styles['skeleton']}`}>
+      <div className={styles['cardAccentBar']} />
+      <div className={styles['cardHead']}>
+        <div className={styles['skeletonBadge']} />
+      </div>
+      <div className={styles['skeletonTitle']} />
+      <div className={styles['skeletonText']} />
+      <div className={styles['skeletonTextShort']} />
+      <div className={styles['cardFooter']}>
+        <div className={styles['skeletonBtn']} />
+      </div>
+    </div>
   );
 }
 
@@ -99,11 +114,6 @@ function RuleCard({ rule, onClick }: { rule: GrammarRuleSummary; onClick: () => 
     <article
       className={styles['card']}
       style={{ '--card-accent': color } as React.CSSProperties}
-      onClick={onClick}
-      role="button"
-      tabIndex={0}
-      onKeyDown={(e) => { if (e.key === 'Enter' || e.key === ' ') { onClick(); } }}
-      aria-label={`Open grammar rule: ${rule.topic}`}
     >
       <div className={styles['cardAccentBar']} />
 
@@ -112,7 +122,7 @@ function RuleCard({ rule, onClick }: { rule: GrammarRuleSummary; onClick: () => 
           <LevelBadge level={rule.level} />
           <UserStatusBadge status={rule.userStatus} />
         </div>
-        <div onClick={(e) => e.stopPropagation()} onKeyDown={(e) => e.stopPropagation()}>
+        <div className={styles['bookmarkWrapper']}>
           <BookmarkButton targetId={rule.id} type="GRAMMAR_RULE" size="sm" />
         </div>
       </div>
@@ -136,10 +146,15 @@ function RuleCard({ rule, onClick }: { rule: GrammarRuleSummary; onClick: () => 
       )}
 
       <div className={styles['cardFooter']}>
-        <span className={styles['cardCta']}>
-          Study rule <ArrowRight size={13} />
-        </span>
-        {/* Exercise count — new backend field */}
+        <button
+          type="button"
+          className={styles['cardCta']}
+          onClick={onClick}
+          aria-label={`Study grammar rule: ${rule.topic}`}
+        >
+          Study rule <ArrowRight size={13} className={styles['cardArrow']} />
+        </button>
+        
         {rule.exerciseCount > 0 && (
           <span className={styles['exerciseCount']}>
             {rule.exerciseCount} exercise{rule.exerciseCount !== 1 ? 's' : ''}
@@ -169,7 +184,7 @@ function EmptyState({ search }: { search: string }) {
   );
 }
 
-// ─── Main component ────────────────────────────────────────────────────────────
+
 
 export function GrammarRulesPage() {
   const dispatch    = useAppDispatch();
@@ -182,13 +197,22 @@ export function GrammarRulesPage() {
   const activeLevel = useAppSelector(selectActiveLevel);
   const search      = useAppSelector(selectGrammarSearch);
 
-  // Fetch when level changes immediately; search is debounced below
+  
+  useEffect(() => {
+    return () => {
+      if (debounceRef.current !== null) {
+        clearTimeout(debounceRef.current);
+      }
+    };
+  }, []);
+
+  
   useEffect(() => {
     const params: any = {};
     if (activeLevel) params.level = activeLevel;
     if (search.trim().length > 0) params.search = search.trim();
     void dispatch(fetchGrammarRules(params));
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+  
   }, [activeLevel, dispatch]);
 
   const handleLevelClick = useCallback((level: Level | null) => {
@@ -197,9 +221,8 @@ export function GrammarRulesPage() {
 
   const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
     const value = e.target.value;
-    dispatch(setSearch(value)); // instant local filter (selector)
+    dispatch(setSearch(value));
 
-    // Debounced server-side fetch so backend also filters (especially for big lists)
     if (debounceRef.current !== null) { clearTimeout(debounceRef.current); }
     debounceRef.current = setTimeout(() => {
       const params: any = {};
@@ -220,11 +243,6 @@ export function GrammarRulesPage() {
     void dispatch(fetchGrammarRules(params));
   }, [activeLevel, search, dispatch]);
 
-  if (isLoading && rules.length === 0) {
-    return <FullPageSpinner label="Loading grammar rules…" />;
-  }
-
-  // Group counts for the status summary
   const statusCounts = {
     in_progress: rules.filter((r) => r.userStatus === 'in_progress').length,
     mastered:    rules.filter((r) => r.userStatus === 'mastered').length,
@@ -241,7 +259,6 @@ export function GrammarRulesPage() {
         </div>
         <div className={styles['headerMeta']}>
           <span className={styles['ruleCount']}>{rules.length} rules</span>
-          {/* Status summary — only when there's real data */}
           {statusCounts.in_progress > 0 && (
             <span className={styles['inProgressCount']}>
               <Clock size={12} /> {statusCounts.in_progress} in progress
@@ -309,13 +326,15 @@ export function GrammarRulesPage() {
         <EmptyState search={search} />
       ) : (
         <section className={styles['grid']} aria-live="polite">
-          {rules.map((rule) => (
-            <RuleCard
-              key={rule.id}
-              rule={rule}
-              onClick={() => handleCardClick(rule.slug)}
-            />
-          ))}
+          {isLoading && rules.length === 0
+            ? Array.from({ length: 6 }).map((_, idx) => <CardSkeleton key={idx} />)
+            : rules.map((rule) => (
+                <RuleCard
+                  key={rule.id}
+                  rule={rule}
+                  onClick={() => handleCardClick(rule.slug)}
+                />
+              ))}
         </section>
       )}
     </div>

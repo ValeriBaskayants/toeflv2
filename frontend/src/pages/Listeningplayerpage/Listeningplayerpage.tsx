@@ -52,9 +52,9 @@ import type { Difficulty } from '@/types/globalTypes';
 
 const RATE_OPTIONS = [
   { label: '0.75×', value: 0.75 },
-  { label: '1.0×',  value: 1.0  },
+  { label: '1.0×', value: 1.0 },
   { label: '1.25×', value: 1.25 },
-  { label: '1.5×',  value: 1.5  },
+  { label: '1.5×', value: 1.5 },
 ];
 
 const LEVEL_DISPLAY: Record<string, string> = {
@@ -120,8 +120,8 @@ function ModeSelector({ allowedModes, onSelect, isLoading }: ModeSelectorProps) 
             disabled={isLoading}
             className={`${styles['modeCard']} ${hovered === card.mode ? styles['modeCardHovered'] : ''}`}
             style={{
-              '--m-color':  card.color,
-              '--m-bg':     card.bg,
+              '--m-color': card.color,
+              '--m-bg': card.bg,
               '--m-border': card.border,
             } as React.CSSProperties}
             onMouseEnter={() => setHovered(card.mode)}
@@ -129,9 +129,9 @@ function ModeSelector({ allowedModes, onSelect, isLoading }: ModeSelectorProps) 
             onClick={() => onSelect(card.mode)}
           >
             <div className={styles['modeCardIcon']}>
-              {card.mode === 'EASY'   && <Volume2 size={22} />}
+              {card.mode === 'EASY' && <Volume2 size={22} />}
               {card.mode === 'MEDIUM' && <Headphones size={22} />}
-              {card.mode === 'HARD'   && <Zap size={22} />}
+              {card.mode === 'HARD' && <Zap size={22} />}
             </div>
             <div className={styles['modeCardLabel']}>{card.mode.charAt(0) + card.mode.slice(1).toLowerCase()}</div>
             <div className={styles['modeCardMeta']}>
@@ -174,7 +174,7 @@ function PlayerControls({
 }: PlayerControlsProps) {
   const { t } = useTranslation();
 
-  
+
 
   const playsUsed = maxAllowedPlays >= 99
     ? `${playCount}`
@@ -235,10 +235,10 @@ function PlayerControls({
           title={voiceName || 'No voice selected'}
         >
           <Volume2 size={11} />
-          {voiceQuality === 'premium'  && t('listening.player.voicePremium')}
+          {voiceQuality === 'premium' && t('listening.player.voicePremium')}
           {voiceQuality === 'standard' && t('listening.player.voiceStandard')}
-          {voiceQuality === 'basic'    && t('listening.player.voiceBasic')}
-          {voiceQuality === 'none'     && t('listening.player.voiceNone')}
+          {voiceQuality === 'basic' && t('listening.player.voiceBasic')}
+          {voiceQuality === 'none' && t('listening.player.voiceNone')}
         </span>
 
         {!canPlay && maxAllowedPlays < 99 && (
@@ -290,7 +290,7 @@ function TranscriptView({ segments, activeSegmentIdx, visible }: TranscriptViewP
             className={[
               styles['segment'],
               i === activeSegmentIdx ? styles['segmentActive'] : '',
-              i < activeSegmentIdx  ? styles['segmentDone']   : '',
+              i < activeSegmentIdx ? styles['segmentDone'] : '',
             ].filter(Boolean).join(' ')}
           >
             {seg.speaker && (
@@ -326,7 +326,7 @@ function QuestionCard({ question, qIndex, sessionId }: QuestionCardProps) {
     if (isSubmitted || isSubmitting) return;
     dispatch(selectAnswer({ questionId: question.id, selectedIndex: idx }));
 
-    
+
     void dispatch(
       submitAnswer({
         sessionId,
@@ -341,17 +341,17 @@ function QuestionCard({ question, qIndex, sessionId }: QuestionCardProps) {
       <div className={styles['qHeader']}>
         <span className={styles['qNum']}>Q{qIndex + 1}</span>
         {isSubmitting && <Loader2 size={13} className={styles['spin']} />}
-        {isSubmitted && record.isCorrect  && <CheckCircle2 size={15} className={styles['qCorrectIcon']} />}
-        {isSubmitted && !record.isCorrect && <XCircle      size={15} className={styles['qWrongIcon']}   />}
+        {isSubmitted && record.isCorrect && <CheckCircle2 size={15} className={styles['qCorrectIcon']} />}
+        {isSubmitted && !record.isCorrect && <XCircle size={15} className={styles['qWrongIcon']} />}
       </div>
 
       <p className={styles['qText']}>{question.question}</p>
 
       <div className={styles['qOptions']}>
         {question.options.map((opt, i) => {
-          const isSelected  = selectedIdx === i;
+          const isSelected = selectedIdx === i;
           const isCorrectOp = isSubmitted && i === question.correctIndex;
-          const isWrongOp   = isSubmitted && isSelected && !record.isCorrect;
+          const isWrongOp = isSubmitted && isSelected && !record.isCorrect;
 
           return (
             <button
@@ -362,8 +362,8 @@ function QuestionCard({ question, qIndex, sessionId }: QuestionCardProps) {
               className={[
                 styles['qOption'],
                 isSelected && !isSubmitted ? styles['qOptionSelected'] : '',
-                isCorrectOp               ? styles['qOptionCorrect']   : '',
-                isWrongOp                 ? styles['qOptionWrong']     : '',
+                isCorrectOp ? styles['qOptionCorrect'] : '',
+                isWrongOp ? styles['qOptionWrong'] : '',
               ].filter(Boolean).join(' ')}
             >
               <span className={styles['qOptionLetter']}>
@@ -411,7 +411,7 @@ function NotesPanel({ sessionId, currentAudioSec }: NotesPanelProps) {
     };
     dispatch(addNote(note));
     setDraft('');
-    
+
     void dispatch(saveNotes({ sessionId, notes: [note, ...notes] }));
   };
 
@@ -540,7 +540,7 @@ function ResultsView({ result, questions, onBack }: ResultsViewProps) {
                 <div className={styles['resultQMeta']}>
                   {isCorrect
                     ? <CheckCircle2 size={15} className={styles['qCorrectIcon']} />
-                    : <XCircle      size={15} className={styles['qWrongIcon']} />}
+                    : <XCircle size={15} className={styles['qWrongIcon']} />}
                   <span className={styles['resultQNum']}>Q{i + 1}</span>
                 </div>
                 <div>
@@ -562,7 +562,6 @@ function ResultsView({ result, questions, onBack }: ResultsViewProps) {
         </div>
       )}
 
-      {/* Transcript reveal */}
       {result.transcript && (
         <div className={styles['transcriptReveal']}>
           <button
@@ -580,7 +579,6 @@ function ResultsView({ result, questions, onBack }: ResultsViewProps) {
         </div>
       )}
 
-      {/* Actions */}
       <div className={styles['resultsActions']}>
         <button type="button" className={styles['backBtn']} onClick={onBack}>
           <ArrowLeft size={16} />
@@ -618,23 +616,23 @@ export default function ListeningPlayerPage() {
   const [hasPlayed, setHasPlayed] = useState(false);
   const [rateMultiplier, setRateMultiplier] = useState(1.0);
 
-  
+
   useEffect(() => {
     if (!id) return;
     void dispatch(fetchMaterialById(id));
     return () => { dispatch(clearPlayerState()); };
   }, [id, dispatch]);
 
-  
+
   useEffect(() => {
     if (materialLoading) { setPhase('loading'); return; }
-    if (materialError)   { setPhase('error');   return; }
-    if (sessionResult)   { setPhase('completed'); return; }
-    if (activeSession)   { setPhase('active');   return; }
+    if (materialError) { setPhase('error'); return; }
+    if (sessionResult) { setPhase('completed'); return; }
+    if (activeSession) { setPhase('active'); return; }
     if (currentMaterial) { setPhase('mode-select'); return; }
   }, [materialLoading, materialError, currentMaterial, activeSession, sessionResult]);
 
-  
+
   const baseRate = currentMaterial?.recommendedRate ?? 1.0;
   const effectiveRate = baseRate * rateMultiplier;
   const canShowTranscript =
@@ -646,17 +644,16 @@ export default function ListeningPlayerPage() {
     rate: effectiveRate,
     pitch: currentMaterial?.speakerPitch ?? 1.0,
     lang: currentMaterial?.speakerLang ?? 'en-US',
-    fullText: '',
-    materialId: ''
+    fullText: currentMaterial?.fullText ?? '',
+    materialId: currentMaterial?.id ?? '',
   });
 
-  
   useEffect(() => {
     if (tts.hasEnded) setHasPlayed(true);
   }, [tts.hasEnded]);
 
-  
-  const handleModeSelect = async (mode:Difficulty | any) => {
+
+  const handleModeSelect = async (mode: Difficulty | any) => {
     if (!id) return;
     await dispatch(startSession({ materialId: id, mode }));
   };
@@ -666,7 +663,7 @@ export default function ListeningPlayerPage() {
     const playsLeft = maxAllowedPlays >= 99 ? Infinity : maxAllowedPlays - playCount;
     if (playsLeft <= 0) return;
 
-    
+
     await dispatch(recordPlay(activeSession.id));
     tts.play();
   }, [activeSession, maxAllowedPlays, playCount, dispatch, tts]);
@@ -695,7 +692,7 @@ export default function ListeningPlayerPage() {
     navigate('/listening');
   };
 
-  
+
   const questions: ListeningQuestion[] = currentMaterial?.questions ?? [];
   const answeredCount = Object.values(answers).filter((a) => a.submitted).length;
   const canComplete =
@@ -706,7 +703,7 @@ export default function ListeningPlayerPage() {
     activeSession !== null &&
     (maxAllowedPlays >= 99 || playCount < maxAllowedPlays);
 
-  
+
 
   if (phase === 'loading') return <FullPageSpinner label={t('listening.loading')} />;
 
@@ -725,7 +722,6 @@ export default function ListeningPlayerPage() {
 
   return (
     <div className={styles['page']}>
-      {/* ── Page header ── */}
       <div className={styles['pageHeader']}>
         <button type="button" className={styles['backLink']} onClick={handleBack}>
           <ArrowLeft size={16} />
@@ -755,7 +751,6 @@ export default function ListeningPlayerPage() {
         <h1 className={styles['materialTitle']}>{currentMaterial.title}</h1>
       )}
 
-      {/* ── Session error ── */}
       {sessionError && (
         <div className={styles['sessionError']}>
           <AlertCircle size={14} />
@@ -775,13 +770,10 @@ export default function ListeningPlayerPage() {
         />
       )}
 
-      {/* ── PHASE: active ── */}
       {phase === 'active' && activeSession && currentMaterial && (
         <div className={styles['playerLayout']}>
-          {/* Left: Player + Transcript */}
           <div className={styles['playerMain']}>
-            {/* TTS quality warning */}
-            {tts.voiceQuality === 'basic' && (
+            {tts.ttsMode === 'browser' && (
               <div className={styles['qualityWarn']}>
                 <Info size={13} />
                 {t('listening.player.voiceWarnBasic')}
@@ -794,15 +786,14 @@ export default function ListeningPlayerPage() {
               </div>
             )}
 
-            {/* Player */}
             <PlayerControls
               isPlaying={tts.isPlaying}
               hasEnded={tts.hasEnded}
               playCount={playCount}
               maxAllowedPlays={maxAllowedPlays}
               mode={activeSession.mode}
-              voiceQuality={tts.voiceQuality}
-              voiceName={tts.voiceName}
+              voiceQuality={tts.ttsMode === 'google' ? 'premium' : tts.ttsMode === 'browser' ? 'basic' : 'none'}
+              voiceName={tts.voiceLabel}
               currentRate={rateMultiplier}
               onPlay={handlePlay}
               onPause={tts.pause}
@@ -811,20 +802,17 @@ export default function ListeningPlayerPage() {
               canPlay={canPlay}
             />
 
-            {/* Transcript */}
             <TranscriptView
               segments={currentMaterial.segments}
               activeSegmentIdx={tts.activeSegmentIdx}
               visible={canShowTranscript}
             />
 
-            {/* Notes */}
             <NotesPanel
               sessionId={activeSession.id}
             />
           </div>
 
-          {/* Right: Questions */}
           <div className={styles['questionsPanel']}>
             <div className={styles['questionsPanelHeader']}>
               <h2 className={styles['questionsPanelTitle']}>
@@ -873,7 +861,6 @@ export default function ListeningPlayerPage() {
         </div>
       )}
 
-      {/* ── PHASE: completed ── */}
       {phase === 'completed' && sessionResult && currentMaterial && (
         <ResultsView
           result={sessionResult}

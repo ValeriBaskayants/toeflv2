@@ -12,6 +12,7 @@
   "dependencies": {
     "@reduxjs/toolkit": "^2.11.2",
     "axios": "^1.6.8",
+    "clsx": "^2.1.1",
     "i18next": "^23.11.2",
     "lucide-react": "^1.8.0",
     "prettier": "^3.8.3",

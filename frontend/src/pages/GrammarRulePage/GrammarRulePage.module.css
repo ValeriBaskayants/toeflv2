@@ -545,7 +545,26 @@
   transform: translateY(-1px);
   box-shadow: var(--shadow-accent);
 }
+.tab:focus-visible, 
+.accordionTrigger:focus-visible, 
+.backBtn:focus-visible,
+.relatedItem:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
 
+.accordionBodyWrapper {
+  display: grid;
+  grid-template-rows: 0fr;
+  transition: grid-template-rows var(--duration-base) ease-out;
+}
+.accordionBodyWrapper[data-open="true"] {
+  grid-template-rows: 1fr;
+}
+.accordionBody {
+  overflow: hidden;
+}
 
 @media (max-width: 900px) {
   .body {

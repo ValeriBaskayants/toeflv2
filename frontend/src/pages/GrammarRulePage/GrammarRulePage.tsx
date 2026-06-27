@@ -1,4 +1,4 @@
-import { useEffect, useCallback, useState } from 'react';
+import { useEffect, useCallback, useState, useMemo } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import {
   ArrowLeft,
@@ -404,15 +404,15 @@ export function GrammarRulePage() {
 
   const accentColor = LEVEL_COLOR[rule.level] ?? '#6366f1';
 
-  const tabCounts: Record<TabKey, number> = {
-    overview:
-      (rule.coreConcept.length > 0 ? 1 : 0) +
-      (rule.structure.length > 0 ? 1 : 0) +
-      rule.signalWords.length,
-    usages: rule.usages.length + rule.sections.length,
-    mistakes: rule.commonMistakes.length,
-    compare: rule.comparisons.length,
-  };
+  const tabCounts = useMemo<Record<TabKey, number>>(() => {
+    if (!rule) return { overview: 0, usages: 0, mistakes: 0, compare: 0 };
+    return {
+      overview: (rule.coreConcept.length > 0 ? 1 : 0) + (rule.structure.length > 0 ? 1 : 0) + rule.signalWords.length,
+      usages: rule.usages.length + rule.sections.length,
+      mistakes: rule.commonMistakes.length,
+      compare: rule.comparisons.length,
+    };
+  }, [rule]);
 
   return (
     <div className={styles['page']}>

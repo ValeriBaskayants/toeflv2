@@ -14,7 +14,7 @@
 }
 .spin { animation: spin 0.7s linear infinite; }
 
-/* ── Page header ─────────────────────────────────────────────────────────── */
+
 
 .pageHeader {
   display: flex;
@@ -84,7 +84,7 @@
   line-height: 1.25;
 }
 
-/* ── Error page ──────────────────────────────────────────────────────────── */
+
 
 .errorPage {
   display: flex;
@@ -97,7 +97,7 @@
 .errorIcon { color: var(--danger); opacity: .5; }
 .errorText { font-size: 0.95rem; color: var(--text-2); }
 
-/* ── Session error ───────────────────────────────────────────────────────── */
+
 
 .sessionError {
   display: flex;
@@ -112,7 +112,7 @@
   margin-bottom: 1rem;
 }
 
-/* ── Mode selector ───────────────────────────────────────────────────────── */
+
 
 .modeSelector {
   display: flex;
@@ -205,7 +205,7 @@
   max-width: 160px;
 }
 
-/* ── Player layout ───────────────────────────────────────────────────────── */
+
 
 .playerLayout {
   display: grid;
@@ -220,7 +220,7 @@
   gap: 1rem;
 }
 
-/* ── Quality warnings ────────────────────────────────────────────────────── */
+
 
 .qualityWarn {
   display: flex;
@@ -234,7 +234,7 @@
   color: #f59e0b;
 }
 
-/* ── Player controls ─────────────────────────────────────────────────────── */
+
 
 .playerControls {
   background: var(--surface);
@@ -287,7 +287,7 @@
 .playBtn:active:not(:disabled) { transform: scale(0.96); }
 .playBtnDisabled { opacity: .45; cursor: not-allowed; transform: none !important; }
 
-/* Rate group */
+
 .rateGroup {
   display: flex;
   gap: 0.2rem;
@@ -307,7 +307,7 @@
 .rateBtn:hover  { color: var(--text-1); background: var(--surface); }
 .rateBtnActive  { background: var(--surface) !important; color: var(--accent) !important; box-shadow: var(--shadow-sm); }
 
-/* Play meta */
+
 .playMeta {
   display: flex;
   align-items: center;
@@ -345,7 +345,7 @@
   color: var(--danger);
 }
 
-/* ── Transcript ───────────────────────────────────────────────────────────── */
+
 
 .transcript {
   background: var(--surface);
@@ -419,7 +419,7 @@
   color: var(--text-3);
 }
 
-/* ── Notes panel ─────────────────────────────────────────────────────────── */
+
 
 .notesPanel {
   background: var(--surface);
@@ -533,7 +533,7 @@
 }
 .noteRemove:hover { color: var(--danger); }
 
-/* ── Questions panel ─────────────────────────────────────────────────────── */
+
 
 .questionsPanel {
   background: var(--surface);
@@ -594,7 +594,7 @@
   margin-bottom: 1rem;
 }
 
-/* ── Question card ───────────────────────────────────────────────────────── */
+
 
 .qCard {
   background: var(--surface-2);
@@ -691,7 +691,7 @@
 .qExplWrong   { background: rgba(99,102,241,.05); border: 1px solid rgba(99,102,241,.18); color: var(--text-2); }
 .qExplLabel   { font-weight: 700; color: var(--text-3); margin-right: 0.4rem; font-size: 0.7rem; text-transform: uppercase; }
 
-/* ── Complete button ─────────────────────────────────────────────────────── */
+
 
 .completeBtn {
   display: flex;
@@ -719,7 +719,7 @@
   margin-top: 0.5rem;
 }
 
-/* ── Results ─────────────────────────────────────────────────────────────── */
+
 
 .results {
   display: flex;
@@ -832,7 +832,7 @@
 }
 .backBtn:hover { border-color: var(--accent); color: var(--accent); }
 
-/* ── Mobile ──────────────────────────────────────────────────────────────── */
+
 
 @media (max-width: 900px) {
   .playerLayout { grid-template-columns: 1fr; }

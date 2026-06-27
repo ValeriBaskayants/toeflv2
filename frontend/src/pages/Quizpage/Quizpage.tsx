@@ -1,36 +1,30 @@
-import { useCallback, useId, useEffect } from 'react';
+import React, { useCallback, useId, useEffect, useMemo, useRef, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import {
   CheckCheck, ChevronLeft, ChevronRight, X, Zap,
   CheckCircle2, XCircle, RefreshCw, Loader2, AlertCircle,
-  Target, Lightbulb, Trophy,
+  Target, Lightbulb, Trophy, BrainCircuit
 } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
   loadQuizQuestions, submitQuiz, updateSetup, selectAnswer,
   goToQuestion, nextQuestion, prevQuestion, exitQuiz,
-  type QuizSetup,
+  type QuizSetup
 } from '@/store/Slices/QuizSlice';
-import styles from './QuizPage.module.css';
 import { Level, Difficulty } from '@/types/globalTypes';
 
 
+import styles from './QuizPage.module.css';
 
-const LEVELS: Level[] = [
-  Level.A1, Level.A1_PLUS, Level.A2, Level.A2_PLUS,
-  Level.B1, Level.B1_PLUS, Level.B2, Level.B2_PLUS, Level.C1, Level.C2,
-];
+const LEVELS = Object.values(Level);
+const DIFFICULTIES = Object.values(Difficulty);
+const COUNTS = [5, 10, 20, 30];
+const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
 
 const LEVEL_DISPLAY: Record<Level, string> = {
-  [Level.A1]: 'A1', [Level.A1_PLUS]: 'A1+', [Level.A2]: 'A2',
-  [Level.A2_PLUS]: 'A2+', [Level.B1]: 'B1', [Level.B1_PLUS]: 'B1+',
-  [Level.B2]: 'B2', [Level.B2_PLUS]: 'B2+', [Level.C1]: 'C1', [Level.C2]: 'C2',
-};
-
-const LEVEL_COLOR: Record<Level, string> = {
-  [Level.A1]: '#22c55e', [Level.A1_PLUS]: '#16a34a', [Level.A2]: '#14b8a6',
-  [Level.A2_PLUS]: '#0d9488', [Level.B1]: '#3b82f6', [Level.B1_PLUS]: '#2563eb',
-  [Level.B2]: '#8b5cf6', [Level.B2_PLUS]: '#7c3aed', [Level.C1]: '#f59e0b', [Level.C2]: '#ef4444',
+  [Level.A1]: 'A1', [Level.A1_PLUS]: 'A1+', [Level.A2]: 'A2', [Level.A2_PLUS]: 'A2+',
+  [Level.B1]: 'B1', [Level.B1_PLUS]: 'B1+', [Level.B2]: 'B2', [Level.B2_PLUS]: 'B2+',
+  [Level.C1]: 'C1', [Level.C2]: 'C2',
 };
 
 const RECOMMENDED: Record<Level, Difficulty> = {
@@ -41,56 +35,63 @@ const RECOMMENDED: Record<Level, Difficulty> = {
   [Level.C1]: Difficulty.HARD, [Level.C2]: Difficulty.HARD,
 };
 
-const DIFFICULTIES: Difficulty[] = [Difficulty.EASY, Difficulty.MEDIUM, Difficulty.HARD];
-
-const DIFF_COLOR: Record<Difficulty, string> = {
-  [Difficulty.EASY]: '#22c55e', [Difficulty.MEDIUM]: '#f59e0b', [Difficulty.HARD]: '#ef4444',
-};
-const DIFF_LABEL: Record<Difficulty, string> = {
-  [Difficulty.EASY]: 'Easy', [Difficulty.MEDIUM]: 'Medium', [Difficulty.HARD]: 'Hard',
-};
-
-const COUNTS = [5, 10, 20, 30];
-const LETTERS = ['A', 'B', 'C', 'D', 'E', 'F'];
-
-function levelColor(l: Level) { return LEVEL_COLOR[l] ?? '#6366f1'; }
 
 
-
-function SetupPhase() {
+const SetupPhase: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
   const topicId = useId();
   const { setup, loadStatus, loadError } = useAppSelector((s) => s.quiz);
-  const lv = setup.level as Level;
-  const rec = RECOMMENDED[lv] ?? Difficulty.MEDIUM;
-  const loading = loadStatus === 'loading';
 
-  const patch = useCallback((p: Partial<QuizSetup>) => dispatch(updateSetup(p)), [dispatch]);
-  const handleStart = useCallback(() => void dispatch(loadQuizQuestions(setup)), [dispatch, setup]);
+  const currentLevel = setup.level as Level;
+  const recommendedDiff = RECOMMENDED[currentLevel] ?? Difficulty.MEDIUM;
+  const isLoading = loadStatus === 'loading';
+
+  const setSetupValue = useCallback((payload: Partial<QuizSetup>) => {
+    dispatch(updateSetup(payload));
+  }, [dispatch]);
+
+  const handleStartQuiz = useCallback(() => {
+    void dispatch(loadQuizQuestions(setup));
+  }, [dispatch, setup]);
+
+  if (isLoading) return <SkeletonPhase />;
 
   return (
     <div className={styles['setupPage']}>
       <div className={styles['setupCard']}>
+        
+        {/* Header */}
         <div className={styles['setupHeader']}>
-          <div className={styles['setupIcon']}><CheckCheck size={22} /></div>
+          <div className={styles['setupIcon']}>
+            <CheckCheck size={24} />
+          </div>
           <div>
-            <h1 className={styles['setupTitle']}>{t('grammar.title', 'Grammar Quiz')}</h1>
-            <p className={styles['setupSubtitle']}>{t('grammar.subtitle', 'Test your knowledge, earn XP, track mistakes')}</p>
+            <h1 className={styles['setupTitle']}>{t('grammar.title', 'Grammar Session')}</h1>
+            <p className={styles['setupSubtitle']}>
+              {t('grammar.subtitle', 'Calibrate your level, set the volume, and start tracking.')}
+            </p>
           </div>
         </div>
 
         {/* Level */}
         <div className={styles['setupSection']}>
-          <label className={styles['setupLabel']}>{t('grammar.level', 'Your level')}</label>
+          <label className={styles['setupLabel']}>{t('grammar.level', 'Target Level')}</label>
           <div className={styles['levelGrid']}>
-            {LEVELS.map((lvl) => (
-              <button key={lvl} type="button"
-                className={`${styles['levelBtn']} ${lv === lvl ? styles['levelBtnActive'] : ''}`}
-                style={lv === lvl ? { background: levelColor(lvl), borderColor: levelColor(lvl) } : { '--lc': levelColor(lvl) } as React.CSSProperties}
-                onClick={() => patch({ level: lvl })}
-              >{LEVEL_DISPLAY[lvl]}</button>
-            ))}
+            {LEVELS.map((lvl) => {
+              const isSelected = currentLevel === lvl;
+              return (
+                <button
+                  key={lvl}
+                  type="button"
+                  onClick={() => setSetupValue({ level: lvl })}
+                  className={`${styles['levelBtn']} ${isSelected ? styles['levelBtnActive'] : ''}`}
+                  style={isSelected ? { backgroundColor: 'var(--accent)' } : {}}
+                >
+                  {LEVEL_DISPLAY[lvl]}
+                </button>
+              );
+            })}
           </div>
         </div>
 
@@ -99,24 +100,25 @@ function SetupPhase() {
           <div className={styles['setupLabelRow']}>
             <label className={styles['setupLabel']}>{t('grammar.difficulty', 'Difficulty')}</label>
             <span className={styles['setupHint']}>
-              <Lightbulb size={11} />
-              {t('grammar.recommended', 'Recommended for')} {LEVEL_DISPLAY[lv]}:{' '}
-              <strong style={{ color: DIFF_COLOR[rec] }}>{DIFF_LABEL[rec]}</strong>
+              <Lightbulb size={12} className="text-[var(--warning)]" />
+              {t('grammar.recommended', 'Recommended:')} <strong>{recommendedDiff}</strong>
             </span>
           </div>
           <div className={styles['diffRow']}>
             {DIFFICULTIES.map((d) => {
-              const isRec = d === rec;
-              const isActive = (setup.difficulty as Difficulty) === d;
+              const isSelected = setup.difficulty === d;
+              const isRecommended = recommendedDiff === d;
               return (
-                <button key={d} type="button"
-                  className={`${styles['diffBtn']} ${isActive ? styles['diffBtnActive'] : ''} ${isRec ? styles['diffBtnRec'] : ''}`}
-                  style={isActive ? { background: DIFF_COLOR[d], borderColor: DIFF_COLOR[d], '--dc': DIFF_COLOR[d] } as React.CSSProperties : { '--dc': DIFF_COLOR[d] } as React.CSSProperties}
-                  onClick={() => patch({ difficulty: d })}
+                <button
+                  key={d}
+                  type="button"
+                  onClick={() => setSetupValue({ difficulty: d })}
+                  className={`${styles['diffBtn']} ${isSelected ? styles['diffBtnActive'] : ''} ${isRecommended && !isSelected ? styles['diffBtnRec'] : ''}`}
+                  style={isSelected ? { backgroundColor: 'var(--accent)' } : {}}
                 >
-                  <span className={styles['diffDot']} style={{ background: isActive ? '#fff' : DIFF_COLOR[d] }} />
-                  {DIFF_LABEL[d]}
-                  {isRec && !isActive && <span className={styles['recTag']}>rec</span>}
+                  {isRecommended && <span className={styles['recTag']}>Rec</span>}
+                  <div className={styles['diffDot']} style={{ backgroundColor: isSelected ? '#fff' : 'var(--border)' }} />
+                  {d}
                 </button>
               );
             })}
@@ -125,148 +127,236 @@ function SetupPhase() {
 
         {/* Count */}
         <div className={styles['setupSection']}>
-          <label className={styles['setupLabel']}>{t('grammar.questionCount', 'Number of questions')}</label>
+          <label className={styles['setupLabel']}>{t('grammar.questionCount', 'Volume')}</label>
           <div className={styles['countRow']}>
-            {COUNTS.map((c) => (
-              <button key={c} type="button"
-                className={`${styles['countBtn']} ${setup.count === c ? styles['countBtnActive'] : ''}`}
-                onClick={() => patch({ count: c })}
-              >{c}</button>
-            ))}
+            {COUNTS.map((c) => {
+              const isSelected = setup.count === c;
+              return (
+                <button
+                  key={c}
+                  type="button"
+                  onClick={() => setSetupValue({ count: c })}
+                  className={`${styles['countBtn']} ${isSelected ? styles['countBtnActive'] : ''}`}
+                >
+                  {c}
+                </button>
+              );
+            })}
           </div>
         </div>
 
         {/* Topic */}
         <div className={styles['setupSection']}>
-          <label className={styles['setupLabel']} htmlFor={topicId}>
-            {t('grammar.topic', 'Topic')}
+          <div className={styles['setupLabelRow']}>
+            <label className={styles['setupLabel']} htmlFor={topicId}>
+              {t('grammar.topic', 'Focus Topic')}
+            </label>
             <span className={styles['optionalTag']}>{t('grammar.optional', 'optional')}</span>
-          </label>
-          <input id={topicId} type="text" className={styles['topicInput']}
+          </div>
+          <input
+            id={topicId}
+            type="text"
             value={setup.topic}
-            onChange={(e) => patch({ topic: e.target.value })}
-            placeholder={t('grammar.topicPlaceholder', 'e.g. Present Perfect, Modal Verbs…')}
+            onChange={(e) => setSetupValue({ topic: e.target.value })}
+            placeholder={t('grammar.topicPlaceholder', 'e.g. Gerunds, Conditionals')}
+            className={styles['topicInput']}
           />
         </div>
 
-        {loadError !== null && (
+        {/* Error Callout */}
+        {loadError && (
           <div className={styles['setupError']}>
-            <AlertCircle size={14} /><span>{loadError}</span>
+            <AlertCircle size={16} />
+            <span>{loadError}</span>
           </div>
         )}
 
-        <button type="button" className={styles['startBtn']} onClick={handleStart} disabled={loading}>
-          {loading ? <Loader2 size={18} className={styles['spin']} /> : <Target size={18} />}
-          {loading ? t('grammar.loading', 'Loading questions…') : t('grammar.start', 'Start Quiz')}
+        {/* Submit */}
+        <button
+          type="button"
+          onClick={handleStartQuiz}
+          disabled={isLoading}
+          className={styles['startBtn']}
+        >
+          <Target size={18} />
+          {t('grammar.start', 'Initialize Quiz')}
         </button>
       </div>
     </div>
   );
-}
+};
 
 
 
-function PlayingPhase() {
+const SkeletonPhase: React.FC = () => (
+  <div className={styles['setupPage']}>
+    <div className={`${styles['setupCard']} animate-pulse`}>
+      <div className={styles['setupHeader']}>
+        <div className={`${styles['setupIcon']} bg-[var(--surface-2)]`} />
+        <div className="space-y-2 w-full">
+          <div className="h-6 w-1/3 bg-[var(--surface-2)] rounded" />
+          <div className="h-4 w-2/3 bg-[var(--surface-2)] rounded" />
+        </div>
+      </div>
+      <div className="space-y-6 mt-4">
+        {[1, 2, 3].map((i) => (
+          <div key={i} className="space-y-3">
+            <div className="h-4 w-1/4 bg-[var(--surface-2)] rounded" />
+            <div className="h-10 w-full bg-[var(--surface-2)] rounded" />
+          </div>
+        ))}
+      </div>
+    </div>
+  </div>
+);
+
+
+
+const PlayingPhase: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
+  const { setup, questions, currentIdx, answers, submitStatus, submitError } = useAppSelector((s) => s.quiz);
 
-  const { setup, questions, currentIdx, answers, submitStatus, submitError } =
-    useAppSelector((s) => s.quiz);
-
-  const lv   = setup.level as Level;
-  const diff = setup.difficulty as Difficulty;
-  const lc   = levelColor(lv);
-  const question    = questions[currentIdx] ?? null;
-  const total       = questions.length;
-  const answeredCnt = Object.keys(answers).length;
-  const allAnswered = answeredCnt === total;
+  const currentQuestion = questions[currentIdx] ?? null;
+  const totalQuestions = questions.length;
+  const answeredCount = useMemo(() => Object.keys(answers).length, [answers]);
+  const isAllAnswered = answeredCount === totalQuestions;
   const isSubmitting = submitStatus === 'loading';
-  const selected = question !== null ? answers[question.id] : undefined;
-  const progress = total > 0 ? Math.round((answeredCnt / total) * 100) : 0;
+  const selectedAnswerIndex = currentQuestion ? answers[currentQuestion.id] : undefined;
+  const progressPercent = totalQuestions > 0 ? Math.round((answeredCount / totalQuestions) * 100) : 0;
 
-  const handleSelect = useCallback((idx: number) => {
-    if (question === null) return;
-    dispatch(selectAnswer({ questionId: question.id, index: idx }));
-  }, [dispatch, question]);
+  
+  const [questionStartTime, setQuestionStartTime] = useState<number>(Date.now());
+  const timerRef = useRef<NodeJS.Timeout | null>(null);
 
-  const handleSubmit = useCallback(() => {
+  useEffect(() => {
+    setQuestionStartTime(Date.now());
+  }, [currentIdx]);
+
+  const handleSubmitQuiz = useCallback(() => {
     void dispatch(submitQuiz({
       answers,
       timezone: Intl.DateTimeFormat().resolvedOptions().timeZone,
     }));
   }, [dispatch, answers]);
 
-  
-  useEffect(() => {
-    const onKey = (e: KeyboardEvent) => {
-      if (e.key === 'ArrowRight') dispatch(nextQuestion());
-      if (e.key === 'ArrowLeft')  dispatch(prevQuestion());
-      if (e.key === 'Enter' && allAnswered && currentIdx === total - 1 && !isSubmitting) {
-        handleSubmit();
-      }
-    };
-    window.addEventListener('keydown', onKey);
-    return () => window.removeEventListener('keydown', onKey);
-  }, [dispatch, allAnswered, currentIdx, total, isSubmitting, handleSubmit]);
+  const handleSelectOption = useCallback((idx: number) => {
+    if (!currentQuestion) return;
+    
+    dispatch(selectAnswer({ questionId: currentQuestion.id, index: idx }));
 
-  if (question === null) return null;
+    
+    if (timerRef.current) clearTimeout(timerRef.current);
+    
+    timerRef.current = setTimeout(() => {
+      if (currentIdx < totalQuestions - 1) {
+        dispatch(nextQuestion());
+      } else if (answeredCount + 1 === totalQuestions && !isSubmitting) {
+        
+        
+      }
+    }, 450); 
+
+  }, [dispatch, currentQuestion, questionStartTime, currentIdx, totalQuestions, answeredCount, isSubmitting]);
+
+  useEffect(() => {
+    const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'ArrowRight') dispatch(nextQuestion());
+      if (e.key === 'ArrowLeft') dispatch(prevQuestion());
+      if (e.key === 'Enter' && isAllAnswered && !isSubmitting) handleSubmitQuiz();
+    };
+    window.addEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('keydown', handleKeyDown);
+      if (timerRef.current) clearTimeout(timerRef.current);
+    };
+  }, [dispatch, isAllAnswered, isSubmitting, handleSubmitQuiz]);
+
+  if (!currentQuestion) return null;
 
   return (
     <div className={styles['playPage']}>
-      {/* Progress + meta bar */}
+      {/* Top Bar */}
       <div className={styles['playTopBar']}>
         <div className={styles['progressTrack']}>
-          <div className={styles['progressFill']} style={{ width: `${progress}%`, background: lc }} />
+          <div className={styles['progressFill']} style={{ width: `${progressPercent}%`, backgroundColor: 'var(--accent)' }} />
         </div>
+        
         <div className={styles['playMeta']}>
           <div className={styles['playMetaLeft']}>
-            <span className={styles['levelChip']} style={{ background: lc }}>{LEVEL_DISPLAY[lv]}</span>
-            <span className={styles['diffChip']} style={{ color: DIFF_COLOR[diff] }}>{DIFF_LABEL[diff]}</span>
+            <span className={styles['levelChip']} style={{ backgroundColor: 'var(--text-1)' }}>
+              {LEVEL_DISPLAY[setup.level as Level]}
+            </span>
+            <span className={styles['diffChip']} style={{ color: 'var(--text-2)' }}>
+              {setup.difficulty}
+            </span>
           </div>
-          <span className={styles['questionCounter']}>{currentIdx + 1} / {total}</span>
-          <button type="button" className={styles['exitBtn']}
-            onClick={() => dispatch(exitQuiz())} title={t('grammar.exit', 'Exit quiz')}>
-            <X size={15} />
-          </button>
+          
+          <div className="flex items-center gap-4">
+            <span className={styles['questionCounter']}>
+              {currentIdx + 1} / {totalQuestions}
+            </span>
+            <button
+              type="button"
+              onClick={() => dispatch(exitQuiz())}
+              className={styles['exitBtn']}
+              title={t('grammar.exit', 'Terminate Session')}
+            >
+              <X size={18} />
+            </button>
+          </div>
+        </div>
+
+        {/* Timeline Dots */}
+        <div className={styles['dotNav']}>
+          {questions.map((q, i) => {
+            const isAnswered = answers[q.id] !== undefined;
+            const isCurrent = i === currentIdx;
+            return (
+              <button
+                key={q.id}
+                type="button"
+                onClick={() => dispatch(goToQuestion(i))}
+                className={`${styles['navDot']} ${isCurrent ? styles['navDotCurrent'] : ''} ${isAnswered && !isCurrent ? styles['navDotDone'] : ''}`}
+                style={isCurrent ? { backgroundColor: 'var(--accent)' } : {}}
+                aria-label={`Jump to question ${i + 1}`}
+              />
+            );
+          })}
         </div>
       </div>
 
-      {/* Dot nav */}
-      <div className={styles['dotNav']}>
-        {questions.map((q, i) => {
-          const done = answers[q.id] !== undefined;
-          const curr = i === currentIdx;
-          return (
-            <button key={q.id} type="button"
-              className={`${styles['navDot']} ${curr ? styles['navDotCurrent'] : ''} ${done && !curr ? styles['navDotDone'] : ''}`}
-              style={curr ? { background: lc } : {}}
-              onClick={() => dispatch(goToQuestion(i))}
-              aria-label={`Question ${i + 1}`}
-            />
-          );
-        })}
-      </div>
-
-      {/* Question card */}
+      {/* Main Question Area */}
       <div className={styles['questionWrap']}>
-        <div className={styles['questionCard']}>
-          {question.topic !== '' && <span className={styles['qTopic']}>{question.topic}</span>}
-          <p className={styles['questionText']}>{question.question}</p>
+        <div className={styles['questionCard']} key={currentQuestion.id}> {/* Key forces re-render animation */}
+          {currentQuestion.topic && (
+            <span className={styles['qTopic']}>{currentQuestion.topic}</span>
+          )}
+          <h2 className={styles['questionText']}>{currentQuestion.question}</h2>
 
           <div className={styles['optionList']} role="radiogroup">
-            {question.options.map((opt, idx) => {
-              const isSel = selected === idx;
+            {currentQuestion.options.map((option, idx) => {
+              const isSelected = selectedAnswerIndex === idx;
               return (
-                <button key={idx} type="button" role="radio" aria-checked={isSel}
-                  className={`${styles['option']} ${isSel ? styles['optionSelected'] : ''}`}
-                  style={isSel ? { borderColor: lc, background: `${lc}14` } : {}}
-                  onClick={() => handleSelect(idx)}
+                <button
+                  key={idx}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  onClick={() => handleSelectOption(idx)}
+                  className={`${styles['option']} ${isSelected ? styles['optionSelected'] : ''}`}
                 >
-                  <span className={styles['optionLetter']}
-                    style={isSel ? { background: lc, color: '#fff' } : {}}
-                  >{LETTERS[idx]}</span>
-                  <span className={styles['optionText']}>{opt}</span>
-                  {isSel && <span className={styles['optionCheck']} style={{ color: lc }}><CheckCircle2 size={16} /></span>}
+                  <span className={styles['optionLetter']} style={isSelected ? { backgroundColor: 'var(--accent)', color: '#fff', borderColor: 'var(--accent)' } : {}}>
+                    {LETTERS[idx]}
+                  </span>
+                  <span className={styles['optionText']} style={isSelected ? { fontWeight: 600, color: 'var(--text-1)' } : {}}>
+                    {option}
+                  </span>
+                  {isSelected && (
+                    <div className={styles['optionCheck']}>
+                      <CheckCircle2 size={20} color="var(--accent)" />
+                    </div>
+                  )}
                 </button>
               );
             })}
@@ -274,207 +364,213 @@ function PlayingPhase() {
         </div>
       </div>
 
-      {/* Navigation row */}
+      {/* Navigation Footer */}
       <div className={styles['navRow']}>
-        <button type="button" className={styles['navBtn']}
-          onClick={() => dispatch(prevQuestion())} disabled={currentIdx === 0}>
-          <ChevronLeft size={16} />{t('grammar.prev', 'Previous')}
+        <button
+          type="button"
+          onClick={() => dispatch(prevQuestion())}
+          disabled={currentIdx === 0}
+          className={styles['navBtn']}
+        >
+          <ChevronLeft size={16} /> {t('grammar.prev', 'Back')}
         </button>
 
         <div className={styles['navCenter']}>
           <span className={styles['answeredCount']}>
-            {answeredCnt} / {total} {t('grammar.answered', 'answered')}
+            {answeredCount} / {totalQuestions} {t('grammar.answered', 'Completed')}
           </span>
         </div>
 
-        {currentIdx < total - 1 ? (
-          <button type="button" className={styles['navBtn']}
-            onClick={() => dispatch(nextQuestion())}>
-            {t('grammar.next', 'Next')}<ChevronRight size={16} />
+        {currentIdx < totalQuestions - 1 ? (
+          <button
+            type="button"
+            onClick={() => dispatch(nextQuestion())}
+            className={styles['navBtn']}
+          >
+            {t('grammar.next', 'Next')} <ChevronRight size={16} />
           </button>
         ) : (
-          <button type="button"
-            className={`${styles['submitBtn']} ${!allAnswered ? styles['submitBtnDisabled'] : ''}`}
-            style={allAnswered ? { background: lc } : {}}
-            onClick={handleSubmit} disabled={!allAnswered || isSubmitting}
+          <button
+            type="button"
+            disabled={!isAllAnswered || isSubmitting}
+            onClick={handleSubmitQuiz}
+            className={`${styles['submitBtn']} ${(!isAllAnswered || isSubmitting) ? styles['submitBtnDisabled'] : ''}`}
+            style={{ backgroundColor: 'var(--accent)' }}
           >
-            {isSubmitting
-              ? <><Loader2 size={14} className={styles['spin']} />{t('grammar.submitting', 'Submitting…')}</>
-              : t('grammar.submit', 'Submit Quiz')
-            }
+            {isSubmitting ? <Loader2 size={16} className={styles['spin']} /> : <CheckCheck size={16} />}
+            {t('grammar.submit', 'Finalize')}
           </button>
         )}
       </div>
 
-      {submitError !== null && (
+      {submitError && (
         <div className={styles['submitError']}>
-          <AlertCircle size={14} />{submitError}
+          <AlertCircle size={14} /> {submitError}
         </div>
       )}
     </div>
   );
-}
+};
 
 
 
-function ResultsPhase() {
+const ResultsPhase: React.FC = () => {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
+  const { questions, answers, results, accuracy, xpEarned, correctCount, totalCount, setup, feedback, countedAsCompleted } = useAppSelector((s) => s.quiz);
 
-  const {
-    questions, answers, results, accuracy, xpEarned,
-    correctCount, totalCount, setup, feedback, countedAsCompleted,
-  } = useAppSelector((s) => s.quiz);
+  const finalScorePercent = accuracy ?? 0;
+  const circleRadius = 54;
+  const circumference = 2 * Math.PI * circleRadius;
+  const strokeDashoffset = circumference * (1 - finalScorePercent / 100);
 
-  const lv   = setup.level as Level;
-  const diff = setup.difficulty as Difficulty;
-  const lc   = levelColor(lv);
-  const pct  = accuracy ?? 0;
-
-  
-  const R = 54;
-  const CIRC = 2 * Math.PI * R;
-  const ringOffset = CIRC * (1 - pct / 100);
-  const ringColor  = pct >= 80 ? '#22c55e' : pct >= 60 ? '#f59e0b' : '#ef4444';
-
-  const scoreLabel =
-    pct === 100 ? 'Perfect! 🎉' :
-    pct >= 80   ? 'Great job! ✨' :
-    pct >= 70   ? 'Good work 👍' :
-    pct >= 60   ? 'Keep going 📚' :
-                  'More practice 💪';
+  const statusConfig = useMemo(() => {
+    if (finalScorePercent === 100) return { label: 'Flawless Masterpiece', color: 'var(--success)', emoji: '🏆' };
+    if (finalScorePercent >= 80) return { label: 'Exceptional Performance', color: 'var(--success)', emoji: '✨' };
+    if (finalScorePercent >= 70) return { label: 'Solid Competence', color: '#f59e0b', emoji: '👍' };
+    if (finalScorePercent >= 60) return { label: 'Needs Refinement', color: '#f59e0b', emoji: '📚' };
+    return { label: 'Targeted Review Required', color: 'var(--danger)', emoji: '💪' };
+  }, [finalScorePercent]);
 
   return (
     <div className={styles['resultsPage']}>
       <div className={styles['resultsCard']}>
-
-        {/* ── Score header ── */}
+        
+        {/* Score Header */}
         <div className={styles['scoreTop']}>
           <div className={styles['scoreCircleWrap']}>
             <svg viewBox="0 0 120 120" className={styles['scoreSvg']}>
-              <circle cx="60" cy="60" r={R} className={styles['ringTrack']} />
-              <circle cx="60" cy="60" r={R}
+              <circle cx="60" cy="60" r={circleRadius} className={styles['ringTrack']} />
+              <circle 
+                cx="60" cy="60" r={circleRadius} 
                 className={styles['ringFill']}
-                stroke={ringColor}
-                strokeDasharray={CIRC}
-                strokeDashoffset={ringOffset}
+                stroke={statusConfig.color}
+                strokeDasharray={circumference}
+                style={{ strokeDashoffset }}
               />
             </svg>
             <div className={styles['scoreInner']}>
-              <span className={styles['scorePct']}>{pct}%</span>
-              <span className={styles['scoreAccLabel']}>{t('grammar.accuracy', 'accuracy')}</span>
+              <span className={styles['scorePct']}>{finalScorePercent}%</span>
+              <span className={styles['scoreAccLabel']}>{t('grammar.accuracy', 'Accuracy')}</span>
             </div>
           </div>
 
           <div className={styles['scoreRight']}>
-            <p className={styles['scoreEmoji']}>{scoreLabel}</p>
-
+            <div className={styles['scoreEmoji']}>
+              {statusConfig.emoji} {statusConfig.label}
+            </div>
+            
             <div className={styles['scoreStats']}>
               <div className={styles['scoreStat']}>
                 <CheckCircle2 size={16} className={styles['iconGreen']} />
-                <span>{correctCount ?? 0} / {totalCount ?? 0} {t('grammar.correct', 'Correct')}</span>
+                <strong>{correctCount} / {totalCount}</strong> {t('grammar.correct', 'Correct')}
               </div>
               <div className={styles['scoreStat']}>
                 <Zap size={16} className={styles['iconAmber']} />
-                <span>+{xpEarned ?? 0} XP {t('grammar.earned', 'earned')}</span>
+                <strong>+{xpEarned} XP</strong> {t('grammar.earned', 'Allocated')}
               </div>
               <div className={styles['scoreStat']}>
                 <Trophy size={16} className={styles['iconPurple']} />
-                <span>{LEVEL_DISPLAY[lv]} · {DIFF_LABEL[diff]}</span>
+                <span className="uppercase text-xs font-bold tracking-wider">
+                  {LEVEL_DISPLAY[setup.level as Level]} · {setup.difficulty}
+                </span>
               </div>
             </div>
 
-            {countedAsCompleted === true && (
+            {countedAsCompleted ? (
               <div className={styles['countedNote']}>
-                <CheckCircle2 size={13} />
-                {t('grammar.counted', 'Counted toward your progress!')}
+                <BrainCircuit size={14} /> {t('grammar.counted', 'Synchronized with progression engine')}
               </div>
-            )}
-            {countedAsCompleted === false && (
+            ) : (
               <div className={styles['notCountedNote']}>
-                <AlertCircle size={13} />
-                {t('grammar.notCounted', 'Answer 5+ questions to count toward progress')}
+                <AlertCircle size={14} /> {t('grammar.notCounted', 'Min 5 answers required for sync')}
               </div>
             )}
-
-            <div className={styles['resultActions']}>
-              <button type="button" className={styles['newQuizBtn']}
-                style={{ background: lc }} onClick={() => dispatch(exitQuiz())}>
-                <RefreshCw size={15} />{t('grammar.newQuiz', 'New Quiz')}
-              </button>
-            </div>
           </div>
         </div>
 
-        {/* ── AI Feedback ── */}
-        {feedback !== null && feedback !== '' && (
+        {/* Action Row */}
+        <div className={styles['resultActions']}>
+          <button
+            type="button"
+            onClick={() => dispatch(exitQuiz())}
+            className={styles['newQuizBtn']}
+            style={{ backgroundColor: 'var(--text-1)' }}
+          >
+            <RefreshCw size={16} /> {t('grammar.newQuiz', 'Generate New Task')}
+          </button>
+        </div>
+
+        {/* AI Feedback */}
+        {feedback && (
           <div className={styles['feedbackCard']}>
             <div className={styles['feedbackHeader']}>
-              <Lightbulb size={14} />
-              {t('grammar.feedback', 'AI Feedback')}
+              <Lightbulb size={14} /> {t('grammar.feedback', 'Algorithmic Diagnostics')}
             </div>
             <p className={styles['feedbackText']}>{feedback}</p>
           </div>
         )}
 
-        {/* ── Answer review ── */}
+        {/* Review List */}
         <div className={styles['reviewSection']}>
-          <h2 className={styles['reviewTitle']}>{t('grammar.reviewTitle', 'Answer Review')}</h2>
+          <h3 className={styles['reviewTitle']}>{t('grammar.reviewTitle', 'Granular Review')}</h3>
           <div className={styles['reviewList']}>
             {questions.map((q, qi) => {
-              const res        = results?.find((r) => r.questionId === q.id);
-              const userIdx    = answers[q.id];
-              const isCorrect  = res?.isCorrect ?? false;
-              const correctIdx = res?.correctIndex ?? q.correctIndex;
+              const report = results?.find((r) => r.questionId === q.id);
+              const userIdx = answers[q.id];
+              const isCorrect = report?.isCorrect ?? false;
+              const correctIdx = report?.correctIndex ?? q.correctIndex;
 
               return (
-                <div key={q.id}
-                  className={`${styles['reviewCard']} ${isCorrect ? styles['reviewOk'] : styles['reviewErr']}`}
-                >
+                <div key={q.id} className={`${styles['reviewCard']} ${isCorrect ? styles['reviewOk'] : styles['reviewErr']}`}>
                   <div className={styles['reviewCardHead']}>
-                    <span className={styles['reviewNum']}>{qi + 1}</span>
-                    {isCorrect
-                      ? <CheckCircle2 size={15} className={styles['iconGreen']} />
-                      : <XCircle     size={15} className={styles['iconRed']}   />
-                    }
-                    <p className={styles['reviewQ']}>{q.question}</p>
+                    <div className={styles['reviewNum']}>{qi + 1}</div>
+                    <div className={styles['reviewQ']}>{q.question}</div>
+                    {isCorrect ? (
+                      <CheckCircle2 size={18} className={styles['iconGreen']} />
+                    ) : (
+                      <XCircle size={18} className={styles['iconRed']} />
+                    )}
                   </div>
-
+                  
                   {!isCorrect && (
                     <div className={styles['reviewAnswers']}>
-                      <span className={styles['yourAnswer']}>
-                        {t('grammar.yourAnswer', 'You')}: {userIdx !== undefined ? q.options[userIdx] : '—'}
-                      </span>
-                      <span className={styles['correctAnswer']}>
-                        {t('grammar.correct', 'Correct')}: {q.options[correctIdx] ?? '—'}
-                      </span>
+                      <div className={styles['yourAnswer']}>
+                        {t('grammar.yourAnswer', 'Your Input')}: {userIdx !== undefined ? q.options[userIdx] : '—'}
+                      </div>
+                      <div className={styles['correctAnswer']}>
+                        {t('grammar.correct', 'Correct Mapping')}: {q.options[correctIdx] ?? '—'}
+                      </div>
                     </div>
                   )}
 
-                  {q.explanation !== '' && (
-                    <p className={styles['explanation']}>
-                      <Lightbulb size={11} />{q.explanation}
-                    </p>
+                  {q.explanation && (
+                    <div className={styles['explanation']}>
+                      <Lightbulb size={14} />
+                      <p>{q.explanation}</p>
+                    </div>
                   )}
                 </div>
               );
             })}
           </div>
         </div>
+
       </div>
     </div>
   );
-}
+};
 
 
 
 export default function QuizPage() {
   const { phase } = useAppSelector((s) => s.quiz);
+  
   return (
-    <div style={{ minHeight: '100%' }}>
-      {phase === 'setup'   && <SetupPhase />}
+    <main className="w-full h-full bg-[var(--bg)] transition-colors duration-300">
+      {phase === 'setup' && <SetupPhase />}
       {phase === 'playing' && <PlayingPhase />}
       {phase === 'results' && <ResultsPhase />}
-    </div>
+    </main>
   );
 }

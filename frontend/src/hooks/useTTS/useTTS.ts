@@ -13,154 +13,171 @@ export interface TTSConfig {
 
 export interface TTSControls {
   isPlaying: boolean;
+  isPaused: boolean;
   activeSegmentIdx: number;
   hasEnded: boolean;
-  ttsMode: 'elevenlabs' | 'browser' | 'loading' | 'unsupported';
   isLoading: boolean;
   error: string | null;
+  ttsMode: 'google' | 'browser' | 'loading' | 'unsupported';
+  voiceLabel: string;
+  isSupported: boolean;
   play: () => void;
   pause: () => void;
   stop: () => void;
   restart: () => void;
   setRate: (r: number) => void;
   currentRate: number;
-  voiceQuality: 'premium' | 'standard' | 'basic' | 'none';
-  voiceName: string;
-  isSupported: boolean;
-  currentTime: number;
 }
 
-function rankVoice(v: SpeechSynthesisVoice, lang: string): number {
-  const langBase = lang.slice(0, 2).toLowerCase();
-  const vLang = v.lang.slice(0, 2).toLowerCase();
-  if (vLang !== langBase) return -1;
 
-  const name = v.name.toLowerCase();
 
-  if (name.includes('google') && name.includes('us english')) return 100;
-  if (name.includes('google') && name.includes('uk english')) return 95;
-  if (name.includes('google')) return 90;
-
-  if (name.includes('microsoft') && (name.includes('aria') || name.includes('jenny'))) return 88;
-  if (name.includes('microsoft') && name.includes('neural')) return 85;
-  if (name.includes('microsoft')) return 80;
-
-  if (name.includes('samantha') || name.includes('alex') || name.includes('karen')) return 78;
-
+function scoreVoice(v: SpeechSynthesisVoice, lang: string): number {
+  if (v.lang.slice(0, 2).toLowerCase() !== lang.slice(0, 2).toLowerCase()) return -1;
+  const n = v.name.toLowerCase();
+  if (n.includes('google') && n.includes('us english')) return 100;
+  if (n.includes('google') && n.includes('uk english')) return 95;
+  if (n.includes('google')) return 88;
+  if (n.includes('microsoft') && n.includes('neural')) return 85;
+  if (n.includes('microsoft') && (n.includes('aria') || n.includes('jenny'))) return 82;
+  if (n.includes('microsoft')) return 75;
+  if (n.includes('samantha') || n.includes('karen') || n.includes('daniel')) return 72;
   if (v.lang === lang) return 60;
-  if (vLang === langBase) return 40;
-  return -1;
+  return 40;
 }
 
-function selectBestVoice(
-  voices: SpeechSynthesisVoice[],
-  lang: string,
-): SpeechSynthesisVoice | null {
+function pickBestVoice(lang: string): SpeechSynthesisVoice | null {
+  if (!('speechSynthesis' in window)) return null;
+  const voices = window.speechSynthesis.getVoices();
   let best: SpeechSynthesisVoice | null = null;
   let bestScore = -1;
   for (const v of voices) {
-    const score = rankVoice(v, lang);
-    if (score > bestScore) {
-      bestScore = score;
-      best = v;
-    }
+    const s = scoreVoice(v, lang);
+    if (s > bestScore) { bestScore = s; best = v; }
   }
   return best;
 }
 
+
+
 export function useTTS(config: TTSConfig): TTSControls {
   const { segments, fullText, materialId, pitch, lang } = config;
 
-  const [isPlaying, setIsPlaying] = useState(false);
+  const [isPlaying, setIsPlaying]               = useState(false);
+  const [isPaused, setIsPaused]                 = useState(false);
   const [activeSegmentIdx, setActiveSegmentIdx] = useState(-1);
-  const [hasEnded, setHasEnded] = useState(false);
-  const [ttsMode, setTtsMode] = useState<'elevenlabs' | 'browser' | 'loading' | 'unsupported'>('loading');
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState<string | null>(null);
-  const [currentRate, setCurrentRate] = useState(config.rate);
-  const [currentTime, setCurrentTime] = useState(0);
+  const [hasEnded, setHasEnded]                 = useState(false);
+  const [isLoading, setIsLoading]               = useState(false);
+  const [error, setError]                       = useState<string | null>(null);
+  const [ttsMode, setTtsMode]                   = useState<'google' | 'browser' | 'loading' | 'unsupported'>('loading');
+  const [currentRate, setCurrentRate]           = useState(config.rate);
+  const [voiceLabel, setVoiceLabel]             = useState('');
 
-  const audioRef = useRef<HTMLAudioElement | null>(null);
-  const audioBase64Ref = useRef<string | null>(null);
-  const browserVoiceRef = useRef<SpeechSynthesisVoice | null>(null);
-  const isPlayingRef = useRef(false);
+  const audioRef         = useRef<HTMLAudioElement | null>(null);
+  const browserVoiceRef  = useRef<SpeechSynthesisVoice | null>(null);
+  const isPlayingRef     = useRef(false);
+  const currentSegRef    = useRef(-1);
+  const rateRef          = useRef(config.rate);
 
+  const browserSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+
+  
+  useEffect(() => { rateRef.current = currentRate; }, [currentRate]);
+
+  
   useEffect(() => {
-    isPlayingRef.current = isPlaying;
-  }, [isPlaying]);
+    if (!browserSupported) return;
+    let attempts = 0;
+    function tryLoad() {
+      const v = pickBestVoice(lang);
+      if (v) { browserVoiceRef.current = v; return true; }
+      return false;
+    }
+    if (tryLoad()) return;
+    function onChange() {
+      if (tryLoad()) window.speechSynthesis.removeEventListener('voiceschanged', onChange);
+    }
+    window.speechSynthesis.addEventListener('voiceschanged', onChange);
+    const iv = setInterval(() => { if (tryLoad() || ++attempts > 20) clearInterval(iv); }, 150);
+    return () => {
+      clearInterval(iv);
+      window.speechSynthesis.removeEventListener('voiceschanged', onChange);
+    };
+  }, [lang, browserSupported]);
 
+  
   useEffect(() => {
-    const isSpeechSupported = typeof window !== 'undefined' && 'speechSynthesis' in window;
+    if (!browserSupported) return;
+    const iv = setInterval(() => {
+      if (isPlayingRef.current && window.speechSynthesis.speaking && !window.speechSynthesis.paused) {
+        window.speechSynthesis.pause();
+        window.speechSynthesis.resume();
+      }
+    }, 10_000);
+    return () => clearInterval(iv);
+  }, [browserSupported]);
 
-    if (isSpeechSupported) {
-      const loadVoices = () => {
-        const voices = window.speechSynthesis.getVoices();
-        if (voices.length > 0) {
-          browserVoiceRef.current = selectBestVoice(voices, lang);
-        }
-      };
-      loadVoices();
-      window.speechSynthesis.addEventListener('voiceschanged', loadVoices);
+  
+  useEffect(() => {
+    
+    if (!materialId || !fullText) {
+      if (browserSupported) {
+        setTtsMode('browser');
+        setVoiceLabel(browserVoiceRef.current?.name ?? 'Browser voice');
+      } else {
+        setTtsMode('unsupported');
+      }
+      setIsLoading(false);
+      return;
     }
 
-    setIsLoading(true);
     setTtsMode('loading');
+    setIsLoading(true);
+    setError(null);
 
     void (async () => {
       try {
-        const { data } = await listeningApi.tts(materialId, fullText, config.rate);
+        const { data } = await listeningApi.tts(materialId, fullText, rateRef.current);
 
         if (data.fallback) {
-          if (!isSpeechSupported) {
-            setTtsMode('unsupported');
-          } else {
-            setTtsMode('browser');
-          }
+          useBrowser();
           return;
         }
 
-        const audioEl = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`);
-        audioEl.preload = 'auto';
+        const audio = new Audio(`data:audio/mpeg;base64,${data.audioBase64}`);
+        audio.preload = 'auto';
+        audio.playbackRate = rateRef.current;
 
-        audioEl.onended = () => {
-          setIsPlaying(false);
-          setHasEnded(true);
-          setActiveSegmentIdx(-1);
-          isPlayingRef.current = false;
-        };
-
-        audioEl.onerror = () => {
-          setError('Audio playback error. Switching to browser TTS.');
-          setTtsMode('browser');
-          setIsPlaying(false);
-        };
-
-        audioEl.ontimeupdate = () => {
-          const currentAudioTime = audioEl.currentTime;
-          setCurrentTime(currentAudioTime);
-
+        
+        audio.ontimeupdate = () => {
+          const t = audio.currentTime;
           for (let i = segments.length - 1; i >= 0; i--) {
             const seg = segments[i];
-            if (seg !== undefined && currentAudioTime >= seg.startSec) {
-              setActiveSegmentIdx(i);
+            if (seg !== undefined && t >= seg.startSec) {
+              if (currentSegRef.current !== i) {
+                currentSegRef.current = i;
+                setActiveSegmentIdx(i);
+              }
               break;
             }
           }
         };
 
-        audioRef.current = audioEl;
-        audioBase64Ref.current = data.audioBase64;
-        setTtsMode('elevenlabs');
-        setError(null);
-      } catch (err: unknown) {
-        const message = err instanceof Error ? err.message : 'TTS request failed';
-        console.warn('[useTTS] ElevenLabs fetch failed, falling back to browser TTS:', message);
+        audio.onended = () => {
+          setIsPlaying(false); setIsPaused(false); setHasEnded(true);
+          setActiveSegmentIdx(-1); currentSegRef.current = -1;
+          isPlayingRef.current = false;
+        };
 
-        if (!isSpeechSupported) {
-          setTtsMode('unsupported');
-        } else {
-          setTtsMode('browser');
-        }
+        audio.onerror = () => {
+          console.warn('[useTTS] <audio> error — falling back to browser');
+          useBrowser();
+        };
+
+        audioRef.current = audio;
+        setTtsMode('google');
+        setVoiceLabel('Google Neural2');
+      } catch {
+        useBrowser();
       } finally {
         setIsLoading(false);
       }
@@ -172,215 +189,164 @@ export function useTTS(config: TTSConfig): TTSControls {
         audioRef.current.src = '';
         audioRef.current = null;
       }
-      if (typeof window !== 'undefined' && 'speechSynthesis' in window) {
-        window.speechSynthesis.cancel();
-        window.speechSynthesis.removeEventListener('voiceschanged', () => { });
-      }
+      if (browserSupported) window.speechSynthesis.cancel();
+      setIsPlaying(false); setIsPaused(false);
+      setActiveSegmentIdx(-1);
+      isPlayingRef.current = false; currentSegRef.current = -1;
     };
+  
+  }, [materialId]); 
 
-  }, [materialId]);
-
-  useEffect(() => {
-    setCurrentRate(config.rate);
-    if (audioRef.current) {
-      audioRef.current.playbackRate = config.rate;
+  function useBrowser() {
+    if (browserSupported) {
+      setTtsMode('browser');
+      setVoiceLabel(browserVoiceRef.current?.name ?? 'Browser voice');
+    } else {
+      setTtsMode('unsupported');
+      setVoiceLabel('Not supported');
     }
-  }, [config.rate]);
-
-  const elevenlabsPlay = useCallback(() => {
-    const audioEl = audioRef.current;
-    if (audioEl === null) return;
-
-    audioEl.playbackRate = currentRate;
-
-    void audioEl.play().then(() => {
-      setIsPlaying(true);
-      setHasEnded(false);
-      isPlayingRef.current = true;
-    }).catch((err: unknown) => {
-      console.error('[useTTS] Audio play failed:', err);
-      setError('Playback failed. Try again.');
-    });
-  }, [currentRate]);
-
-  const elevenlabsPause = useCallback(() => {
-    audioRef.current?.pause();
-    setIsPlaying(false);
-    isPlayingRef.current = false;
-  }, []);
-
-  const elevenlabsStop = useCallback(() => {
-    const audioEl = audioRef.current;
-    if (audioEl === null) return;
-    audioEl.pause();
-    audioEl.currentTime = 0;
-    setIsPlaying(false);
-    setHasEnded(false);
-    setActiveSegmentIdx(-1);
-    isPlayingRef.current = false;
-  }, []);
-
-  const elevenlabsRestart = useCallback(() => {
-    const audioEl = audioRef.current;
-    if (audioEl === null) return;
-    audioEl.currentTime = 0;
-    audioEl.playbackRate = currentRate;
-    void audioEl.play().then(() => {
-      setIsPlaying(true);
-      setHasEnded(false);
-      isPlayingRef.current = true;
-    });
-  }, [currentRate]);
-
-  const elevenlabsSetRate = useCallback((r: number) => {
-    setCurrentRate(r);
-    if (audioRef.current) {
-      audioRef.current.playbackRate = r;
-    }
-  }, []);
-
-  const speakFromBrowser = useCallback(
-    (startIdx: number, rate: number) => {
-      if (!('speechSynthesis' in window) || segments.length === 0) return;
-
-      window.speechSynthesis.cancel();
-
-      const slice = segments.slice(startIdx);
-
-      slice.forEach((seg, offset) => {
-        const realIdx = startIdx + offset;
-        const u = new SpeechSynthesisUtterance(seg.text);
-
-        u.rate = rate;
-        u.pitch = pitch;
-        u.lang = lang;
-
-        if (browserVoiceRef.current !== null) {
-          u.voice = browserVoiceRef.current;
-        }
-
-        u.onstart = () => {
-          setActiveSegmentIdx(realIdx);
-          setHasEnded(false);
-        };
-
-        if (realIdx === segments.length - 1) {
-          u.onend = () => {
-            setIsPlaying(false);
-            setHasEnded(true);
-            setActiveSegmentIdx(-1);
-            isPlayingRef.current = false;
-          };
-        }
-
-        window.speechSynthesis.speak(u);
-      });
-
-      setIsPlaying(true);
-      setHasEnded(false);
-      isPlayingRef.current = true;
-    },
-    [segments, pitch, lang],
-  );
-
-  const browserPlay = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-    if (window.speechSynthesis.paused) {
-      window.speechSynthesis.resume();
-      setIsPlaying(true);
-      isPlayingRef.current = true;
-    } else if (!window.speechSynthesis.speaking) {
-      speakFromBrowser(0, currentRate);
-    }
-  }, [speakFromBrowser, currentRate]);
-
-  const browserPause = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.pause();
-    setIsPlaying(false);
-    isPlayingRef.current = false;
-  }, []);
-
-  const browserStop = useCallback(() => {
-    if (!('speechSynthesis' in window)) return;
-    window.speechSynthesis.cancel();
-    setIsPlaying(false);
-    setActiveSegmentIdx(-1);
-    setHasEnded(false);
-    isPlayingRef.current = false;
-  }, []);
-
-  const browserRestart = useCallback(() => {
-    speakFromBrowser(0, currentRate);
-  }, [speakFromBrowser, currentRate]);
-
-  const browserSetRate = useCallback(
-    (r: number) => {
-      setCurrentRate(r);
-      if (isPlayingRef.current) {
-        const fromIdx = activeSegmentIdx >= 0 ? activeSegmentIdx : 0;
-        speakFromBrowser(fromIdx, r);
-      }
-    },
-    [activeSegmentIdx, speakFromBrowser],
-  );
-
-  const play = useCallback(() => {
-    if (ttsMode === 'elevenlabs') return elevenlabsPlay();
-    if (ttsMode === 'browser') return browserPlay();
-  }, [ttsMode, elevenlabsPlay, browserPlay]);
-
-  const pause = useCallback(() => {
-    if (ttsMode === 'elevenlabs') return elevenlabsPause();
-    if (ttsMode === 'browser') return browserPause();
-  }, [ttsMode, elevenlabsPause, browserPause]);
-
-  const stop = useCallback(() => {
-    if (ttsMode === 'elevenlabs') return elevenlabsStop();
-    if (ttsMode === 'browser') return browserStop();
-  }, [ttsMode, elevenlabsStop, browserStop]);
-
-  const restart = useCallback(() => {
-    if (ttsMode === 'elevenlabs') return elevenlabsRestart();
-    if (ttsMode === 'browser') return browserRestart();
-  }, [ttsMode, elevenlabsRestart, browserRestart]);
-
-  const setRate = useCallback(
-    (r: number) => {
-      if (ttsMode === 'elevenlabs') return elevenlabsSetRate(r);
-      if (ttsMode === 'browser') return browserSetRate(r);
-    },
-    [ttsMode, elevenlabsSetRate, browserSetRate],
-  );
-
-  const isSupported = ttsMode !== 'unsupported';
-  let voiceQuality: 'premium' | 'standard' | 'basic' | 'none' = 'none';
-  let voiceName = '';
-
-  if (ttsMode === 'elevenlabs') {
-    voiceQuality = 'premium';
-    voiceName = 'ElevenLabs AI';
-  } else if (ttsMode === 'browser') {
-    voiceQuality = 'basic';
-    voiceName = browserVoiceRef.current?.name || 'Browser Built-in';
   }
 
+  
+  useEffect(() => {
+    setCurrentRate(config.rate);
+    rateRef.current = config.rate;
+    if (audioRef.current) audioRef.current.playbackRate = config.rate;
+  }, [config.rate]);
+
+  
+  
+  
+
+  const googlePlay = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    if (isPaused) {
+      
+      void audio.play().then(() => { setIsPlaying(true); setIsPaused(false); isPlayingRef.current = true; });
+      return;
+    }
+    audio.playbackRate = rateRef.current;
+    void audio.play().then(() => {
+      setIsPlaying(true); setIsPaused(false); setHasEnded(false);
+      isPlayingRef.current = true;
+    }).catch((err: unknown) => {
+      setError('Playback failed. Try again.');
+      console.error('[useTTS] play() error:', err);
+    });
+  }, [isPaused]);
+
+  const googlePause = useCallback(() => {
+    audioRef.current?.pause();
+    setIsPlaying(false); setIsPaused(true);
+    isPlayingRef.current = false;
+  }, []);
+
+  const googleStop = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.pause(); audio.currentTime = 0;
+    setIsPlaying(false); setIsPaused(false); setHasEnded(false);
+    setActiveSegmentIdx(-1); currentSegRef.current = -1;
+    isPlayingRef.current = false;
+  }, []);
+
+  const googleRestart = useCallback(() => {
+    const audio = audioRef.current;
+    if (!audio) return;
+    audio.currentTime = 0;
+    audio.playbackRate = rateRef.current;
+    void audio.play().then(() => {
+      setIsPlaying(true); setIsPaused(false); setHasEnded(false);
+      isPlayingRef.current = true;
+    });
+  }, []);
+
+  const googleSetRate = useCallback((r: number) => {
+    setCurrentRate(r); rateRef.current = r;
+    if (audioRef.current) audioRef.current.playbackRate = r;
+  }, []);
+
+  
+  
+  
+
+  const speakFrom = useCallback((startIdx: number, rate: number) => {
+    if (!browserSupported || segments.length === 0) return;
+    window.speechSynthesis.cancel();
+    setTimeout(() => {
+      segments.slice(startIdx).forEach((seg, offset) => {
+        const realIdx = startIdx + offset;
+        const utt = new SpeechSynthesisUtterance(seg.text);
+        utt.rate = Math.max(0.1, Math.min(rate, 10));
+        utt.pitch = Math.max(0, Math.min(pitch, 2));
+        utt.lang = lang;
+        if (browserVoiceRef.current) utt.voice = browserVoiceRef.current;
+        utt.onstart = () => { setActiveSegmentIdx(realIdx); currentSegRef.current = realIdx; setHasEnded(false); };
+        utt.onerror = (ev) => {
+          if (ev.error === 'interrupted' || ev.error === 'canceled') return;
+          setError(`Speech error: ${ev.error}`);
+          setIsPlaying(false); setIsPaused(false); isPlayingRef.current = false;
+        };
+        if (realIdx === segments.length - 1) {
+          utt.onend = () => {
+            setIsPlaying(false); setIsPaused(false); setHasEnded(true);
+            setActiveSegmentIdx(-1); currentSegRef.current = -1; isPlayingRef.current = false;
+          };
+        }
+        window.speechSynthesis.speak(utt);
+      });
+      setIsPlaying(true); setIsPaused(false); setHasEnded(false);
+      isPlayingRef.current = true;
+    }, 80);
+  }, [segments, pitch, lang, browserSupported]);
+
+  const browserPlay = useCallback(() => {
+    if (!browserSupported) return;
+    if (isPaused && window.speechSynthesis.paused) {
+      window.speechSynthesis.resume();
+      setIsPlaying(true); setIsPaused(false); isPlayingRef.current = true;
+      return;
+    }
+    if (!window.speechSynthesis.speaking) speakFrom(0, rateRef.current);
+  }, [browserSupported, isPaused, speakFrom]);
+
+  const browserPause = useCallback(() => {
+    if (!browserSupported) return;
+    window.speechSynthesis.pause();
+    setIsPlaying(false); setIsPaused(true); isPlayingRef.current = false;
+  }, [browserSupported]);
+
+  const browserStop = useCallback(() => {
+    if (!browserSupported) return;
+    window.speechSynthesis.cancel();
+    setIsPlaying(false); setIsPaused(false); setHasEnded(false);
+    setActiveSegmentIdx(-1); currentSegRef.current = -1; isPlayingRef.current = false;
+  }, [browserSupported]);
+
+  const browserRestart = useCallback(() => speakFrom(0, rateRef.current), [speakFrom]);
+
+  const browserSetRate = useCallback((r: number) => {
+    setCurrentRate(r); rateRef.current = r;
+    if (isPlayingRef.current) {
+      speakFrom(currentSegRef.current >= 0 ? currentSegRef.current : 0, r);
+    }
+  }, [speakFrom]);
+
+  
+  
+  
+
+  const play    = useCallback(() => ttsMode === 'google' ? googlePlay()    : browserPlay(),    [ttsMode, googlePlay, browserPlay]);
+  const pause   = useCallback(() => ttsMode === 'google' ? googlePause()   : browserPause(),   [ttsMode, googlePause, browserPause]);
+  const stop    = useCallback(() => ttsMode === 'google' ? googleStop()    : browserStop(),    [ttsMode, googleStop, browserStop]);
+  const restart = useCallback(() => ttsMode === 'google' ? googleRestart() : browserRestart(), [ttsMode, googleRestart, browserRestart]);
+  const setRate = useCallback((r: number) => ttsMode === 'google' ? googleSetRate(r) : browserSetRate(r), [ttsMode, googleSetRate, browserSetRate]);
+
   return {
-    isPlaying,
-    activeSegmentIdx,
-    hasEnded,
-    ttsMode,
-    isLoading,
-    error,
-    play,
-    pause,
-    stop,
-    restart,
-    setRate,
-    currentRate,
-    voiceQuality,
-    voiceName,
-    isSupported,
-    currentTime,
+    isPlaying, isPaused, activeSegmentIdx, hasEnded,
+    isLoading, error, ttsMode, voiceLabel,
+    isSupported: ttsMode !== 'unsupported',
+    play, pause, stop, restart, setRate, currentRate,
   };
 }

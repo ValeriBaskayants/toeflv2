@@ -11,10 +11,6 @@ import {
 } from '../../../constants/level-requirements';
 import nlp from 'compromise';
 
-// ─────────────────────────────────────────────────────────────────────────────
-// LANGUAGETOOL TYPES
-// ─────────────────────────────────────────────────────────────────────────────
-
 interface LTReplacement { value: string }
 interface LTContext     { text: string; offset: number; length: number }
 interface LTRule        { issueType: string; category: { id: string } }
@@ -27,10 +23,6 @@ interface LTMatch {
   rule:         LTRule;
 }
 interface LTResponse { matches: LTMatch[] }
-
-// ─────────────────────────────────────────────────────────────────────────────
-// JOB PAYLOAD
-// ─────────────────────────────────────────────────────────────────────────────
 
 interface AnalysisJobData {
   submissionId:        string;

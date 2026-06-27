@@ -20,6 +20,8 @@ import {
   BarChart2,
   Info,
 } from 'lucide-react';
+
+
 import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
   fetchPromptById,
@@ -27,12 +29,15 @@ import {
   submitWriting,
   setDraftText,
   clearEditor,
+  setSubmissionTimeout, 
 } from '@/store/Slices/WritingSlice';
+
+
+import { useDebounce } from '@/hooks/useDebounce/useDebounceю';
+
 import type { WritingError, WritingAnalysis } from '@/types/writing/Writing.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './WritingeditorPage.module.css';
-
-
 
 const LEVEL_DISPLAY: Record<string, string> = {
   A1: 'A1', A1_PLUS: 'A1+', A2: 'A2', A2_PLUS: 'A2+',
@@ -49,7 +54,6 @@ const TYPE_ICON: Record<string, React.ReactNode> = {
 const SCORE_COLOR = (s: number) => (s >= 80 ? '#22c55e' : s >= 60 ? '#f59e0b' : '#ef4444');
 
 const POLL_INTERVAL_MS = 2500;
-const POLL_MAX_ATTEMPTS = 28;
 
 function countWords(text: string): number {
   return text.trim().length === 0 ? 0 : text.trim().split(/\s+/).length;
@@ -84,8 +88,6 @@ function ScoreRing({ score }: { score: number }) {
   );
 }
 
-
-
 interface ScoreBarProps {
   label: string;
   score: number;
@@ -112,8 +114,6 @@ function ScoreBar({ label, score, icon, weight }: ScoreBarProps) {
     </div>
   );
 }
-
-
 
 interface HighlightedTextProps {
   text: string;
@@ -177,8 +177,6 @@ function HighlightedText({ text, errors }: HighlightedTextProps) {
     </div>
   );
 }
-
-
 
 interface AnalysisPanelProps {
   analysis: WritingAnalysis;
@@ -294,8 +292,6 @@ function AnalysisPanel({ analysis, text }: AnalysisPanelProps) {
   );
 }
 
-
-
 function WordCountBar({ count, min, max }: { count: number; min: number; max: number }) {
   const { t } = useTranslation();
   const pct = Math.min(100, (count / max) * 100);
@@ -336,60 +332,107 @@ export default function WritingEditorPage() {
   const dispatch = useAppDispatch();
 
   const {
-    currentPrompt,
-    promptLoading,
-    promptError,
-    draftText,
-    submitting,
-    submitError,
-    pendingSubmissionId,
-    currentSubmission,
-    willCountForProgress,
-    attemptNumber,
+    currentPrompt, promptLoading, promptError, draftText,
+    submitting, submitError, pendingSubmissionId,
+    currentSubmission, willCountForProgress, attemptNumber,
   } = useAppSelector((s) => s.writing);
 
-  const pollRef = useRef<ReturnType<typeof setInterval> | null>(null);
-  const pollCount = useRef(0);
+  
+  const [localText, setLocalText] = useState(draftText);
+  const debouncedText = useDebounce(localText, 500);
 
+  
+  useEffect(() => {
+    if (debouncedText !== draftText) {
+      dispatch(setDraftText(debouncedText));
+    }
+  }, [debouncedText, draftText, dispatch]);
+
+  
+  useEffect(() => {
+    if (draftText === '') {
+      setLocalText(''); 
+    } else if (draftText && !localText) {
+      setLocalText(draftText); 
+    }
+    
+  }, [draftText]);
+
+  
   useEffect(() => {
     if (!promptId) return;
     void dispatch(fetchPromptById(promptId));
     const subId = searchParams.get('submission');
     if (subId) void dispatch(fetchSubmission(subId));
+    
     return () => {
       dispatch(clearEditor());
-      if (pollRef.current) clearInterval(pollRef.current);
     };
   }, [promptId, dispatch, searchParams]);
 
+  
+  const pendingIdRef = useRef(pendingSubmissionId);
+  useEffect(() => {
+    pendingIdRef.current = pendingSubmissionId;
+  }, [pendingSubmissionId]);
+
   useEffect(() => {
     if (!pendingSubmissionId) return;
-    pollCount.current = 0;
-    pollRef.current = setInterval(async () => {
-      pollCount.current += 1;
-      if (pollCount.current > POLL_MAX_ATTEMPTS) {
-        if (pollRef.current) clearInterval(pollRef.current);
-        return;
+
+    let isMounted = true;
+    let pollTimer: NodeJS.Timeout;
+
+    
+    const maxTimeout = setTimeout(() => {
+      isMounted = false;
+      dispatch(setSubmissionTimeout());
+    }, 70000);
+
+    const poll = async () => {
+      if (!isMounted || !pendingIdRef.current) return;
+
+      try {
+        const result = await dispatch(fetchSubmission(pendingIdRef.current));
+        
+        
+        if (fetchSubmission.fulfilled.match(result) && result.payload.status !== 'PENDING') {
+          clearTimeout(maxTimeout);
+          return;
+        }
+      } catch (error) {
+        console.error('Polling error:', error);
       }
-      const result = await dispatch(fetchSubmission(pendingSubmissionId));
-      if (fetchSubmission.fulfilled.match(result) && result.payload.status !== 'PENDING') {
-        if (pollRef.current) clearInterval(pollRef.current);
+
+      
+      if (isMounted && pendingIdRef.current) {
+        pollTimer = setTimeout(poll, POLL_INTERVAL_MS);
       }
-    }, POLL_INTERVAL_MS);
-    return () => { if (pollRef.current) clearInterval(pollRef.current); };
+    };
+
+    poll(); 
+
+    
+    return () => {
+      isMounted = false;
+      clearTimeout(pollTimer);
+      clearTimeout(maxTimeout);
+    };
   }, [pendingSubmissionId, dispatch]);
 
+  
   const handleSubmit = useCallback(async () => {
-    if (!promptId || draftText.trim().length === 0) return;
-    await dispatch(submitWriting({ promptId, text: draftText.trim() }));
-  }, [promptId, draftText, dispatch]);
+    if (!promptId || localText.trim().length === 0) return;
+    dispatch(setDraftText(localText.trim())); 
+    await dispatch(submitWriting({ promptId, text: localText.trim() }));
+  }, [promptId, localText, dispatch]);
 
   const handleReset = useCallback(() => {
     dispatch(clearEditor());
     if (promptId) void dispatch(fetchPromptById(promptId));
   }, [dispatch, promptId]);
 
-  const wordCount = countWords(draftText);
+  
+  const wordCount = countWords(localText); 
   const minWords = currentPrompt?.minWords ?? 50;
   const maxWords = currentPrompt?.maxWords ?? 200;
   const canSubmit = wordCount >= Math.floor(minWords * 0.5) && !submitting;
@@ -492,8 +535,8 @@ export default function WritingEditorPage() {
 
               <textarea
                 className={styles['textarea']}
-                value={draftText}
-                onChange={(e) => dispatch(setDraftText(e.target.value))}
+                value={localText}
+                onChange={(e) => setLocalText(e.target.value)}
                 placeholder={t('writing.placeholder')}
                 spellCheck
                 disabled={submitting}

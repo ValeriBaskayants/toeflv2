@@ -1,16 +1,4 @@
-
-
-
-
-
-
-
-
-
-
 import { type ID, Level, WritingType, SubmissionStatus, type ISODateString } from '../globalTypes';
-
-
 
 export interface WritingError {
   message: string;
@@ -32,8 +20,6 @@ export interface WritingAnalysis {
   detectedTone?: string;
   errors: WritingError[];
 }
-
-
 
 export interface WritingPrompt {
   id: ID;
@@ -57,8 +43,6 @@ export interface WritingPromptWithStatus extends WritingPrompt {
   userStatus: 'not_attempted' | 'in_progress' | 'completed';
 }
 
-
-
 export interface WritingSubmission {
   id: ID;
   userId: ID;
@@ -72,8 +56,6 @@ export interface WritingSubmission {
 }
 
 
-
-
 export interface SubmitWritingResponse {
   submissionId: string;
   status: 'PENDING';
@@ -82,7 +64,6 @@ export interface SubmitWritingResponse {
   
   willCountForProgress: boolean;
 }
-
 
 
 export interface WritingUserStats {

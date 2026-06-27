@@ -21,6 +21,7 @@ import { AdminModule } from './modules/admin/admin.module';
 import { PlacementModule } from './modules/placement/placement.module';
 import { BullModule } from '@nestjs/bullmq';
 import { RoadmapModule } from './modules/roadmap/roadmap.module';
+import { TtsModule } from './modules/tts/tts.module';
 
 @Module({
   imports: [
@@ -62,6 +63,7 @@ import { RoadmapModule } from './modules/roadmap/roadmap.module';
     MistakeModule,
     BookmarksModule,
     PlacementModule,
+    TtsModule,
     RoadmapModule
   ],
   providers: [
@@ -69,4 +71,4 @@ import { RoadmapModule } from './modules/roadmap/roadmap.module';
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
-export class AppModule {}
+export class AppModule { }

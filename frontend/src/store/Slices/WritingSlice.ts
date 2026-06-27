@@ -1,15 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
-
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import {
   writingApi,
@@ -39,7 +27,7 @@ interface WritingState {
   submitError: string | null;
 
   pendingSubmissionId: string | null;
-  
+
   willCountForProgress: boolean | null;
   attemptNumber: number | null;
 
@@ -50,7 +38,7 @@ interface WritingState {
   submissions: SubmissionWithPrompt[];
   submissionsLoading: boolean;
 
-  
+
   userStats: WritingUserStats | null;
   userStatsLoading: boolean;
 
@@ -195,6 +183,15 @@ export const writingSlice = createSlice({
       state.submissionError = null;
       state.currentPrompt = null;
     },
+    setSubmissionTimeout: (state) => {
+      state.pendingSubmissionId = null;
+      state.submitting = false;
+      state.currentSubmission = {
+        ...state.currentSubmission,
+        status: 'ERROR', 
+      } as any;
+      state.submitError = 'Analysis took too long. Please try again.';
+    },
   },
 
   extraReducers: (builder) => {
@@ -289,4 +286,4 @@ export const writingSlice = createSlice({
   },
 });
 
-export const { setDraftText, setFilter, clearEditor } = writingSlice.actions;
+export const { setDraftText, setFilter, clearEditor,setSubmissionTimeout } = writingSlice.actions;

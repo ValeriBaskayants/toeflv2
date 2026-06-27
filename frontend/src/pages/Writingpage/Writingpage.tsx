@@ -1,14 +1,3 @@
-
-
-
-
-
-
-
-
-
-
-
 import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
@@ -163,7 +152,6 @@ function PromptCard({ prompt }: { prompt: WritingPromptWithStatus }) {
           {prompt.topic && <span className={styles['topicTag']}>#{prompt.topic}</span>}
         </div>
 
-        {/* Статус пользователя — правый угол карточки */}
         <div className={styles['promptCardStatus']}>
           {isCompleted && (
             <span className={styles['statusDone']}>
@@ -246,8 +234,6 @@ function SubmissionCard({ sub }: { sub: SubmissionWithPrompt }) {
   );
 }
 
-
-
 export default function WritingPage() {
   const { t } = useTranslation();
   const dispatch = useAppDispatch();
@@ -280,7 +266,6 @@ export default function WritingPage() {
 
   return (
     <div className={styles['page']}>
-      {/* ── Header ── */}
       <header className={styles['header']}>
         <div>
           <h1 className={styles['pageTitle']}>
@@ -296,10 +281,8 @@ export default function WritingPage() {
         )}
       </header>
 
-      {/* ── Stats bar (показывается только если есть история) ── */}
       <StatsBar />
 
-      {/* ── Filters ── */}
       <div className={styles['filterBar']}>
         <div className={styles['filterRow']}>
           <span className={styles['filterLabel']}>{t('writing.filters.level')}</span>
@@ -350,7 +333,6 @@ export default function WritingPage() {
         </div>
       </div>
 
-      {/* ── Error banner ── */}
       {promptsError !== null && (
         <div className={styles['errorBanner']}>
           <AlertCircle size={15} />
@@ -361,7 +343,6 @@ export default function WritingPage() {
         </div>
       )}
 
-      {/* ── Empty ── */}
       {!promptsLoading && promptsError === null && filteredPrompts.length === 0 && (
         <div className={styles['emptyState']}>
           <PenLine size={52} className={styles['emptyIcon']} />
@@ -370,7 +351,6 @@ export default function WritingPage() {
         </div>
       )}
 
-      {/* ── Prompts grid ── */}
       {filteredPrompts.length > 0 && (
         <section className={styles['promptsSection']}>
           <div className={styles['promptsGrid']}>
@@ -381,7 +361,6 @@ export default function WritingPage() {
         </section>
       )}
 
-      {/* ── Recent submissions ── */}
       {submissions.length > 0 && (
         <section className={styles['historySection']}>
           <h2 className={styles['sectionTitle']}>

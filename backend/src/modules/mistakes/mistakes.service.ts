@@ -48,9 +48,6 @@ export class MistakesService {
         },
       },
       orderBy: [
-        
-        
-        
         { nextReview: 'asc' },
         { wrongCount: 'desc' },
       ],
@@ -73,10 +70,6 @@ export class MistakesService {
     });
   }
 
-  
-  
-  
-  
 
   async getDueForReview(
     userId: string,

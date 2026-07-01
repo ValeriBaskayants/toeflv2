@@ -5,8 +5,8 @@ export const listening = {
   error:          'Could not load listening materials',
   retry:          'Try again',
   materialsCount: 'materials',
-  questionsLabel: 'questions',
-  modes:          'modes',
+  questionss:      'questions',
+  modess:          'modes',
 
   type: {
     lecture:      'Lecture',
@@ -29,6 +29,28 @@ export const listening = {
     subtitle: 'Different modes offer different challenges and XP rewards',
   },
 
+  
+  modes: {
+    EASY: {
+      name:  'Easy',
+      plays: '∞ plays',
+      xp:    '×0.7 XP',
+      desc:  'Transcript visible. Replay as many times as you need.',
+    },
+    MEDIUM: {
+      name:  'Medium',
+      plays: '3 plays',
+      xp:    '×1.0 XP',
+      desc:  'No transcript during playback. Revealed on completion.',
+    },
+    HARD: {
+      name:  'Hard',
+      plays: '1 play',
+      xp:    '×1.3 XP',
+      desc:  'One chance only. Maximum XP reward.',
+    },
+  },
+
   player: {
     backToList:       'Back to library',
     transcript:       'Transcript',
@@ -37,12 +59,20 @@ export const listening = {
     noPlaysLeft:      'No plays remaining',
     completing:       'Saving results…',
     complete:         'Complete session',
-    voicePremium:     'Premium voice',
-    voiceStandard:    'Standard voice',
-    voiceBasic:       'Basic voice — open Chrome for better audio',
-    voiceNone:        'No voice — browser not supported',
-    voiceWarnBasic:   'Your browser uses a basic voice. For the best experience open this page in Chrome.',
-    ttsNotSupported:  'Text-to-speech is not supported in this browser. Please use Chrome or Safari.',
+
+    
+    playsUnlimited:  '{{count}} plays',
+    playsCount:      '{{used}} / {{max}} plays',
+
+    
+    voiceGoogle:   'Google Neural2',
+    voiceBrowser:  'Browser voice',
+    voiceLoading:  'Loading audio…',
+    voiceNone:     'Voice unavailable',
+
+    
+    voiceWarnBasic:  'For the best audio quality, open this page in Chrome or Edge.',
+    ttsNotSupported: 'Text-to-speech is not supported in this browser. Please use Chrome or Safari.',
   },
 
   questions: {

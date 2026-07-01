@@ -1,3 +1,6 @@
+// frontend/src/i18n/locales/ru/listening.ts
+// ПОЛНАЯ ЗАМЕНА
+
 export const listening = {
   title:          'Аудирование',
   subtitle:       'Тренируйте восприятие на слух с реальными диалогами и лекциями',
@@ -5,8 +8,8 @@ export const listening = {
   error:          'Не удалось загрузить материалы',
   retry:          'Повторить',
   materialsCount: 'материалов',
-  questionsLabel: 'вопросов',
-  modes:          'режима',
+  questionss:      'вопросов',
+  modess:          'режима',
 
   type: {
     lecture:      'Лекция',
@@ -29,6 +32,27 @@ export const listening = {
     subtitle: 'Разные режимы — разные задачи и награды XP',
   },
 
+  modes: {
+    EASY: {
+      name:  'Лёгкий',
+      plays: '∞ прослушиваний',
+      xp:    '×0.7 XP',
+      desc:  'Транскрипт виден. Слушайте сколько угодно раз.',
+    },
+    MEDIUM: {
+      name:  'Средний',
+      plays: '3 прослушивания',
+      xp:    '×1.0 XP',
+      desc:  'Транскрипт скрыт во время воспроизведения. Откроется после завершения.',
+    },
+    HARD: {
+      name:  'Сложный',
+      plays: '1 прослушивание',
+      xp:    '×1.3 XP',
+      desc:  'Один шанс. Максимальная награда XP.',
+    },
+  },
+
   player: {
     backToList:       'Назад к библиотеке',
     transcript:       'Транскрипт',
@@ -37,12 +61,17 @@ export const listening = {
     noPlaysLeft:      'Прослушивания закончились',
     completing:       'Сохраняем результаты…',
     complete:         'Завершить сессию',
-    voicePremium:     'Премиум-голос',
-    voiceStandard:    'Стандартный голос',
-    voiceBasic:       'Базовый голос — откройте Chrome для лучшего звука',
-    voiceNone:        'Голос недоступен — браузер не поддерживается',
-    voiceWarnBasic:   'Для лучшего качества звука откройте страницу в Chrome.',
-    ttsNotSupported:  'Синтез речи не поддерживается. Используйте Chrome или Safari.',
+
+    playsUnlimited:  '{{count}} прослушиваний',
+    playsCount:      '{{used}} / {{max}} прослушиваний',
+
+    voiceGoogle:   'Google Neural2',
+    voiceBrowser:  'Браузерный голос',
+    voiceLoading:  'Загружаем аудио…',
+    voiceNone:     'Голос недоступен',
+
+    voiceWarnBasic:  'Для лучшего качества звука откройте страницу в Chrome или Edge.',
+    ttsNotSupported: 'Синтез речи не поддерживается. Используйте Chrome или Safari.',
   },
 
   questions: {

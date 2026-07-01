@@ -9,6 +9,7 @@ import ProgressPage from '@/pages/ProgressPage/ProgressPage';
 import ReadingListPage from '@/pages/ReadingListPage/ReadingListPage';
 import ReadingReaderPage from '@/pages/ReadingReaderPage/ReadingReaderPage';
 import { GrammarRulesPage } from '@/pages/GrammarRulesPage/GrammarRulesPage';
+import { GrammarRulePage } from '@/pages/GrammarRulePage/GrammarRulePage';
 import { PlacementPage } from '@/pages/Placementpage/Placementpage';
 import ListeningPage from '@/pages/ListeningPage/ListeningPage';
 import ListeningPlayerPage from '@/pages/Listeningplayerpage/Listeningplayerpage';
@@ -18,6 +19,8 @@ import WritingEditorPage from '@/pages/Writingeditorpage/Writingeditorpage';
 import WritingPage from '@/pages/Writingpage/Writingpage';
 import MistakesPage from '@/pages/MistakePage/MistakesPage';
 import { VocabularyPage } from '@/pages/VocabularyPage/VocabularyPage';
+import { ExercisesPage } from '@/pages/ExercisesPage/ExercisesPage';
+import { ExerciseList } from '@/pages/ExerciseList/ExerciseList';
 
 function ComingSoonPage({ title }: { title: string }) {
   return (
@@ -55,23 +58,22 @@ export function AppRouter() {
         <Route path="/listening/:id" element={<ListeningPlayerPage />} />
 
         <Route path="/grammar" element={<GrammarRulesPage />} />
-        <Route path="/grammar-rules" element={<GrammarRulesPage />} />
-        <Route path="/grammar-rules/:slug" element={<GrammarRulesPage />} />
+        <Route path="/grammar/:slug" element={<GrammarRulePage />} />
 
-        <Route path="/vocabulary" element={<VocabularyPage/>} />
-
+        <Route path="/vocabulary" element={<VocabularyPage />} />
         <Route path="/speaking" element={<ComingSoonPage title="Speaking" />} />
 
+        <Route path="/exercises" element={<ExercisesPage />} />
+        <Route path="/exercises/:topic" element={<ExerciseList />} />
+
+        <Route path="/quiz" element={<QuizPage />} />
         <Route path="/bookmarks" element={<BookmarksPage />} />
         <Route path="/progress" element={<ProgressPage />} />
-        <Route path="/quiz" element={<QuizPage />} />
         <Route path="/placement" element={<PlacementPage />} />
         <Route path="/mistakes" element={<MistakesPage />} />
-
         <Route path="/admin" element={<AdminPage />} />
       </Route>
 
-      {/* ── Fallbacks ───────────────────────────────────────────────────── */}
       <Route path="/" element={<Navigate to="/dashboard" replace />} />
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>

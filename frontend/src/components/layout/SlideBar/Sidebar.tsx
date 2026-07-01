@@ -16,6 +16,9 @@ import {
   X,
   ShieldAlert,
   AlertTriangle,
+  Dumbbell,
+  ListChecks,
+  Bookmark,
 } from 'lucide-react';
 import i18n from '@/i18n';
 import { useAppDispatch, useAppSelector } from '@/store/store';
@@ -120,7 +123,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             <BarChart3 size={16} className={styles['navIcon']} />
             <span>{t('navigation.progress')}</span>
           </NavLink>
-
+          <NavLink
+            to="/bookmarks"
+            className={({ isActive }) =>
+              `${styles['navItem']} ${isActive ? styles['navItemActive'] : ''}`
+            }
+            onClick={onClose}
+          >
+            <Bookmark size={16} className={styles['navIcon']} />
+            <span>{t('navigation.bookmarks')}</span>
+          </NavLink>
           {/* Mistakes with due-review badge */}
           <NavLink
             to="/mistakes"
@@ -146,6 +158,8 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             { to: '/speaking', Icon: Mic, label: 'navigation.speaking' },
             { to: '/grammar', Icon: CheckCheck, label: 'navigation.grammar' },
             { to: '/vocabulary', Icon: Layers, label: 'navigation.vocabulary' },
+            { to: '/exercises', Icon: Dumbbell, label: 'navigation.exercises' },
+            { to: '/quiz', Icon: ListChecks, label: 'navigation.quiz' },
           ].map(({ to, Icon, label }) => (
             <NavLink
               key={to}

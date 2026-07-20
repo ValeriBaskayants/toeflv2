@@ -133,7 +133,6 @@ export class ListeningService {
     return enriched.sort((a, b) => ORDER[a.userStatus as keyof typeof ORDER] - ORDER[b.userStatus as keyof typeof ORDER]);
   }
 
-
   async findById(id: string, userId: string) {
     const material = await this.prisma.listeningMaterial.findUnique({
       where: { id },
@@ -147,11 +146,12 @@ export class ListeningService {
       select: { id: true, mode: true, playCount: true, maxAllowedPlays: true },
     });
 
-    const canSeeTranscript = openSession !== null && openSession.mode === 'EASY';
+    const transcriptVisible = openSession !== null && openSession.mode === 'EASY';
 
     return {
       ...material,
-      fullText: canSeeTranscript ? material.fullText : undefined,
+      fullText: material.fullText,    
+      transcriptVisible,                
       openSession,
       recommendedRate: LEVEL_SPEECH_RATE[material.level],
     };

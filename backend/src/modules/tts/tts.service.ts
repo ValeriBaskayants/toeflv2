@@ -8,18 +8,11 @@ import { PrismaService } from '../prisma/prisma.service';
 
 
 
-const GOOGLE_VOICE_ID = 'en-US-Neural2-F'; 
-const GOOGLE_MODEL_ID = 'google-neural2';   
-
-const VOICE_BY_LANG: Record<string, { name: string; ssmlGender: string }> = {
-  'en-US': { name: 'en-US-Neural2-F', ssmlGender: 'FEMALE' },
-  'en-GB': { name: 'en-GB-Neural2-A', ssmlGender: 'FEMALE' },
-  'en-AU': { name: 'en-AU-Neural2-A', ssmlGender: 'FEMALE' },
-};
-const DEFAULT_VOICE = { name: 'en-US-Neural2-F', ssmlGender: 'FEMALE' };
-
-const MAX_CHARS = 4_800; 
-const TIMEOUT_MS = 15_000;
+const ELEVENLABS_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
+const ELEVENLABS_MODEL_ID = 'eleven_multilingual_v2';
+const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io/v1';
+const MAX_CHARS    = 2_500; 
+const TIMEOUT_MS   = 15_000;
 
 export interface TtsResult {
   audioBase64: string;
@@ -47,6 +40,7 @@ export class TtsService {
     rate?: number,
     lang?: string,
   ): Promise<TtsResult | TtsFallbackResult> {
+
     
     const material = await this.prisma.listeningMaterial.findUnique({
       where: { id: materialId },
@@ -58,22 +52,17 @@ export class TtsService {
     }
 
     
-    const languageCode = lang ?? material.speakerLang ?? 'en-US';
-    const speakingRate = Math.max(0.25, Math.min(rate ?? 1.0, 4.0));
-    const voice = VOICE_BY_LANG[languageCode] ?? DEFAULT_VOICE;
-
-    const apiKey = this.config.get<string>('googleTtsApiKey');
+    const apiKey = this.config.get<string>('elevenlabs.apiKey');
     if (!apiKey) {
-      this.logger.warn('GOOGLE_TTS_API_KEY not configured — using browser TTS fallback');
+      this.logger.warn('ELEVENLABS_API_KEY not configured');
       return { fallback: true, reason: 'api_key_not_configured' };
     }
 
     const truncatedText = text.slice(0, MAX_CHARS);
 
     
-    
     const contentHash = createHash('sha256')
-      .update(`${truncatedText}::${voice.name}::${GOOGLE_MODEL_ID}::${speakingRate.toFixed(2)}`)
+      .update(`${truncatedText}::${ELEVENLABS_VOICE_ID}::${ELEVENLABS_MODEL_ID}`)
       .digest('hex');
 
     
@@ -83,6 +72,7 @@ export class TtsService {
     });
 
     if (cached !== null) {
+      
       void this.prisma.ttsCache
         .update({
           where: { contentHash },
@@ -97,36 +87,39 @@ export class TtsService {
         materialId,
       });
 
-      return { audioBase64: cached.audioBase64, fallback: false, cached: true };
+      
+      return {
+        audioBase64: cached.audioBase64,
+        fallback: false,
+        cached: true,
+      };
     }
 
     
-    this.logger.log('TTS_GOOGLE_REQUEST', {
+    this.logger.log('TTS_ELEVENLABS_REQUEST', {
       materialId,
       textLength: truncatedText.length,
-      voice: voice.name,
-      speakingRate,
+      voiceId: ELEVENLABS_VOICE_ID,
     });
 
     try {
       const response = await fetch(
-        `https://texttospeech.googleapis.com/v1/text:synthesize?key=${apiKey}`,
+        `${ELEVENLABS_BASE_URL}/text-to-speech/${ELEVENLABS_VOICE_ID}`,
         {
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
+          headers: {
+            'Accept': 'audio/mpeg',
+            'Content-Type': 'application/json',
+            'xi-api-key': apiKey,
+          },
           body: JSON.stringify({
-            input: { text: truncatedText },
-            voice: {
-              languageCode,
-              name: voice.name,
-              ssmlGender: voice.ssmlGender,
-            },
-            audioConfig: {
-              audioEncoding: 'MP3',
-              speakingRate,
-              pitch: 0,
-              volumeGainDb: 1.5,              
-              effectsProfileId: ['headphone-class-device'], 
+            text: truncatedText,
+            model_id: ELEVENLABS_MODEL_ID,
+            voice_settings: {
+              stability: 0.5,
+              similarity_boost: 0.75,
+              style: 0.0,
+              use_speaker_boost: true,
             },
           }),
           signal: AbortSignal.timeout(TIMEOUT_MS),
@@ -137,33 +130,25 @@ export class TtsService {
         const status = response.status;
 
         if (status === 429) {
-          this.logger.warn('GOOGLE_TTS_RATE_LIMITED', { materialId });
+          this.logger.warn('ELEVENLABS_RATE_LIMITED', { materialId });
           return { fallback: true, reason: 'rate_limited' };
         }
-        if (status === 400) {
-          const body = await response.text();
-          this.logger.error('GOOGLE_TTS_BAD_REQUEST', { materialId, body });
-          return { fallback: true, reason: 'bad_request' };
-        }
-        if (status === 403) {
-          this.logger.error('GOOGLE_TTS_FORBIDDEN — проверь API ключ и включён ли Text-to-Speech API');
-          return { fallback: true, reason: 'forbidden' };
+        if (status === 401) {
+          this.logger.error('ELEVENLABS_UNAUTHORIZED — проверь ELEVENLABS_API_KEY в .env');
+          return { fallback: true, reason: 'unauthorized' };
         }
 
-        this.logger.error('GOOGLE_TTS_API_ERROR', { status, materialId });
+        this.logger.error('ELEVENLABS_API_ERROR', { status, materialId });
         return { fallback: true, reason: `http_${status}` };
       }
 
-      const data = await response.json() as { audioContent?: string };
+      
+      const arrayBuffer = await response.arrayBuffer();
+      const audioBase64 = Buffer.from(arrayBuffer).toString('base64');
 
-      if (!data.audioContent) {
-        this.logger.error('GOOGLE_TTS_EMPTY_RESPONSE', { materialId });
-        return { fallback: true, reason: 'empty_response' };
-      }
-
-      this.logger.log('TTS_GOOGLE_SUCCESS', {
+      this.logger.log('TTS_ELEVENLABS_SUCCESS', {
         materialId,
-        audioSizeKb: Math.round((data.audioContent.length * 3) / 4 / 1024),
+        audioSizeKb: Math.round(arrayBuffer.byteLength / 1024),
       });
 
       
@@ -172,9 +157,9 @@ export class TtsService {
           data: {
             contentHash,
             textLength: truncatedText.length,
-            voiceId: voice.name,    
-            modelId: GOOGLE_MODEL_ID,
-            audioBase64: data.audioContent,
+            voiceId: ELEVENLABS_VOICE_ID,
+            modelId: ELEVENLABS_MODEL_ID,
+            audioBase64,
           },
         })
         .catch((err: unknown) => {
@@ -182,13 +167,14 @@ export class TtsService {
         });
 
       return {
-        audioBase64: data.audioContent,
+        audioBase64,
         fallback: false,
         cached: false,
       };
+
     } catch (err: unknown) {
       const isTimeout = err instanceof Error && err.name === 'AbortError';
-      this.logger.error('TTS_GOOGLE_REQUEST_FAILED', {
+      this.logger.error('TTS_ELEVENLABS_REQUEST_FAILED', {
         materialId,
         isTimeout,
         error: err instanceof Error ? err.message : String(err),

@@ -1,396 +1,236 @@
-import type { ContentType } from '../types/admin/Admin.types';
+import type { ContentType } from "../types/admin/Admin.types";
 
 export const EXAMPLES: Record<ContentType, string> = {
-  exercises: JSON.stringify(
-    [
-      {
-        topic: 'Present Simple',
-        level: 'A1',
-        difficulty: 'EASY',
+  exercises: JSON.stringify([
+    {
+      topic: 'Present Simple',
+      level: 'A1',
+      difficulty: 'EASY',
+      sentence: 'She _____ to school every day.',
+      blanks: [{ position: 0, answer: 'goes', options: ['go', 'goes', 'going', 'gone'] }],
+      explanation: 'Use -s/-es with he/she/it in Present Simple.',
+      tags: ['a1', 'present-simple'],
+      topicSlugs: ['present-simple'],
+    },
+    {
+      topic: 'Past Simple',
+      level: 'A2',
+      difficulty: 'MEDIUM',
+      sentence: 'They _____ dinner before the movie started.',
+      blanks: [{ position: 0, answer: 'ate', options: ['eat', 'ate', 'eaten', 'eating'] }],
+      explanation: 'Past Simple uses the past form of the verb.',
+      tags: ['a2', 'past-simple'],
+      topicSlugs: ['past-simple-irregular'],
+    },
+  ], null, 2),
 
-        sentence: 'She _____ to school every day.',
-
-        blanks: [
-          {
-            position: 0,
-            answer: 'goes',
-            options: ['go', 'goes', 'going', 'gone'],
-          },
-        ],
-
-        explanation: 'Use -s/-es with he/she/it in Present Simple.',
-        tags: ['a1', 'present-simple'],
-
-        isAvailableForPlacement: false,
-        difficultyRating: null,
-        discriminationRating: null,
-      },
-      {
-        topic: 'Past Simple',
-        level: 'A2',
-        difficulty: 'MEDIUM',
-
-        sentence: 'They _____ dinner before the movie started.',
-
-        blanks: [
-          {
-            position: 0,
-            answer: 'ate',
-            options: ['eat', 'ate', 'eaten', 'eating'],
-          },
-        ],
-
-        explanation: 'Past Simple uses the past form of the verb.',
-        tags: ['a2', 'past-simple'],
-
-        isAvailableForPlacement: false,
-        difficultyRating: null,
-        discriminationRating: null,
-      },
-    ],
-    null,
-    2,
-  ),
-
-  grammarRules: JSON.stringify(
-    [
-      {
-        topic: 'Present Simple',
-        slug: 'present-simple',
-        level: 'A1',
-
-        summary: 'Used for habits, routines, facts and general truths.',
-        coreConcept: 'Subject + base verb (+ s/es for he/she/it)',
-        structure: 'I/You/We/They + V1 | He/She/It + V1+s/es',
-
-        usages: [
-          {
-            title: 'Habits & Routines',
-            explanation: 'Actions that happen regularly or repeatedly.',
-            examples: [
-              {
-                sentence: 'She drinks coffee every morning.',
-                translation: 'Она пьёт кофе каждое утро.',
-              },
-            ],
-          },
-          {
-            title: 'General Truths',
-            explanation: 'Facts that are always true.',
-            examples: [
-              {
-                sentence: 'Water boils at 100°C.',
-              },
-            ],
-          },
-        ],
-
-        sections: [
-          {
-            title: 'Negative Form',
-            content: "Use do not (don't) or does not (doesn't) + base verb.",
-            examples: [
-              {
-                sentence: 'He does not play tennis.',
-              },
-              {
-                sentence: "They don't watch TV.",
-              },
-            ],
-          },
-        ],
-
-        comparisons: [
-          {
-            compareWith: 'Present Continuous',
-            explanation:
-              'Present Simple describes habits and facts, while Present Continuous describes actions happening now.',
-            examples: [
-              {
-                sentence: 'She works every day. / She is working now.',
-              },
-            ],
-          },
-        ],
-
-        commonMistakes: [
-          'She go to school. ✗ → She goes to school. ✓',
-          "He don't like it. ✗ → He doesn't like it. ✓",
-        ],
-
-        signalWords: ['always', 'usually', 'often', 'every day', 'never'],
-
-        relatedTopics: ['present-continuous', 'past-simple'],
-      },
-    ],
-    null,
-    2,
-  ),
-
-  vocabulary: JSON.stringify(
-    [
-      {
-        word: 'accomplish',
-        level: 'B1',
-        type: 'VERB',
-
-        pronunciation: '/əˈkɒmplɪʃ/',
-        definition: 'To succeed in doing something difficult.',
-        definitionRu: 'Достигать, выполнять',
-
-        examples: [
-          'She accomplished her goal in record time.',
-          'The team accomplished what seemed impossible.',
-        ],
-
-        synonyms: ['achieve', 'complete', 'fulfill'],
-        antonyms: ['fail', 'abandon'],
-
-        imageUrl: null,
-
-        forms: {
-          base: 'accomplish',
-          past: 'accomplished',
-          pastParticiple: 'accomplished',
-          thirdPerson: 'accomplishes',
-          presentParticiple: 'accomplishing',
+  grammarRules: JSON.stringify([
+    {
+      topic: 'Present Simple',
+      slug: 'present-simple',
+      level: 'A1',
+      order: 11,
+      isCore: true,
+      prerequisiteSlugs: ['subject-pronouns'],
+      summary: 'Used for habits, routines, facts and general truths.',
+      coreConcept: 'Subject + base verb (+ s/es for he/she/it)',
+      structure: 'I/You/We/They + V1 | He/She/It + V1+s/es',
+      usages: [
+        {
+          title: 'Habits & Routines',
+          explanation: 'Actions that happen regularly or repeatedly.',
+          examples: [
+            { sentence: 'She drinks coffee every morning.', translation: 'Она пьёт кофе каждое утро.' },
+          ],
         },
-
-        isIrregularVerb: false,
+      ],
+      sections: [
+        {
+          title: 'Negative form',
+          content: "Use do not (don't) or does not (doesn't) + base verb.",
+          examples: [
+            { sentence: "He does not play tennis." },
+            { sentence: "They don't watch TV." },
+          ],
+        },
+      ],
+      commonMistakes: [
+        "She go to school. ✗ → She goes to school. ✓",
+        "He don't like it. ✗ → He doesn't like it. ✓",
+      ],
+      signalWords: ['always', 'usually', 'often', 'every day', 'never'],
+      relatedTopics: ['present-simple-questions-negatives', 'adverbs-of-frequency'],
+      practiceTargets: {
+        grammarRequired: 5,
+        grammarAccuracyMin: 60,
+        quizRequired: 2,
+        readingRequired: 1,
+        listeningRequired: 1,
       },
-      {
-        word: 'innovative',
-        level: 'B2',
-        type: 'ADJECTIVE',
+      resources: [
+        {
+          title: 'Perfect English Grammar — Present Simple',
+          url: 'https://www.perfect-english-grammar.com/present-simple.html',
+          type: 'article',
+          description: 'Full explanation + exercises',
+        },
+      ],
+    },
+  ], null, 2),
 
-        pronunciation: '/ˈɪnəveɪtɪv/',
-        definition: 'Featuring new methods; advanced and original.',
-        definitionRu: 'Инновационный, передовой',
-
-        examples: [
-          'The company is known for its innovative products.',
-        ],
-
-        synonyms: ['creative', 'original', 'pioneering'],
-        antonyms: ['conventional', 'traditional'],
-
-        imageUrl: null,
-
-        forms: null,
-
-        isIrregularVerb: false,
+  vocabulary: JSON.stringify([
+    {
+      word: 'accomplish',
+      level: 'B1',
+      type: 'VERB',
+      pronunciation: '/əˈkɒmplɪʃ/',
+      definition: 'To succeed in doing something difficult.',
+      definitionRu: 'Достигать, выполнять',
+      examples: [
+        'She accomplished her goal in record time.',
+        'The team accomplished what seemed impossible.',
+      ],
+      synonyms: ['achieve', 'complete', 'fulfill'],
+      antonyms: ['fail', 'abandon'],
+      forms: {
+        base: 'accomplish',
+        past: 'accomplished',
+        pastParticiple: 'accomplished',
+        thirdPerson: 'accomplishes',
+        presentParticiple: 'accomplishing',
       },
-    ],
-    null,
-    2,
-  ),
+      isIrregularVerb: false,
+    },
+  ], null, 2),
 
-  readings: JSON.stringify(
-    [
-      {
-        title: 'The Water Cycle',
-        slug: 'the-water-cycle',
+  readings: JSON.stringify([
+    {
+      title: 'A Typical Morning',
+      level: 'A1',
+      topic: 'Daily Life',
+      description: 'A short text about daily routines using Present Simple.',
+      content: 'Every morning, Tom gets up at seven o\'clock. He brushes his teeth and washes his face. Then he goes to the kitchen and makes breakfast. He usually eats eggs and drinks orange juice. After breakfast, he takes the bus to work. He starts work at nine o\'clock.',
+      tags: ['daily-life', 'routines'],
+      grammarTopics: ['present-simple', 'adverbs-of-frequency', 'prepositions-of-time'],
+      questions: [
+        {
+          text: 'What time does Tom get up?',
+          explanation: 'The text says Tom gets up at seven o\'clock.',
+          options: [
+            { text: 'At six o\'clock',   isCorrect: false },
+            { text: 'At seven o\'clock', isCorrect: true },
+            { text: 'At eight o\'clock', isCorrect: false },
+            { text: 'At nine o\'clock',  isCorrect: false },
+          ],
+        },
+        {
+          text: 'How does Tom get to work?',
+          explanation: 'He takes the bus to work.',
+          options: [
+            { text: 'By car',  isCorrect: false },
+            { text: 'By bus',  isCorrect: true },
+            { text: 'On foot', isCorrect: false },
+            { text: 'By bike', isCorrect: false },
+          ],
+        },
+      ],
+      vocabulary: [
+        { word: 'brush', translation: 'чистить', contextSentence: 'He brushes his teeth.' },
+        { word: 'usually', translation: 'обычно' },
+      ],
+    },
+  ], null, 2),
 
-        level: 'A2',
-        topic: 'Science',
+  multipleChoice: JSON.stringify([
+    {
+      question: 'Which sentence uses Present Simple correctly?',
+      options: [
+        'She go to school every day.',
+        'She going to school every day.',
+        'She goes to school every day.',
+        'She is go to school every day.',
+      ],
+      correctIndex: 2,
+      explanation: 'With he/she/it in Present Simple, add -s/-es to the verb: goes.',
+      topic: 'Present Simple',
+      level: 'A1',
+      difficulty: 'EASY',
+      topicSlugs: ['present-simple', 'present-simple-questions-negatives'],
+    },
+    {
+      question: 'Choose the correct negative form:',
+      options: [
+        "She don't like coffee.",
+        "She doesn't likes coffee.",
+        "She doesn't like coffee.",
+        'She not like coffee.',
+      ],
+      correctIndex: 2,
+      explanation: "With he/she/it use \"doesn't\" + base verb (not doesn't likes).",
+      topic: 'Present Simple',
+      level: 'A1',
+      difficulty: 'EASY',
+      topicSlugs: ['present-simple-questions-negatives'],
+    },
+  ], null, 2),
 
-        description: 'A short passage about how water moves through nature.',
+  writingPrompts: JSON.stringify([
+    {
+      prompt: 'Describe your daily routine in detail. What do you do in the morning, afternoon, and evening?',
+      level: 'A2',
+      type: 'PARAGRAPH',
+      minWords: 80,
+      maxWords: 150,
+      topic: 'Daily Life',
+      instructions: 'Use Present Simple. Include at least 3 time expressions.',
+    },
+    {
+      prompt: 'Do you think social media has a positive or negative impact on society? Give reasons and examples.',
+      level: 'B2',
+      type: 'ESSAY',
+      minWords: 250,
+      maxWords: 400,
+      topic: 'Technology & Society',
+      instructions: 'Write a balanced argument. Use discourse markers. Include two specific examples.',
+    },
+  ], null, 2),
 
-        content:
-          'Water is constantly moving around Earth in a process called the water cycle. The sun heats water in rivers, lakes, and oceans, causing it to evaporate and rise into the atmosphere. As the water vapor rises, it cools and condenses to form clouds. When enough droplets gather, precipitation occurs as rain or snow.',
-
-        tags: ['science', 'nature'],
-
-        coverImageUrl: null,
-
-        questions: [
-          {
-            type: 'MULTIPLE_CHOICE',
-
-            text: 'What causes water to evaporate?',
-
-            explanation:
-              'The sun provides heat energy that turns liquid water into vapor.',
-
-            options: [
-              {
-                text: 'Heat from the sun',
-                isCorrect: true,
-              },
-              {
-                text: 'Strong winds',
-                isCorrect: false,
-              },
-              {
-                text: 'Cold temperatures',
-                isCorrect: false,
-              },
-              {
-                text: 'Ocean currents',
-                isCorrect: false,
-              },
-            ],
-          },
-        ],
-
-        vocabulary: [
-          {
-            word: 'evaporate',
-            translation: 'испаряться',
-            contextSentence: 'Water evaporates when heated.',
-          },
-          {
-            word: 'precipitation',
-            translation: 'осадки',
-          },
-        ],
-      },
-    ],
-    null,
-    2,
-  ),
-
-  multipleChoice: JSON.stringify(
-    [
-      {
-        question: 'Which tense describes an action happening right now?',
-
-        options: [
-          'Present Simple',
-          'Past Simple',
-          'Present Continuous',
-          'Future Simple',
-        ],
-
-        correctIndex: 2,
-
-        explanation:
-          'Present Continuous (am/is/are + -ing) describes actions currently in progress.',
-
-        topic: 'Tenses',
-        category: 'GRAMMAR',
-
-        level: 'A1',
-        difficulty: 'EASY',
-
-        isAvailableForPlacement: false,
-        difficultyRating: null,
-        discriminationRating: null,
-      },
-      {
-        question: 'Choose the correct sentence:',
-
-        options: [
-          "She don't like coffee.",
-          "She doesn't likes coffee.",
-          "She doesn't like coffee.",
-          'She not like coffee.',
-        ],
-
-        correctIndex: 2,
-
-        explanation: `With he/she/it use "doesn't" + base verb.`,
-
-        topic: 'Present Simple',
-        category: 'GRAMMAR',
-
-        level: 'A1',
-        difficulty: 'EASY',
-
-        isAvailableForPlacement: false,
-        difficultyRating: null,
-        discriminationRating: null,
-      },
-    ],
-    null,
-    2,
-  ),
-
-  writingPrompts: JSON.stringify(
-    [
-      {
-        prompt:
-          'Describe your daily routine in detail. What do you do in the morning, afternoon, and evening?',
-        level: 'A2',
-        type: 'PARAGRAPH',
-        minWords: 80,
-        maxWords: 150,
-        topic: 'Daily Life',
-        instructions: 'Use Present Simple. Include at least 3 time expressions.',
-      },
-      {
-        prompt:
-          'Do you think social media has a positive or negative impact on society? Give reasons and examples.',
-        level: 'B2',
-        type: 'ESSAY',
-        minWords: 250,
-        maxWords: 400,
-        topic: 'Technology & Society',
-        instructions:
-          'Write a balanced argument. Use discourse markers. Include two specific examples.',
-      },
-    ],
-    null,
-    2,
-  ),
-
-  listening: JSON.stringify(
-    [
-      {
-        title: 'Campus Tour',
-        topic: 'University Life',
-        level: 'B1',
-        type: 'CONVERSATION',
-        fullText:
-          'Welcome to the university. My name is Sarah and I will be your guide today. On your left is the library, open from 8am to 10pm. Straight ahead is the main lecture hall for first-year classes.',
-        segments: [
-          {
-            index: 0,
-            text: 'Welcome to the university.',
-            startSec: 0,
-            endSec: 2.5,
-            speaker: 'Sarah',
-          },
-          {
-            index: 1,
-            text: 'My name is Sarah and I will be your guide today.',
-            startSec: 2.5,
-            endSec: 6.0,
-            speaker: 'Sarah',
-          },
-          {
-            index: 2,
-            text: 'On your left is the library, open from 8am to 10pm.',
-            startSec: 6.0,
-            endSec: 10.5,
-            speaker: 'Sarah',
-          },
-        ],
-        speakerRate: 0.95,
-        speakerLang: 'en-US',
-        speakerPitch: 1.0,
-        allowedModes: ['EASY', 'MEDIUM', 'HARD'],
-        questions: [
-          {
-            question: 'What is the name of the tour guide?',
-            options: ['Sarah', 'Emma', 'Laura', 'Kate'],
-            correctIndex: 0,
-            explanation: 'Sarah introduces herself at the beginning.',
-            referenceStartSec: 2.5,
-            referenceEndSec: 6.0,
-          },
-          {
-            question: 'Until what time is the library open?',
-            options: ['8pm', '9pm', '10pm', '11pm'],
-            correctIndex: 2,
-            explanation: 'The library is open until 10pm.',
-            referenceStartSec: 6.0,
-            referenceEndSec: 10.5,
-          },
-        ],
-      },
-    ],
-    null,
-    2,
-  ),
+  listening: JSON.stringify([
+    {
+      title: 'A Typical Day',
+      topic: 'Daily Routines',
+      level: 'A1',
+      type: 'CONVERSATION',
+      fullText: 'Good morning! My name is Anna. Every day I wake up at seven o\'clock. I always eat breakfast before I go to work. I usually have bread and coffee. I start work at nine. I finish at five. In the evening I watch TV or read a book.',
+      segments: [
+        { index: 0, text: 'Good morning! My name is Anna.', startSec: 0, endSec: 2.5, speaker: 'Anna' },
+        { index: 1, text: 'Every day I wake up at seven o\'clock.', startSec: 2.5, endSec: 5.5, speaker: 'Anna' },
+        { index: 2, text: 'I always eat breakfast before I go to work.', startSec: 5.5, endSec: 9.0, speaker: 'Anna' },
+        { index: 3, text: 'I usually have bread and coffee.', startSec: 9.0, endSec: 11.5, speaker: 'Anna' },
+      ],
+      speakerRate: 0.65,
+      speakerLang: 'en-US',
+      speakerPitch: 1.0,
+      allowedModes: ['EASY', 'MEDIUM', 'HARD'],
+      grammarTopics: ['present-simple', 'adverbs-of-frequency'],
+      questions: [
+        {
+          question: 'What time does Anna wake up?',
+          options: ['At six o\'clock', 'At seven o\'clock', 'At eight o\'clock', 'At nine o\'clock'],
+          correctIndex: 1,
+          explanation: 'Anna says she wakes up at seven o\'clock every day.',
+          referenceStartSec: 2.5,
+          referenceEndSec: 5.5,
+        },
+        {
+          question: 'What does Anna usually have for breakfast?',
+          options: ['Eggs and juice', 'Cereal and milk', 'Bread and coffee', 'Toast and tea'],
+          correctIndex: 2,
+          explanation: 'Anna says she usually has bread and coffee.',
+          referenceStartSec: 9.0,
+          referenceEndSec: 11.5,
+        },
+      ],
+    },
+  ], null, 2),
 };

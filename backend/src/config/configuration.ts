@@ -16,6 +16,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   THROTTLE_TTL: z.coerce.number().default(60),
   THROTTLE_LIMIT: z.coerce.number().default(120),
+  ELEVENLABS_API_KEY: z.string()
 });
 
 export default () => {
@@ -51,6 +52,9 @@ export default () => {
     redis: {
       host: d.REDIS_HOST,
       port: d.REDIS_PORT,
+    },
+    elevenlabs: {
+      apiKey: process.env.ELEVENLABS_API_KEY ?? null,
     },
   };
 };

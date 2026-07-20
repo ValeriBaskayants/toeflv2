@@ -111,6 +111,11 @@ export class CreateListeningMaterialDto {
 
   @IsOptional()
   @IsArray()
+  @IsString({ each: true })
+  grammarTopics?: string[];
+
+  @IsOptional()
+  @IsArray()
   @ValidateNested({ each: true })
   @Type(() => CreateListeningQuestionDto)
   questions?: CreateListeningQuestionDto[];

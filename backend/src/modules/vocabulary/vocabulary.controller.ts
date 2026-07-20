@@ -2,6 +2,7 @@ import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
 import { VocabularyService } from './vocabulary.service';
 import { GetFlashcardsDto, GetVocabularyDto } from './dto/get-vocabulary.dto';
 import { ReviewWordDto } from './dto/review-word.dto';
+import { SubmitVocabAnswerDto } from './dto/submit-vocab-answer.dto';
 import { BulkCreateVocabularyDto } from './dto/bulk-create-vocabulary.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
@@ -22,6 +23,11 @@ export class VocabularyController {
     return this.service.getFlashcards(user.id, query);
   }
 
+  @Get('session')
+  getSession(@CurrentUser() user: JwtUserPayload, @Query() query: GetFlashcardsDto) {
+    return this.service.getSession(user.id, query);
+  }
+
   @Get('user-progress')
   getUserProgress(@CurrentUser() user: JwtUserPayload) {
     return this.service.getUserProgress(user.id);
@@ -30,6 +36,15 @@ export class VocabularyController {
   @Post('review')
   review(@CurrentUser() user: JwtUserPayload, @Body() dto: ReviewWordDto) {
     return this.service.reviewWord(user.id, dto.wordId, dto.quality);
+  }
+
+  @Post('answer')
+  submitAnswer(
+    @CurrentUser() user: JwtUserPayload,
+    @Body() dto: SubmitVocabAnswerDto,
+    @Query('timezone') timezone?: string,
+  ) {
+    return this.service.submitAnswer(user.id, dto, timezone);
   }
 
   @Post('bulk')

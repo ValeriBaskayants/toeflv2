@@ -46,27 +46,18 @@ import {
   clearPlayerState,
 } from '@/store/Slices/ListeningSlice';
 import { useTTS } from '@/hooks/useTTS/useTTS';
+import { ListeningMode } from '@/types/globalTypes';
 import type { ListeningQuestion, ListeningNote } from '@/types/listening/Listening.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './ListeningplayerPage.module.css';
-import { ListeningMode } from '@/types/globalTypes';
 
-// ─── Helpers ─────────────────────────────────────────────────────────────────
-
-/** True only when running in a real Chromium-based browser */
-function isChromiumBrowser(): boolean {
-  if (typeof window === 'undefined') return false;
-  const ua = navigator.userAgent;
-  // Chrome/Edge/Opera/Brave — all have "Chrome" in UA
-  // Firefox has "Firefox", Safari has "Safari" but NOT "Chrome"
-  return ua.includes('Chrome') || ua.includes('Chromium');
-}
+// ─── Constants ────────────────────────────────────────────────────────────────
 
 const RATE_OPTIONS = [
   { label: '0.75×', value: 0.75 },
-  { label: '1.0×', value: 1.0 },
+  { label: '1.0×',  value: 1.0  },
   { label: '1.25×', value: 1.25 },
-  { label: '1.5×', value: 1.5 },
+  { label: '1.5×',  value: 1.5  },
 ];
 
 const LEVEL_DISPLAY: Record<string, string> = {
@@ -75,25 +66,21 @@ const LEVEL_DISPLAY: Record<string, string> = {
   C1: 'C1', C2: 'C2',
 };
 
+const MODE_STYLE: Record<ListeningMode, { color: string; bg: string; border: string }> = {
+  [ListeningMode.EASY]:   { color: '#22c55e', bg: 'rgba(34,197,94,.08)',  border: 'rgba(34,197,94,.3)'  },
+  [ListeningMode.MEDIUM]: { color: '#f59e0b', bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.3)' },
+  [ListeningMode.HARD]:   { color: '#ef4444', bg: 'rgba(239,68,68,.08)',  border: 'rgba(239,68,68,.3)'  },
+};
+
 type Phase = 'loading' | 'mode-select' | 'active' | 'completed' | 'error';
 
 // ─── ModeSelector ─────────────────────────────────────────────────────────────
 
-const MODE_KEYS = ['EASY', 'MEDIUM', 'HARD'] as const;
-type ModeKey = (typeof MODE_KEYS)[number];
-
-const MODE_STYLE: Record<ListeningMode, { color: string; bg: string; border: string }> = {
-  [ListeningMode.EASY]: { color: '#22c55e', bg: 'rgba(34,197,94,.08)', border: 'rgba(34,197,94,.3)' },
-  [ListeningMode.MEDIUM]: { color: '#f59e0b', bg: 'rgba(245,158,11,.08)', border: 'rgba(245,158,11,.3)' },
-  [ListeningMode.HARD]: { color: '#ef4444', bg: 'rgba(239,68,68,.08)', border: 'rgba(239,68,68,.3)' },
-};
 interface ModeSelectorProps {
   allowedModes: string[];
-  onSelect: (mode: ListeningMode) => void;  // ← было ModeKey
+  onSelect: (mode: ListeningMode) => void;
   isLoading: boolean;
 }
-
-
 
 function ModeSelector({ allowedModes, onSelect, isLoading }: ModeSelectorProps) {
   const { t } = useTranslation();
@@ -121,13 +108,11 @@ function ModeSelector({ allowedModes, onSelect, isLoading }: ModeSelectorProps) 
                 onClick={() => onSelect(mode)}
               >
                 <div className={styles['modeCardIcon']}>
-                  {mode === ListeningMode.EASY && <Volume2 size={22} />}
+                  {mode === ListeningMode.EASY   && <Volume2    size={22} />}
                   {mode === ListeningMode.MEDIUM && <Headphones size={22} />}
-                  {mode === ListeningMode.HARD && <Zap size={22} />}
+                  {mode === ListeningMode.HARD   && <Zap        size={22} />}
                 </div>
-                <div className={styles['modeCardLabel']}>
-                  {t(`listening.modes.${mode}.name`)}
-                </div>
+                <div className={styles['modeCardLabel']}>{t(`listening.modes.${mode}.name`)}</div>
                 <div className={styles['modeCardMeta']}>
                   <span className={styles['modeCardPlays']}>{t(`listening.modes.${mode}.plays`)}</span>
                   <span className={styles['modeCardXp']}>{t(`listening.modes.${mode}.xp`)}</span>
@@ -146,12 +131,12 @@ function ModeSelector({ allowedModes, onSelect, isLoading }: ModeSelectorProps) 
 
 interface PlayerControlsProps {
   isPlaying: boolean;
+  isPaused: boolean;
   isLoadingAudio: boolean;
+  ttsError: string | null;
   playCount: number;
   maxAllowedPlays: number;
-  mode: string;
-  voiceQuality: 'google' | 'browser' | 'loading' | 'unsupported';
-  voiceLabel: string;
+  mode: ListeningMode;
   currentRate: number;
   onPlay: () => void;
   onPause: () => void;
@@ -161,18 +146,23 @@ interface PlayerControlsProps {
 }
 
 function PlayerControls({
-  isPlaying, isLoadingAudio, playCount, maxAllowedPlays, mode,
-  voiceQuality, voiceLabel, currentRate,
-  onPlay, onPause, onRestart, onRateChange, canPlay,
+  isPlaying, isPaused, isLoadingAudio, ttsError,
+  playCount, maxAllowedPlays, mode,
+  currentRate, onPlay, onPause, onRestart, onRateChange, canPlay,
 }: PlayerControlsProps) {
   const { t } = useTranslation();
 
-  // const playsUsed = maxAllowedPlays >= 99
-  // ? `${playCount}`
-  // : `${playCount} / ${maxAllowedPlays}`;
-
   return (
     <div className={styles['playerControls']}>
+
+      {/* TTS error — показываем если Google TTS не настроен */}
+      {ttsError !== null && (
+        <div className={styles['ttsError']}>
+          <AlertCircle size={14} />
+          <span>{ttsError}</span>
+        </div>
+      )}
+
       <div className={styles['controlsRow']}>
         {/* Restart */}
         <button
@@ -196,7 +186,7 @@ function PlayerControls({
             ? <Loader2 size={22} className={styles['spin']} />
             : isPlaying
               ? <Pause size={24} />
-              : <Play size={24} style={{ marginLeft: 2 }} />
+              : <Play  size={24} style={{ marginLeft: 2 }} />
           }
         </button>
 
@@ -217,28 +207,33 @@ function PlayerControls({
 
       {/* Meta row */}
       <div className={styles['playMeta']}>
+        {/* Play counter */}
         <span className={styles['playCountBadge']} data-mode={mode}>
-          {mode === 'EASY'
+          {maxAllowedPlays >= 99
             ? t('listening.player.playsUnlimited', { count: playCount })
             : t('listening.player.playsCount', { used: playCount, max: maxAllowedPlays })}
         </span>
 
         {/* Voice badge */}
-        <span
-          className={`${styles['voiceQuality']} ${styles[`voiceQ_${voiceQuality}`]}`}
-          title={voiceLabel}
-        >
+        <span className={`${styles['voiceQuality']} ${styles['voiceQ_google']}`}>
           <Volume2 size={11} />
-          {voiceQuality === 'google' && t('listening.player.voiceGoogle')}
-          {voiceQuality === 'browser' && t('listening.player.voiceBrowser')}
-          {voiceQuality === 'loading' && t('listening.player.voiceLoading')}
-          {voiceQuality === 'unsupported' && t('listening.player.voiceNone')}
+          {isLoadingAudio
+            ? t('listening.player.voiceLoading')
+            : t('listening.player.voiceGoogle')}
         </span>
 
+        {/* Plays exhausted */}
         {!canPlay && maxAllowedPlays < 99 && (
           <span className={styles['playsExhausted']}>
             <AlertCircle size={12} />
             {t('listening.player.noPlaysLeft')}
+          </span>
+        )}
+
+        {/* Paused indicator */}
+        {isPaused && !isPlaying && (
+          <span className={styles['pausedBadge']}>
+            {t('listening.player.paused')}
           </span>
         )}
       </div>
@@ -282,7 +277,7 @@ function TranscriptView({ segments, activeSegmentIdx, visible }: TranscriptViewP
             className={[
               styles['segment'],
               i === activeSegmentIdx ? styles['segmentActive'] : '',
-              i < activeSegmentIdx ? styles['segmentDone'] : '',
+              i < activeSegmentIdx  ? styles['segmentDone']   : '',
             ].filter(Boolean).join(' ')}
           >
             {seg.speaker && <span className={styles['segmentSpeaker']}>{seg.speaker}</span>}
@@ -308,9 +303,9 @@ function QuestionCard({ question, qIndex, sessionId }: QuestionCardProps) {
   const { answers } = useAppSelector((s) => s.listening);
   const record = answers[question.id];
 
-  const isSubmitted = record?.submitted === true;
+  const isSubmitted  = record?.submitted === true;
   const isSubmitting = record?.submitting === true;
-  const selectedIdx = record?.selectedIndex;
+  const selectedIdx  = record?.selectedIndex;
 
   const handleSelect = (idx: number) => {
     if (isSubmitted || isSubmitting) return;
@@ -323,17 +318,17 @@ function QuestionCard({ question, qIndex, sessionId }: QuestionCardProps) {
       <div className={styles['qHeader']}>
         <span className={styles['qNum']}>Q{qIndex + 1}</span>
         {isSubmitting && <Loader2 size={13} className={styles['spin']} />}
-        {isSubmitted && record.isCorrect && <CheckCircle2 size={15} className={styles['qCorrectIcon']} />}
-        {isSubmitted && !record.isCorrect && <XCircle size={15} className={styles['qWrongIcon']} />}
+        {isSubmitted && record.isCorrect  && <CheckCircle2 size={15} className={styles['qCorrectIcon']} />}
+        {isSubmitted && !record.isCorrect && <XCircle      size={15} className={styles['qWrongIcon']}   />}
       </div>
 
       <p className={styles['qText']}>{question.question}</p>
 
       <div className={styles['qOptions']}>
         {question.options.map((opt, i) => {
-          const isSelected = selectedIdx === i;
+          const isSelected  = selectedIdx === i;
           const isCorrectOp = isSubmitted && i === question.correctIndex;
-          const isWrongOp = isSubmitted && isSelected && !record.isCorrect;
+          const isWrongOp   = isSubmitted && isSelected && !record.isCorrect;
 
           return (
             <button
@@ -344,8 +339,8 @@ function QuestionCard({ question, qIndex, sessionId }: QuestionCardProps) {
               className={[
                 styles['qOption'],
                 isSelected && !isSubmitted ? styles['qOptionSelected'] : '',
-                isCorrectOp ? styles['qOptionCorrect'] : '',
-                isWrongOp ? styles['qOptionWrong'] : '',
+                isCorrectOp               ? styles['qOptionCorrect']   : '',
+                isWrongOp                 ? styles['qOptionWrong']     : '',
               ].filter(Boolean).join(' ')}
             >
               <span className={styles['qOptionLetter']}>{String.fromCharCode(65 + i)}</span>
@@ -475,7 +470,6 @@ function ResultsView({ result, questions, onBack }: ResultsViewProps) {
   const { t } = useTranslation();
   const { answers } = useAppSelector((s) => s.listening);
   const [showTranscript, setShowTranscript] = useState(false);
-
   const allCorrect = result.correctCount === result.totalCount;
 
   return (
@@ -485,7 +479,6 @@ function ResultsView({ result, questions, onBack }: ResultsViewProps) {
         <div className={styles['scoreSub']}>
           {t('listening.results.finalScore')} · {t(`listening.modes.${result.mode}.name`)}
         </div>
-
         <div className={styles['scoreStats']}>
           <div className={styles['scoreStat']}>
             <span className={styles['scoreStatVal']}>{result.rawAccuracy}%</span>
@@ -515,7 +508,7 @@ function ResultsView({ result, questions, onBack }: ResultsViewProps) {
                 <div className={styles['resultQMeta']}>
                   {isCorrect
                     ? <CheckCircle2 size={15} className={styles['qCorrectIcon']} />
-                    : <XCircle size={15} className={styles['qWrongIcon']} />}
+                    : <XCircle      size={15} className={styles['qWrongIcon']}   />}
                   <span className={styles['resultQNum']}>Q{i + 1}</span>
                 </div>
                 <div>
@@ -580,10 +573,9 @@ export default function ListeningPlayerPage() {
     sessionResult, answers,
   } = useAppSelector((s) => s.listening);
 
-  const [phase, setPhase] = useState<Phase>('loading');
-  const [hasPlayed, setHasPlayed] = useState(false);
+  const [phase, setPhase]                   = useState<Phase>('loading');
+  const [hasPlayed, setHasPlayed]           = useState(false);
   const [rateMultiplier, setRateMultiplier] = useState(1.0);
-  const isChrome = isChromiumBrowser();
 
   useEffect(() => {
     if (!id) return;
@@ -592,35 +584,34 @@ export default function ListeningPlayerPage() {
   }, [id, dispatch]);
 
   useEffect(() => {
-    if (materialLoading) { setPhase('loading'); return; }
-    if (materialError) { setPhase('error'); return; }
-    if (sessionResult) { setPhase('completed'); return; }
-    if (activeSession) { setPhase('active'); return; }
-    if (currentMaterial) { setPhase('mode-select'); return; }
+    if (materialLoading)  { setPhase('loading');    return; }
+    if (materialError)    { setPhase('error');       return; }
+    if (sessionResult)    { setPhase('completed');   return; }
+    if (activeSession)    { setPhase('active');      return; }
+    if (currentMaterial)  { setPhase('mode-select'); return; }
   }, [materialLoading, materialError, currentMaterial, activeSession, sessionResult]);
 
-  const baseRate = currentMaterial?.recommendedRate ?? 1.0;
+  const baseRate      = currentMaterial?.recommendedRate ?? 1.0;
   const effectiveRate = baseRate * rateMultiplier;
 
   const canShowTranscript =
     currentMaterial !== null &&
-    (activeSession?.mode === 'EASY' || phase === 'completed');
+    (activeSession?.mode === ListeningMode.EASY || phase === 'completed');
 
-  // ── TTS ── NOTE: fullText and materialId are now correctly passed
   const tts = useTTS({
-    segments: currentMaterial?.segments ?? [],
-    fullText: currentMaterial?.fullText ?? '',   // ← was '' bug is fixed
-    materialId: currentMaterial?.id ?? '',   // ← was '' bug is fixed
-    rate: effectiveRate,
-    pitch: currentMaterial?.speakerPitch ?? 1.0,
-    lang: currentMaterial?.speakerLang ?? 'en-US',
+    segments:   currentMaterial?.segments ?? [],
+    fullText:   currentMaterial?.fullText ?? '',
+    materialId: currentMaterial?.id       ?? '',
+    rate:       effectiveRate,
+    pitch:      currentMaterial?.speakerPitch ?? 1.0,
+    lang:       currentMaterial?.speakerLang  ?? 'en-US',
   });
 
   useEffect(() => {
     if (tts.hasEnded) setHasPlayed(true);
   }, [tts.hasEnded]);
 
-  const handleModeSelect = useCallback(async (mode: ListeningMode) => {  
+  const handleModeSelect = useCallback(async (mode: ListeningMode) => {
     if (!id) return;
     await dispatch(startSession({ materialId: id, mode }));
   }, [id, dispatch]);
@@ -629,7 +620,10 @@ export default function ListeningPlayerPage() {
     if (!activeSession) return;
     const playsLeft = maxAllowedPlays >= 99 ? Infinity : maxAllowedPlays - playCount;
     if (playsLeft <= 0) return;
-    await dispatch(recordPlay(activeSession.id));
+    // recordPlay только при первом нажатии Play (не при resume после паузы)
+    if (!tts.isPaused) {
+      await dispatch(recordPlay(activeSession.id));
+    }
     tts.play();
   }, [activeSession, maxAllowedPlays, playCount, dispatch, tts]);
 
@@ -657,28 +651,23 @@ export default function ListeningPlayerPage() {
     navigate('/listening');
   };
 
-  const questions = currentMaterial?.questions ?? [];
+  const questions     = currentMaterial?.questions ?? [];
   const answeredCount = Object.values(answers).filter((a) => a.submitted).length;
 
-  // canPlay: session exists AND plays remaining AND audio is not loading
+  // canPlay: сессия активна + есть попытки + аудио загружено
   const canPlay =
     activeSession !== null &&
     (maxAllowedPlays >= 99 || playCount < maxAllowedPlays) &&
-    !tts.isLoading;
+    !tts.isLoading &&
+    tts.ttsMode !== 'error';
 
   const canComplete =
     activeSession !== null &&
     (hasPlayed || playCount > 0) &&
     !completing;
 
-  // ── Should we show the "use Chrome" warning? ──────────────────────────────
-  // Only show if:
-  //   1. TTS fell back to browser (no Google TTS)  AND
-  //   2. The current browser is NOT Chrome
-  const showBrowserWarning =
-    tts.ttsMode === 'browser' && !isChrome && phase === 'active';
+  // ─── Render ───────────────────────────────────────────────────────────────
 
-  // ── Render ────────────────────────────────────────────────────────────────
   if (phase === 'loading') return <FullPageSpinner label={t('listening.loading')} />;
 
   if (phase === 'error') {
@@ -696,6 +685,7 @@ export default function ListeningPlayerPage() {
 
   return (
     <div className={styles['page']}>
+
       {/* Header */}
       <div className={styles['pageHeader']}>
         <button type="button" className={styles['backLink']} onClick={handleBack}>
@@ -711,7 +701,7 @@ export default function ListeningPlayerPage() {
             <span className={styles['typeBadge']}>
               {currentMaterial.type === 'LECTURE'
                 ? <><BookOpen size={11} /> {t('listening.type.lecture')}</>
-                : <><Mic size={11} /> {t('listening.type.conversation')}</>}
+                : <><Mic     size={11} /> {t('listening.type.conversation')}</>}
             </span>
             {activeSession && (
               <span className={`${styles['modeBadge']} ${styles[`mode${activeSession.mode}`]}`}>
@@ -745,35 +735,18 @@ export default function ListeningPlayerPage() {
         />
       )}
 
-      {/* Active session */}
+      {/* Active */}
       {phase === 'active' && activeSession && currentMaterial && (
         <div className={styles['playerLayout']}>
           <div className={styles['playerMain']}>
-
-            {/* Browser warning — only for non-Chrome when on browser TTS */}
-            {showBrowserWarning && (
-              <div className={styles['qualityWarn']}>
-                <Info size={13} />
-                {t('listening.player.voiceWarnBasic')}
-              </div>
-            )}
-
-            {/* TTS completely unsupported */}
-            {tts.ttsMode === 'unsupported' && (
-              <div className={styles['qualityWarn']}>
-                <AlertCircle size={13} />
-                {t('listening.player.ttsNotSupported')}
-              </div>
-            )}
-
             <PlayerControls
               isPlaying={tts.isPlaying}
+              isPaused={tts.isPaused}
               isLoadingAudio={tts.isLoading}
+              ttsError={tts.error}
               playCount={playCount}
               maxAllowedPlays={maxAllowedPlays}
               mode={activeSession.mode}
-              voiceQuality={tts.ttsMode}
-              voiceLabel={tts.voiceLabel}
               currentRate={rateMultiplier}
               onPlay={handlePlay}
               onPause={tts.pause}
@@ -791,12 +764,10 @@ export default function ListeningPlayerPage() {
             <NotesPanel sessionId={activeSession.id} />
           </div>
 
-          {/* Questions panel */}
+          {/* Questions */}
           <div className={styles['questionsPanel']}>
             <div className={styles['questionsPanelHeader']}>
-              <h2 className={styles['questionsPanelTitle']}>
-                {t('listening.questions.title')}
-              </h2>
+              <h2 className={styles['questionsPanelTitle']}>{t('listening.questions.title')}</h2>
               <span className={styles['questionsProgress']}>
                 {answeredCount}/{questions.length}
               </span>

@@ -15,10 +15,17 @@ model GrammarRule {
   signalWords    String[]
   relatedTopics  String[]
 
+  order             Int              @default(0)
+  prerequisiteSlugs String[]
+  isCore            Boolean          @default(true)
+  practiceTargets   PracticeTargets?
+  resources         TopicResource[]
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([level])
+  @@index([level, order])
 }
 
 type Usage {
@@ -42,4 +49,19 @@ type Comparison {
 type Example {
   sentence    String
   translation String?
+}
+
+type PracticeTargets {
+  grammarRequired    Int @default(5)
+  grammarAccuracyMin Int @default(60)
+  quizRequired       Int @default(2)
+  readingRequired    Int @default(1)
+  listeningRequired  Int @default(1)
+}
+
+type TopicResource {
+  title       String
+  url         String
+  type        String // "exercise" | "article" | "video" | "podcast"
+  description String?
 }

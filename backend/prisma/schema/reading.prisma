@@ -14,8 +14,13 @@ model ReadingMaterial {
   contentBlocks    Json?         
 
   level            Level         
-  topic            String
+  topic            String        // thematic topic of the text, e.g. "Science", "University Life"
   tags             String[]
+
+  // Curriculum grammar tags — which GrammarRule.slug(s) this text exercises.
+  // Distinct from `topic` above (thematic) — a text can be "about Science"
+  // (topic) while training "Present Simple" and "Articles" (grammarTopics).
+  grammarTopics    String[]      @default([])
 
   wordCount        Int           @default(0)
   estimatedMinutes Int           @default(3)
@@ -29,6 +34,7 @@ model ReadingMaterial {
   vocabulary       VocabularyEmbedded[]
 
   @@index([level, topic])
+  @@index([grammarTopics])
 }
 
 type VocabularyEmbedded {

@@ -61,10 +61,8 @@ export const roadmapSlice = createSlice({
 
 export const { clearRoadmap } = roadmapSlice.actions;
 
-export interface RoadmapRootState {
-  roadmap: RoadmapState;
-}
+export interface RoadmapRootState { roadmap: RoadmapState }
 
-export const selectRoadmapData      = (s: RoadmapRootState) => s.roadmap.data;
-export const selectRoadmapLoading   = (s: RoadmapRootState) => s.roadmap.isLoading;
-export const selectRoadmapError     = (s: RoadmapRootState) => s.roadmap.error;
+export const selectRoadmapData    = (s: RoadmapRootState) => s.roadmap.data;
+export const selectRoadmapLoading = (s: RoadmapRootState) => s.roadmap.isLoading;
+export const selectRoadmapError   = (s: RoadmapRootState) => s.roadmap.error;

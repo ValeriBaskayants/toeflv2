@@ -1,0 +1,34 @@
+
+enum TopicStatus {
+  NOT_STARTED
+  IN_PROGRESS
+  MASTERED
+  NEEDS_REVIEW
+}
+
+model UserTopicMastery {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  topicSlug String // GrammarRule.slug
+  level     Level // the level this topic belongs to (for history when user moves on)
+
+  grammarCompleted   Int   @default(0)
+  grammarAccuracy    Float @default(0)
+  quizCompleted      Int   @default(0)
+  quizAccuracy       Float @default(0)
+  readingCompleted   Int   @default(0)
+  listeningCompleted Int   @default(0)
+
+  status          TopicStatus @default(NOT_STARTED)
+  masteredAt      DateTime?
+  lastPracticedAt DateTime?
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@unique([userId, topicSlug])
+  @@index([userId, status])
+  @@index([userId, level])
+}

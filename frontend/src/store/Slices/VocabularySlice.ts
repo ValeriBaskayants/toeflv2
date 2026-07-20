@@ -2,13 +2,44 @@ import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/tool
 import { VocabularyApi } from '@/api/services/vocabulary';
 import type {
   Flashcard,
+  VocabCard,
   VocabularyWord,
   VocabUserProgress,
   ReviewResult,
   ReviewWordPayload,
   GetVocabularyParams,
   GetFlashcardsParams,
+  SubmitVocabAnswerPayload,
+  SubmitAnswerResult,
 } from '@/types/vocabulary/Vocabulary';
+
+
+
+export const fetchSession = createAsyncThunk<
+  VocabCard[],
+  GetFlashcardsParams | undefined,
+  { rejectValue: string }
+>('vocabulary/fetchSession', async (params, { rejectWithValue }) => {
+  try {
+    const { data } = await VocabularyApi.getSession(params);
+    return data;
+  } catch (error: unknown) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Failed to load session');
+  }
+});
+
+export const submitVocabAnswer = createAsyncThunk<
+  SubmitAnswerResult & { wordId: string },
+  SubmitVocabAnswerPayload,
+  { rejectValue: string }
+>('vocabulary/submitAnswer', async (payload, { rejectWithValue }) => {
+  try {
+    const { data } = await VocabularyApi.submitAnswer(payload);
+    return { ...data, wordId: payload.wordId };
+  } catch (error: unknown) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Failed to submit answer');
+  }
+});
 
 export const fetchFlashcards = createAsyncThunk<
   Flashcard[],
@@ -20,6 +51,19 @@ export const fetchFlashcards = createAsyncThunk<
     return data;
   } catch (error: unknown) {
     return rejectWithValue(error instanceof Error ? error.message : 'Failed to load flashcards');
+  }
+});
+
+export const reviewWord = createAsyncThunk<
+  ReviewResult & { wordId: string },
+  ReviewWordPayload,
+  { rejectValue: string }
+>('vocabulary/reviewWord', async (payload, { rejectWithValue }) => {
+  try {
+    const { data } = await VocabularyApi.reviewWord(payload);
+    return { ...data, wordId: payload.wordId };
+  } catch (error: unknown) {
+    return rejectWithValue(error instanceof Error ? error.message : 'Failed to submit review');
   }
 });
 
@@ -49,22 +93,18 @@ export const fetchVocabProgress = createAsyncThunk<
   }
 });
 
-export const reviewWord = createAsyncThunk<
-  ReviewResult & { wordId: string },
-  ReviewWordPayload,
-  { rejectValue: string }
->('vocabulary/reviewWord', async (payload, { rejectWithValue }) => {
-  try {
-    const { data } = await VocabularyApi.reviewWord(payload);
-    return { ...data, wordId: payload.wordId };
-  } catch (error: unknown) {
-    return rejectWithValue(error instanceof Error ? error.message : 'Failed to submit review');
-  }
-});
+
 
 type AsyncStatus = 'idle' | 'loading' | 'success' | 'error';
 
 interface VocabularyState {
+  sessionCards: VocabCard[];
+  sessionStatus: AsyncStatus;
+  sessionError: string | null;
+
+  submitAnswerStatus: AsyncStatus;
+  submitAnswerError: string | null;
+
   flashcards: Flashcard[];
   flashcardsStatus: AsyncStatus;
   flashcardsError: string | null;
@@ -81,6 +121,13 @@ interface VocabularyState {
 }
 
 const initialState: VocabularyState = {
+  sessionCards: [],
+  sessionStatus: 'idle',
+  sessionError: null,
+
+  submitAnswerStatus: 'idle',
+  submitAnswerError: null,
+
   flashcards: [],
   flashcardsStatus: 'idle',
   flashcardsError: null,
@@ -100,6 +147,11 @@ const VocabularySlice = createSlice({
   name: 'vocabulary',
   initialState,
   reducers: {
+    clearSession: (state) => {
+      state.sessionCards = [];
+      state.sessionStatus = 'idle';
+      state.sessionError = null;
+    },
     clearFlashcards: (state) => {
       state.flashcards = [];
       state.flashcardsStatus = 'idle';
@@ -109,22 +161,48 @@ const VocabularySlice = createSlice({
       state.wordList = [];
       state.wordListStatus = 'idle';
     },
-    updateFlashcardStatus: (state, action: PayloadAction<{ wordId: string; status: string }>) => {
-      const card = state.flashcards.find((f) => f.word.id === action.payload.wordId);
-      if (card?.progress !== null && card !== undefined) {
-        card.progress = {
-          ...card.progress!,
-          status: action.payload.status as never,
-        };
-      }
+    removeCardFromSession: (state, action: PayloadAction<string>) => {
+      state.sessionCards = state.sessionCards.filter((c) => c.cardId !== action.payload);
     },
   },
   extraReducers: (builder) => {
     builder
       
+      .addCase(fetchSession.pending, (state) => {
+        state.sessionStatus = 'loading';
+        state.sessionError = null;
+      })
+      .addCase(fetchSession.fulfilled, (state, action) => {
+        state.sessionCards = action.payload;
+        state.sessionStatus = 'success';
+      })
+      .addCase(fetchSession.rejected, (state, action) => {
+        state.sessionStatus = 'error';
+        state.sessionError = action.payload ?? 'Unknown error';
+      })
+
+      
+      .addCase(submitVocabAnswer.pending, (state) => {
+        state.submitAnswerStatus = 'loading';
+        state.submitAnswerError = null;
+      })
+      .addCase(submitVocabAnswer.fulfilled, (state, action) => {
+        state.submitAnswerStatus = 'success';
+        if (action.payload.justMastered && state.userProgress !== null) {
+          state.userProgress.mastered += 1;
+          state.userProgress.dueToday = Math.max(0, state.userProgress.dueToday - 1);
+        } else if (state.userProgress !== null && state.userProgress.dueToday > 0) {
+          state.userProgress.dueToday -= 1;
+        }
+      })
+      .addCase(submitVocabAnswer.rejected, (state, action) => {
+        state.submitAnswerStatus = 'error';
+        state.submitAnswerError = action.payload ?? 'Unknown error';
+      })
+
+      
       .addCase(fetchFlashcards.pending, (state) => {
         state.flashcardsStatus = 'loading';
-        state.flashcardsError = null;
       })
       .addCase(fetchFlashcards.fulfilled, (state, action) => {
         state.flashcards = action.payload;
@@ -138,7 +216,6 @@ const VocabularySlice = createSlice({
       
       .addCase(fetchWordList.pending, (state) => {
         state.wordListStatus = 'loading';
-        state.wordListError = null;
       })
       .addCase(fetchWordList.fulfilled, (state, action) => {
         state.wordList = action.payload;
@@ -159,64 +236,12 @@ const VocabularySlice = createSlice({
       })
       .addCase(fetchVocabProgress.rejected, (state) => {
         state.userProgressStatus = 'error';
-      })
-
-      
-      .addCase(reviewWord.pending, (state) => {
-        state.reviewStatus = 'loading';
-        state.reviewError = null;
-      })
-      .addCase(reviewWord.fulfilled, (state, action) => {
-        state.reviewStatus = 'success';
-
-        
-        const card = state.flashcards.find((f) => f.word.id === action.payload.wordId);
-        if (card !== undefined) {
-          if (card.progress === null) {
-            card.progress = {
-              id: '',
-              userId: '',
-              wordId: action.payload.wordId,
-              easinessFactor: 2.5,
-              interval: action.payload.interval,
-              repetitions: action.payload.repetitions,
-              nextReviewDate: action.payload.nextReviewDate,
-              status: action.payload.status,
-              lastReviewedAt: new Date().toISOString(),
-              createdAt: new Date().toISOString(),
-              updatedAt: new Date().toISOString(),
-            };
-          } else {
-            card.progress.status = action.payload.status;
-            card.progress.interval = action.payload.interval;
-            card.progress.repetitions = action.payload.repetitions;
-            card.progress.nextReviewDate = action.payload.nextReviewDate;
-          }
-        }
-
-        
-        
-        
-        
-        
-        
-        if (action.payload.justMastered && state.userProgress !== null) {
-          state.userProgress.mastered += 1;
-          
-          state.userProgress.dueToday = Math.max(0, state.userProgress.dueToday - 1);
-        } else if (state.userProgress !== null && state.userProgress.dueToday > 0) {
-          
-          state.userProgress.dueToday -= 1;
-        }
-      })
-      .addCase(reviewWord.rejected, (state, action) => {
-        state.reviewStatus = 'error';
-        state.reviewError = action.payload ?? 'Unknown error';
       });
   },
 });
 
-export const { clearFlashcards, clearWordList, updateFlashcardStatus } = VocabularySlice.actions;
+export const { clearSession, clearFlashcards, clearWordList, removeCardFromSession } =
+  VocabularySlice.actions;
 
 export const vocabularySlice = VocabularySlice;
 
@@ -224,11 +249,18 @@ interface VocabRootState {
   vocabulary: VocabularyState;
 }
 
-export const selectFlashcards        = (s: VocabRootState): Flashcard[]           => s.vocabulary.flashcards;
-export const selectFlashcardsStatus  = (s: VocabRootState): AsyncStatus           => s.vocabulary.flashcardsStatus;
-export const selectFlashcardsError   = (s: VocabRootState): string | null         => s.vocabulary.flashcardsError;
-export const selectWordList          = (s: VocabRootState): VocabularyWord[]       => s.vocabulary.wordList;
-export const selectWordListStatus    = (s: VocabRootState): AsyncStatus           => s.vocabulary.wordListStatus;
-export const selectWordListError     = (s: VocabRootState): string | null         => s.vocabulary.wordListError;
-export const selectVocabProgress     = (s: VocabRootState): VocabUserProgress | null => s.vocabulary.userProgress;
-export const selectReviewStatus      = (s: VocabRootState): AsyncStatus           => s.vocabulary.reviewStatus;
+
+
+export const selectSessionCards = (s: VocabRootState): VocabCard[] => s.vocabulary.sessionCards;
+export const selectSessionStatus = (s: VocabRootState): AsyncStatus => s.vocabulary.sessionStatus;
+export const selectSessionError = (s: VocabRootState): string | null => s.vocabulary.sessionError;
+export const selectSubmitAnswerStatus = (s: VocabRootState): AsyncStatus => s.vocabulary.submitAnswerStatus;
+export const selectSubmitAnswerError = (s: VocabRootState): string | null => s.vocabulary.submitAnswerError;
+
+export const selectFlashcards = (s: VocabRootState): Flashcard[] => s.vocabulary.flashcards;
+export const selectFlashcardsStatus = (s: VocabRootState): AsyncStatus => s.vocabulary.flashcardsStatus;
+export const selectFlashcardsError = (s: VocabRootState): string | null => s.vocabulary.flashcardsError;
+export const selectWordList = (s: VocabRootState): VocabularyWord[] => s.vocabulary.wordList;
+export const selectWordListStatus = (s: VocabRootState): AsyncStatus => s.vocabulary.wordListStatus;
+export const selectVocabProgress = (s: VocabRootState): VocabUserProgress | null => s.vocabulary.userProgress;
+export const selectReviewStatus = (s: VocabRootState): AsyncStatus => s.vocabulary.reviewStatus;

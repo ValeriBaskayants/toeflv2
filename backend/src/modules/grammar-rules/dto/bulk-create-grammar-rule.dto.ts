@@ -1,4 +1,15 @@
-import { IsArray, IsEnum, IsOptional, IsString, MaxLength, ValidateNested } from 'class-validator';
+import {
+  IsArray,
+  IsBoolean,
+  IsEnum,
+  IsInt,
+  IsOptional,
+  IsString,
+  Max,
+  MaxLength,
+  Min,
+  ValidateNested,
+} from 'class-validator';
 import { Type } from 'class-transformer';
 import { Level } from '@prisma/client';
 
@@ -49,6 +60,54 @@ class ComparisonDto {
   @Type(() => ExampleDto)
   examples!: ExampleDto[];
 }
+
+
+class PracticeTargetsDto {
+  @IsOptional()
+  @IsInt()
+  @Min(1)
+  grammarRequired?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  @Max(100)
+  grammarAccuracyMin?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  quizRequired?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  readingRequired?: number;
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  listeningRequired?: number;
+}
+
+class TopicResourceDto {
+  @IsString()
+  @MaxLength(200)
+  title!: string;
+
+  @IsString()
+  @MaxLength(500)
+  url!: string;
+
+  @IsString()
+  type!: string; 
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(500)
+  description?: string;
+}
+
 
 export class CreateGrammarRuleDto {
   @IsString()
@@ -105,6 +164,33 @@ export class CreateGrammarRuleDto {
   @IsArray()
   @IsString({ each: true })
   relatedTopics?: string[];
+
+  // ── Curriculum / roadmap fields ─────────────────────────────────────────
+
+  @IsOptional()
+  @IsInt()
+  @Min(0)
+  order?: number;
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  prerequisiteSlugs?: string[];
+
+  @IsOptional()
+  @IsBoolean()
+  isCore?: boolean;
+
+  @IsOptional()
+  @ValidateNested()
+  @Type(() => PracticeTargetsDto)
+  practiceTargets?: PracticeTargetsDto;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => TopicResourceDto)
+  resources?: TopicResourceDto[];
 }
 
 export class BulkCreateGrammarRulesDto {

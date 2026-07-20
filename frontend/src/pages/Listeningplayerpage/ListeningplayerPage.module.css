@@ -850,3 +850,50 @@
   .page { padding: 1.25rem 1rem 3rem; }
   .scoreStats { gap: 1rem; }
 }
+
+
+
+
+.ttsError {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.625rem 1rem;
+  background: var(--danger-light);
+  border: 1px solid rgba(239, 68, 68, .25);
+  border-radius: var(--radius-sm);
+  font-size: 0.78rem;
+  color: var(--danger);
+  margin-bottom: 0.75rem;
+}
+
+
+.pausedBadge {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.7rem;
+  padding: 0.18rem 0.5rem;
+  border-radius: 100px;
+  background: rgba(99, 102, 241, .1);
+  color: var(--accent);
+  font-weight: 600;
+}
+
+
+.voiceQ_google {
+  background: rgba(34, 197, 94, .1);
+  color: #22c55e;
+}
+.voiceQ_browser {
+  background: rgba(245, 158, 11, .1);
+  color: #f59e0b;
+}
+.voiceQ_loading {
+  background: var(--surface-2);
+  color: var(--text-3);
+}
+.voiceQ_unsupported {
+  background: rgba(239, 68, 68, .1);
+  color: #ef4444;
+}

@@ -1,42 +1,55 @@
+import type { Level } from '@/types/globalTypes';
 
+export type TopicNodeStatus =
+  | 'locked'
+  | 'available'
+  | 'in_progress'
+  | 'mastered'
+  | 'needs_review';
 
-export interface ExternalResource {
-  title:       string;
-  url:         string;
-  type:        'video' | 'website' | 'podcast';
-  description: string;
+export type LevelStatus = 'completed' | 'current' | 'locked';
+
+export interface TopicResource {
+  title: string;
+  url: string;
+  type: 'exercise' | 'article' | 'video' | 'podcast';
+  description?: string;
 }
 
-export interface SkillTask {
-  skill:       string;
-  label:       string;
-  required:    number;
-  completed:   number;
-  remaining:   number;
-  accuracy:    number;
-  accuracyMin: number;
-  sms:         number;   
-  route:       string;   
-  cta:         string;   
-  isBlocking:  boolean;  
+export interface TopicProgress {
+  grammar:   { completed: number; required: number; accuracy: number; accuracyMin: number };
+  quiz:      { completed: number; required: number };
+  reading:   { completed: number; required: number };
+  listening: { completed: number; required: number };
 }
 
-export type NodeStatus = 'completed' | 'current' | 'locked';
+export interface RoadmapTopicNode {
+  slug:                 string;
+  title:                string;
+  order:                number;
+  isCore:               boolean;
+  status:               TopicNodeStatus;
+  summary:              string;
+  progress:             TopicProgress;
+  resources:            TopicResource[];
+  prerequisiteSlugs:    string[];
+  missingPrerequisites: string[];
+}
 
-export interface RoadmapLevelNode {
-  level:            string;
-  displayName:      string;          
-  status:           NodeStatus;
-  readinessPercent: number;
-  isReadyForTest:   boolean;
-  estimatedDays:    [number, number]; 
-  skills:           SkillTask[];
-  bonusResources:   ExternalResource[];
+export interface RoadmapLevelSummary {
+  level:          Level;
+  displayName:    string;
+  status:         LevelStatus;
+  topicCount:     number;
+  coreTopicCount: number;
 }
 
 export interface RoadmapResponse {
-  nodes:         RoadmapLevelNode[];
-  currentLevel:  string;
-  totalProgress: number;             
-  projectedDate: string | null;      
+  currentLevel:               string;
+  levels:                     RoadmapLevelSummary[];
+  currentLevelTopics:         RoadmapTopicNode[];
+  nextRecommendedTopicSlug:   string | null;
+  coreTopicsMasteredCount:    number;
+  coreTopicsTotalCount:       number;
+  curriculumReadinessPercent: number;
 }

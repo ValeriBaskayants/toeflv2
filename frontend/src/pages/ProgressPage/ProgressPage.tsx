@@ -1,11 +1,10 @@
 import { useEffect, useCallback, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { useTranslation } from 'react-i18next';
 import {
   TrendingUp, Flame, Zap, Clock, Calendar, Trophy,
   RefreshCw, AlertCircle, BarChart2, ExternalLink,
-  Lock, CheckCircle2, MapPin, BookOpen, PenLine,
-  Headphones, CheckCheck, Layers, Target, X, Play,
+  Lock, CheckCircle2, MapPin, X, Play, Sparkles,
+  ChevronRight, RotateCcw, Circle,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/store';
 import { selectUser }                     from '@/store/Slices/AuthSlice';
@@ -18,33 +17,47 @@ import {
   fetchRoadmap, selectRoadmapData,
   selectRoadmapLoading, selectRoadmapError,
 } from '@/store/Slices/RoadmapSlice';
-import type { RoadmapLevelNode, } from '@/types/roadmap/Roadmap.types';
+import type {
+  RoadmapLevelSummary, RoadmapTopicNode,
+  TopicNodeStatus, TopicResource,
+} from '@/types/roadmap/Roadmap.types';
 import type { DailyActivity } from '@/types/progress/Progress.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './ProgressPage.module.css';
 
 
-const SKILL_ICON: Record<string, React.FC<{ size: number }>> = {
-  grammar:    (p) => <CheckCheck {...p} />,
-  vocabulary: (p) => <Layers    {...p} />,
-  reading:    (p) => <BookOpen  {...p} />,
-  writing:    (p) => <PenLine   {...p} />,
-  listening:  (p) => <Headphones {...p} />,
-  quiz:       (p) => <Target    {...p} />,
+
+const TOPIC_STATUS_CFG: Record<TopicNodeStatus, {
+  label: string; color: string; bg: string;
+  Icon: React.ComponentType<{ size?: number }>;
+}> = {
+  locked:       { label: 'Locked',      color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', Icon: Lock },
+  available:    { label: 'Available',   color: '#6366f1', bg: 'rgba(99,102,241,0.12)',  Icon: Circle },
+  in_progress:  { label: 'In Progress', color: '#f59e0b', bg: 'rgba(245,158,11,0.12)', Icon: Play },
+  mastered:     { label: 'Mastered',    color: '#22c55e', bg: 'rgba(34,197,94,0.12)',   Icon: CheckCircle2 },
+  needs_review: { label: 'Review Due',  color: '#f43f5e', bg: 'rgba(244,63,94,0.12)',   Icon: RotateCcw },
 };
-const SKILL_COLOR: Record<string, string> = {
-  grammar: '#14b8a6', vocabulary: '#8b5cf6',
-  reading: '#22c55e', writing:    '#ec4899',
-  listening: '#f59e0b', quiz:     '#6366f1',
-};
+
 const LEVEL_COLOR: Record<string, string> = {
-  'A1':'#22c55e','A1+':'#16a34a',
-  'A2':'#14b8a6','A2+':'#0d9488',
-  'B1':'#3b82f6','B1+':'#2563eb',
-  'B2':'#8b5cf6','B2+':'#7c3aed',
+  'A1':'#22c55e', 'A1+':'#16a34a',
+  'A2':'#14b8a6', 'A2+':'#0d9488',
+  'B1':'#3b82f6', 'B1+':'#2563eb',
+  'B2':'#8b5cf6', 'B2+':'#7c3aed',
   'C1':'#f59e0b', 'C2':'#ef4444',
 };
 
+
+
+function topicPct(node: RoadmapTopicNode): number {
+  const p = node.progress;
+  const items = [
+    p.grammar.required   > 0 ? (p.grammar.completed   / p.grammar.required)   * 100 : 100,
+    p.quiz.required      > 0 ? (p.quiz.completed      / p.quiz.required)      * 100 : 100,
+    p.reading.required   > 0 ? (p.reading.completed   / p.reading.required)   * 100 : 100,
+    p.listening.required > 0 ? (p.listening.completed / p.listening.required) * 100 : 100,
+  ];
+  return Math.min(100, Math.round(items.reduce((a, v) => a + v, 0) / items.length));
+}
 
 function buildCells(act: DailyActivity[]) {
   const map = new Map(act.map((a) => [a.date, a.xpEarned]));
@@ -57,77 +70,77 @@ function buildCells(act: DailyActivity[]) {
     return { date, xp, intensity };
   });
 }
-function fmtDate(iso: string | null): string {
-  if (!iso) return '';
-  return new Date(iso).toLocaleDateString(undefined, { month: 'long', year: 'numeric' });
-}
 
 
-function RadialProgress({ sms, color, size = 52 }: { sms: number; color: string; size?: number }) {
+
+function RadialProgress({ pct, color, size = 44 }: { pct: number; color: string; size?: number }) {
   const r    = (size / 2) - 5;
   const circ = 2 * Math.PI * r;
-  const off  = circ * (1 - Math.min(100, sms) / 100);
+  const off  = circ * (1 - Math.min(100, pct) / 100);
   const cx   = size / 2;
   return (
-    <div className={styles['bdRadial']} style={{ width: size, height: size }}>
-      <svg className={styles['bdRadialSvg']} viewBox={`0 0 ${size} ${size}`}>
-        <circle cx={cx} cy={cx} r={r} fill="none" stroke={color} strokeWidth="3.5"
-          className={styles['bdRadialTrack']} />
-        <circle cx={cx} cy={cx} r={r} fill="none" stroke={color} strokeWidth="3.5"
-          strokeLinecap="round"
+    <div className={styles['radial']} style={{ width: size, height: size }}>
+      <svg viewBox={`0 0 ${size} ${size}`} style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke={color}
+          strokeWidth="3" style={{ opacity: 0.15 }} />
+        <circle cx={cx} cy={cx} r={r} fill="none" stroke={color}
+          strokeWidth="3" strokeLinecap="round"
           strokeDasharray={circ} strokeDashoffset={off}
           transform={`rotate(-90 ${cx} ${cx})`}
-          className={styles['bdRadialFill']} />
+          className={styles['radialFill']} />
       </svg>
-      <div className={styles['bdRadialNum']}>{sms}</div>
+      <span className={styles['radialNum']}>{pct}</span>
     </div>
   );
 }
 
 
-function SnakeNode({ node, onClick }: { node: RoadmapLevelNode; onClick: (n: RoadmapLevelNode) => void }) {
-  const color  = LEVEL_COLOR[node.displayName] ?? '#6366f1';
-  const locked = node.status === 'locked';
-  const R      = 26;
+
+function SnakeNode({ lvl, readiness, onClick }: {
+  lvl: RoadmapLevelSummary;
+  readiness: number;
+  onClick: (l: RoadmapLevelSummary) => void;
+}) {
+  const color  = LEVEL_COLOR[lvl.displayName] ?? '#6366f1';
+  const locked = lvl.status === 'locked';
+  const R      = 24;
   const circ   = 2 * Math.PI * R;
-  const off    = circ * (1 - node.readinessPercent / 100);
+  const off    = circ * (1 - readiness / 100);
 
   return (
     <button
       type="button"
       disabled={locked}
-      onClick={() => onClick(node)}
-      aria-label={`${node.displayName} ${node.status} ${node.readinessPercent}%`}
+      onClick={() => onClick(lvl)}
       className={[
         styles['node'],
-        node.status === 'completed' ? styles['nodeOk']  : '',
-        node.status === 'current'   ? styles['nodeCur'] : '',
-        node.status === 'locked'    ? styles['nodeLock']: '',
+        lvl.status === 'completed' ? styles['nodeOk']   : '',
+        lvl.status === 'current'   ? styles['nodeCur']  : '',
+        lvl.status === 'locked'    ? styles['nodeLock'] : '',
       ].filter(Boolean).join(' ')}
       style={{ '--nc': color } as React.CSSProperties}
     >
       <svg className={styles['nodeSvg']} viewBox="0 0 60 60">
-        <circle cx="30" cy="30" r={R} fill="none"
-          stroke={color} strokeWidth="3.5"
-          className={styles['nodeRingTrack']} />
+        <circle cx="30" cy="30" r={R} fill="none" stroke={color}
+          strokeWidth="3.5" style={{ opacity: 0.15 }} />
         {!locked && (
-          <circle cx="30" cy="30" r={R} fill="none"
-            stroke={color} strokeWidth="3.5" strokeLinecap="round"
+          <circle cx="30" cy="30" r={R} fill="none" stroke={color}
+            strokeWidth="3.5" strokeLinecap="round"
             strokeDasharray={circ} strokeDashoffset={off}
             transform="rotate(-90 30 30)"
             className={styles['nodeRingFill']} />
         )}
       </svg>
       <span className={styles['nodeBg']}
-        style={!locked ? { background: `${color}14` } : undefined} />
-      <span className={styles['nodeLbl']}>{node.displayName}</span>
-      {node.status === 'completed' && (
+        style={!locked ? { background: `${color}18` } : undefined} />
+      <span className={styles['nodeLbl']}>{lvl.displayName}</span>
+      {lvl.status === 'completed' && (
         <span className={styles['nodeChk']} style={{ color }}>✓</span>
       )}
-      {node.status === 'current' && (
+      {lvl.status === 'current' && (
         <span className={styles['nodePulseRing']} style={{ background: color }} />
       )}
-      {node.status === 'locked' && (
+      {lvl.status === 'locked' && (
         <span className={styles['nodeLockIco']}><Lock size={9} /></span>
       )}
     </button>
@@ -135,57 +148,64 @@ function SnakeNode({ node, onClick }: { node: RoadmapLevelNode; onClick: (n: Roa
 }
 
 
-function SnakeTrack({ nodes, onNodeClick }: { nodes: RoadmapLevelNode[]; onNodeClick: (n: RoadmapLevelNode) => void }) {
-  const { t } = useTranslation();
-  const row0  = nodes.slice(0, 5);
-  const row1  = [...nodes.slice(5)].reverse(); 
 
-  function rowConnectors(row: RoadmapLevelNode[], reversed = false) {
-    const result: React.ReactNode[] = [];
-    for (let i = 0; i < row.length; i++) {
-      result.push(<SnakeNode key={row[i]!.level} node={row[i]!} onClick={onNodeClick} />);
-      if (i < row.length - 1) {
-        const curr = row[i]!;
-        const next = row[i + 1]!;
-        const bothDone = curr.status === 'completed' && next.status === 'completed';
-        const currDone = curr.status === 'completed' && next.status === 'current';
-        const cls = bothDone || (!reversed && currDone)
-          ? styles['snakeConnLineFilled']
-          : styles['snakeConnLine'];
-        result.push(<div key={`c-${i}`} className={cls} />);
-      }
-    }
-    return result;
+function SnakeTrack({ levels, readiness, onNodeClick }: {
+  levels: RoadmapLevelSummary[];
+  readiness: number;
+  onNodeClick: (l: RoadmapLevelSummary) => void;
+}) {
+  const row0 = levels.slice(0, 5);
+  const row1 = [...levels.slice(5)].reverse();
+
+  function Connector({ a, b }: { a: RoadmapLevelSummary; b: RoadmapLevelSummary }) {
+    const filled = a.status === 'completed' && (b.status === 'completed' || b.status === 'current');
+    return (
+      <div className={filled ? styles['connFilled'] : styles['conn']} />
+    );
+  }
+
+  function Row({ row, reversed = false }: { row: RoadmapLevelSummary[]; reversed?: boolean }) {
+    return (
+      <div className={`${styles['snakeRow']} ${reversed ? styles['snakeRowRev'] : ''}`}>
+        {row.map((lvl, i) => (
+          <div key={lvl.level} className={styles['nodeWrap']}>
+            <SnakeNode
+              lvl={lvl}
+              readiness={lvl.status === 'completed' ? 100 : lvl.status === 'current' ? readiness : 0}
+              onClick={onNodeClick}
+            />
+            {i < row.length - 1 && (
+              <Connector a={reversed ? row[i + 1]! : lvl} b={reversed ? lvl : row[i + 1]!} />
+            )}
+          </div>
+        ))}
+      </div>
+    );
   }
 
   return (
     <div className={styles['snake']}>
-      <div className={styles['snakeRow']}>
-        {rowConnectors(row0, false)}
-      </div>
-
-      {/* U-turn SVG */}
-      <div className={styles['snakeTurn']}>
-        <svg className={styles['snakeTurnSvg']} viewBox="0 0 100 56" preserveAspectRatio="none">
-          <path
-            d="M 96 4 C 96 50, 4 6, 4 50"
-            fill="none" stroke="var(--border)"
-            strokeWidth="2" strokeDasharray="5 3.5"
-          />
-        </svg>
-      </div>
-
-      <div className={`${styles['snakeRow']} ${styles['snakeRowRev']}`}>
-        {rowConnectors(row1, true)}
-      </div>
-
+      <Row row={row0} />
+      {row1.length > 0 && (
+        <>
+          <div className={styles['snakeTurn']}>
+            <svg className={styles['snakeTurnSvg']} viewBox="0 0 100 56" preserveAspectRatio="none">
+              <path d="M 96 4 C 96 50, 4 6, 4 50"
+                fill="none" stroke="var(--border)" strokeWidth="2" strokeDasharray="5 3.5" />
+            </svg>
+          </div>
+          <Row row={row1} reversed />
+        </>
+      )}
       <div className={styles['snakeLegend']}>
-        {(['completed','current','locked'] as const).map((s) => (
-          <span key={s} className={styles['legItem']}>
-            <span className={styles['legDot']} style={{
-              background: s==='completed'?'#22c55e':s==='current'?'var(--accent)':'var(--border)',
-            }} />
-            {t(`roadmap.${s}`)}
+        {([
+          { key: 'completed', color: '#22c55e', label: 'Completed' },
+          { key: 'current',   color: '#6366f1', label: 'Current' },
+          { key: 'locked',    color: 'var(--border)', label: 'Locked' },
+        ] as const).map((s) => (
+          <span key={s.key} className={styles['legItem']}>
+            <span className={styles['legDot']} style={{ background: s.color }} />
+            {s.label}
           </span>
         ))}
       </div>
@@ -194,63 +214,366 @@ function SnakeTrack({ nodes, onNodeClick }: { nodes: RoadmapLevelNode[]; onNodeC
 }
 
 
-function SkillBreakdown({ node }: { node: RoadmapLevelNode }) {
-  const { t }    = useTranslation();
-  const navigate = useNavigate();
+
+function TopicMiniCard({ node, isRecommended, onNavigate }: {
+  node: RoadmapTopicNode;
+  isRecommended: boolean;
+  onNavigate: (slug: string) => void;
+}) {
+  const cfg = TOPIC_STATUS_CFG[node.status];
+  const Icon = cfg.Icon;
+  const pct  = topicPct(node);
+  const isLocked = node.status === 'locked';
 
   return (
-    <div className={`${styles['section']} ${styles['bdSection']}`}>
-      <h2 className={styles['bdHeading']}>
-        {t('progress.skillBreakdown')} — {node.displayName}
-      </h2>
-      <div className={styles['bdGrid']}>
-        {node.skills.map((sk) => {
-          const sc   = SKILL_COLOR[sk.skill] ?? '#6366f1';
-          return (
-            <div key={sk.skill}
-              className={`${styles['bdCard']} ${sk.isBlocking ? styles['bdCardWeak'] : ''}`}
-              style={{ '--sc': sc } as React.CSSProperties}
-            >
-              <div className={styles['bdRadialRow']}>
-                <RadialProgress sms={sk.sms} color={sc} />
-                <div className={styles['bdInfo']}>
-                  <span className={styles['bdName']}>{sk.label}</span>
-                  <span className={styles['bdSub']}>
-                    {sk.accuracyMin > 0
-                      ? `${Math.round(sk.accuracy)}% / ${sk.accuracyMin}%`
-                      : `${sk.completed}/${sk.required}`}
-                  </span>
-                  {sk.isBlocking && (
-                    <span className={styles['bdWeak']}>⚠ {t('roadmap.blocking')}</span>
-                  )}
-                </div>
+    <div
+      className={`${styles['topicRow']}
+        ${isLocked ? styles['topicRowLocked'] : ''}
+        ${isRecommended ? styles['topicRowRec'] : ''}`}
+      style={{ '--tc': cfg.color } as React.CSSProperties}
+    >
+      {/* Status icon */}
+      <div className={styles['topicStatusDot']} style={{ color: cfg.color, background: cfg.bg }}>
+        <Icon size={12} />
+      </div>
+
+      {/* Title + progress */}
+      <div className={styles['topicRowBody']}>
+        <div className={styles['topicRowHead']}>
+          <span className={styles['topicRowNum']}>#{node.order}</span>
+          <span className={styles['topicRowTitle']}>{node.title}</span>
+          {isRecommended && (
+            <span className={styles['topicRecBadge']}>
+              <Sparkles size={9} /> Next
+            </span>
+          )}
+          {!node.isCore && <span className={styles['topicOptBadge']}>opt</span>}
+        </div>
+        {!isLocked && (
+          <div className={styles['topicRowBar']}>
+            <div className={styles['topicRowBarFill']}
+              style={{ width: `${pct}%`, background: cfg.color }} />
+          </div>
+        )}
+      </div>
+
+      {/* CTA */}
+      {!isLocked && node.status !== 'mastered' && (
+        <button
+          type="button"
+          className={styles['topicRowBtn']}
+          style={{ '--tc': cfg.color } as React.CSSProperties}
+          onClick={() => onNavigate(node.slug)}
+        >
+          {node.status === 'needs_review' ? 'Review' :
+           node.status === 'in_progress'  ? 'Continue' : 'Start'}
+          <ChevronRight size={12} />
+        </button>
+      )}
+    </div>
+  );
+}
+
+
+
+function LevelDrawer({ lvl, topics, recommendedSlug, readiness, coreCount, coreMastered,
+  onClose, onLevelUp, isLevelingUp, isReadyForTest, onNavigate }: {
+  lvl: RoadmapLevelSummary;
+  topics: RoadmapTopicNode[];
+  recommendedSlug: string | null;
+  readiness: number;
+  coreCount: number;
+  coreMastered: number;
+  onClose: () => void;
+  onLevelUp: () => void;
+  isLevelingUp: boolean;
+  isReadyForTest: boolean;
+  onNavigate: (slug: string) => void;
+}) {
+  const color    = LEVEL_COLOR[lvl.displayName] ?? '#6366f1';
+  const isCurrent = lvl.status === 'current';
+  const R = 27;
+  const circ = 2 * Math.PI * R;
+  const displayReadiness = lvl.status === 'completed' ? 100 : lvl.status === 'current' ? readiness : 0;
+  const off  = circ * (1 - displayReadiness / 100);
+
+  useEffect(() => {
+    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
+    window.addEventListener('keydown', fn);
+    return () => window.removeEventListener('keydown', fn);
+  }, [onClose]);
+
+  const statusChipCls =
+    lvl.status === 'completed' ? styles['chipOk'] :
+    lvl.status === 'current'   ? styles['chipCur'] : styles['chipLock'];
+
+  return (
+    <div
+      className={styles['drawerOverlay']}
+      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
+      role="dialog" aria-modal="true"
+    >
+      <div className={styles['drawer']}>
+        <div className={styles['drawerBand']} style={{ background: color }} />
+
+        {/* Header */}
+        <div className={styles['drawerHead']}>
+          {/* Radial circle */}
+          <div className={styles['drawerCircleWrap']}>
+            <svg viewBox="0 0 64 64" style={{ width: '100%', height: '100%', overflow: 'visible' }}>
+              <circle cx="32" cy="32" r={R} fill="none" stroke={color}
+                strokeWidth="3.5" style={{ opacity: 0.15 }} />
+              {lvl.status !== 'locked' && (
+                <circle cx="32" cy="32" r={R} fill="none" stroke={color}
+                  strokeWidth="3.5" strokeLinecap="round"
+                  strokeDasharray={circ} strokeDashoffset={off}
+                  transform="rotate(-90 32 32)"
+                  className={styles['drawerCircleAnim']} />
+              )}
+            </svg>
+            <div className={styles['drawerCircleNum']} style={{ color }}>
+              {displayReadiness}%
+            </div>
+          </div>
+
+          {/* Meta */}
+          <div className={styles['drawerMeta']}>
+            <div className={styles['drawerLvlName']} style={{ color }}>
+              Level {lvl.displayName}
+            </div>
+            <div className={`${styles['drawerChip']} ${statusChipCls}`}>
+              {lvl.status === 'completed' && <CheckCircle2 size={11} />}
+              {lvl.status === 'current'   && <MapPin       size={11} />}
+              {lvl.status === 'locked'    && <Lock         size={11} />}
+              {lvl.status === 'completed' ? 'Completed' :
+               lvl.status === 'current'   ? 'Current level' : 'Locked'}
+            </div>
+            {isCurrent && (
+              <div className={styles['drawerTopicStat']}>
+                {coreMastered}/{coreCount} core topics mastered
               </div>
-              <div className={styles['bdFoot']}>
-                <span className={styles['bdCount']}>{sk.completed}/{sk.required}</span>
-                {sk.remaining > 0 && (
-                  <button type="button" className={styles['bdCta']}
-                    onClick={() => navigate(sk.route)}>
-                    {sk.cta} →
-                  </button>
-                )}
+            )}
+          </div>
+
+          <button type="button" className={styles['drawerClose']}
+            onClick={onClose} aria-label="Close">
+            <X size={16} />
+          </button>
+        </div>
+
+        {/* Readiness bar */}
+        <div className={styles['drawerBar']}>
+          <div className={styles['drawerBarFill']}
+            style={{ width: `${displayReadiness}%`, background: color }} />
+        </div>
+
+        {/* Body */}
+        <div className={styles['drawerBody']}>
+          {/* Level-up button */}
+          {isReadyForTest && isCurrent && (
+            <button type="button" className={styles['drawerTestBtn']}
+              onClick={onLevelUp} disabled={isLevelingUp}>
+              <Trophy size={15} />
+              {isLevelingUp ? 'Processing…' : 'Take Level Test'}
+            </button>
+          )}
+
+          {/* Topic list for current level */}
+          {isCurrent && topics.length > 0 && (
+            <div className={styles['drawerTopicSection']}>
+              <div className={styles['drawerSectionTitle']}>
+                Curriculum — {topics.length} topics
+              </div>
+
+              {/* Status summary pills */}
+              <div className={styles['topicStatusSummary']}>
+                {(
+                  [
+                    { s: 'mastered'     as TopicNodeStatus, label: 'Mastered' },
+                    { s: 'needs_review' as TopicNodeStatus, label: 'Review' },
+                    { s: 'in_progress'  as TopicNodeStatus, label: 'In progress' },
+                    { s: 'available'    as TopicNodeStatus, label: 'Available' },
+                    { s: 'locked'       as TopicNodeStatus, label: 'Locked' },
+                  ]
+                ).map(({ s, label }) => {
+                  const count = topics.filter((t) => t.status === s).length;
+                  if (count === 0) return null;
+                  const cfg = TOPIC_STATUS_CFG[s];
+                  return (
+                    <span key={s} className={styles['statusSummaryPill']}
+                      style={{ color: cfg.color, background: cfg.bg }}>
+                      {count} {label}
+                    </span>
+                  );
+                })}
+              </div>
+
+              {/* All topics in order */}
+              <div className={styles['drawerTopicList']}>
+                {topics.map((node) => (
+                  <DrawerTopicRow
+                    key={node.slug}
+                    node={node}
+                    isRecommended={node.slug === recommendedSlug}
+                    onNavigate={(slug) => { onClose(); onNavigate(slug); }}
+                  />
+                ))}
               </div>
             </div>
-          );
-        })}
+          )}
+
+          {/* Completed */}
+          {lvl.status === 'completed' && (
+            <div className={styles['drawerState']}>
+              <div className={styles['drawerStateCircle']} style={{ background: 'rgba(34,197,94,0.1)' }}>
+                <CheckCircle2 size={32} color="#22c55e" />
+              </div>
+              <p className={styles['drawerStateTitle']}>Level completed!</p>
+              <p className={styles['drawerStateBody']}>
+                You've successfully mastered all requirements for {lvl.displayName}.
+              </p>
+            </div>
+          )}
+
+          {/* Locked */}
+          {lvl.status === 'locked' && (
+            <div className={styles['drawerState']}>
+              <div className={styles['drawerStateCircle']} style={{ background: 'rgba(148,163,184,0.1)' }}>
+                <Lock size={32} color="#94a3b8" />
+              </div>
+              <p className={styles['drawerStateTitle']}>Level locked</p>
+              <p className={styles['drawerStateBody']}>
+                Complete and pass the test for your current level to unlock {lvl.displayName}.
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
 }
 
 
+
+function DrawerTopicRow({ node, isRecommended, onNavigate }: {
+  node: RoadmapTopicNode;
+  isRecommended: boolean;
+  onNavigate: (slug: string) => void;
+}) {
+  const cfg    = TOPIC_STATUS_CFG[node.status];
+  const Icon   = cfg.Icon;
+  const pct    = topicPct(node);
+  const p      = node.progress;
+  const isLocked = node.status === 'locked';
+
+  const skillDots = [
+    { label: 'G',  val: p.grammar.completed,   req: p.grammar.required,   color: '#14b8a6' },
+    { label: 'Q',  val: p.quiz.completed,       req: p.quiz.required,      color: '#6366f1' },
+    { label: 'R',  val: p.reading.completed,    req: p.reading.required,   color: '#22c55e' },
+    { label: 'L',  val: p.listening.completed,  req: p.listening.required, color: '#f59e0b' },
+  ];
+
+  return (
+    <div
+      className={`${styles['dTopicRow']}
+        ${isLocked ? styles['dTopicRowLocked'] : ''}
+        ${isRecommended ? styles['dTopicRowRec'] : ''}`}
+      style={{ '--tc': cfg.color } as React.CSSProperties}
+    >
+      {/* Left accent */}
+      <div className={styles['dTopicAccent']} style={{ background: cfg.color }} />
+
+      {/* Status icon */}
+      <div className={styles['dTopicIcon']}
+        style={{ color: cfg.color, background: cfg.bg }}>
+        <Icon size={13} />
+      </div>
+
+      {/* Content */}
+      <div className={styles['dTopicContent']}>
+        <div className={styles['dTopicTitleRow']}>
+          <span className={styles['dTopicNum']}>#{node.order}</span>
+          <span className={styles['dTopicTitle']}>{node.title}</span>
+          {isRecommended && (
+            <span className={styles['dTopicRecBadge']}>
+              <Sparkles size={9} /> next
+            </span>
+          )}
+          {!node.isCore && <span className={styles['dTopicOpt']}>opt</span>}
+        </div>
+
+        {/* Skill dots */}
+        {!isLocked && (
+          <div className={styles['dTopicSkills']}>
+            {skillDots.map((d) => (
+              <span key={d.label} className={styles['dTopicSkillDot']}
+                style={{
+                  background: d.val >= d.req ? d.color : 'var(--surface-2)',
+                  border: `1px solid ${d.color}`,
+                  opacity: d.val >= d.req ? 1 : 0.5,
+                }}
+                title={`${d.label}: ${d.val}/${d.req}`}
+              >
+                {d.label}
+              </span>
+            ))}
+            <div className={styles['dTopicBarMini']}>
+              <div className={styles['dTopicBarFill']}
+                style={{ width: `${pct}%`, background: cfg.color }} />
+            </div>
+          </div>
+        )}
+
+        {/* Resources */}
+        {!isLocked && node.resources.length > 0 && (
+          <div className={styles['dTopicResources']}>
+            {node.resources.map((r) => (
+              <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer"
+                className={styles['dTopicResLink']}>
+                <ExternalLink size={10} />
+                {r.title}
+              </a>
+            ))}
+          </div>
+        )}
+
+        {/* Lock reason */}
+        {isLocked && node.missingPrerequisites.length > 0 && (
+          <div className={styles['dTopicLockMsg']}>
+            <Lock size={10} />
+            Requires: {node.missingPrerequisites.slice(0, 2).join(', ')}
+            {node.missingPrerequisites.length > 2 && ` +${node.missingPrerequisites.length - 2}`}
+          </div>
+        )}
+      </div>
+
+      {/* Navigate button */}
+      {!isLocked && node.status !== 'mastered' && (
+        <button
+          type="button"
+          className={styles['dTopicBtn']}
+          style={{ '--tc': cfg.color } as React.CSSProperties}
+          onClick={() => onNavigate(node.slug)}
+        >
+          {node.status === 'needs_review' ? 'Review' :
+           node.status === 'in_progress'  ? 'Go'     : 'Start'}
+        </button>
+      )}
+    </div>
+  );
+}
+
+
+
 function Heatmap({ recentActivity }: { recentActivity: DailyActivity[] }) {
-  const { t }   = useTranslation();
-  const cells   = buildCells(recentActivity);
-  const weeks   = Array.from({ length: 5 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
+  const cells = buildCells(recentActivity);
+  const weeks = Array.from({ length: 5 }, (_, w) => cells.slice(w * 7, w * 7 + 7));
 
   return (
     <div className={`${styles['section']} ${styles['heatSection']}`}>
-      <h2 className={styles['heatHeading']}>{t('progress.activity')}</h2>
+      <div className={styles['heatHead']}>
+        <h2 className={styles['sectionHeading']}>Activity — last 35 days</h2>
+      </div>
       <div className={styles['heatGrid']}>
         <div className={styles['heatDays']}>
           {['S','M','T','W','T','F','S'].map((d, i) => (
@@ -271,201 +594,21 @@ function Heatmap({ recentActivity }: { recentActivity: DailyActivity[] }) {
         </div>
       </div>
       <div className={styles['heatLeg']}>
-        <span className={styles['heatLegLbl']}>{t('progress.less')}</span>
+        <span className={styles['heatLegLbl']}>Less</span>
         {([0,1,2,3,4] as const).map((i) => (
           <div key={i} className={`${styles['heatLegCell']} ${styles[`hi${i}`]}`} />
         ))}
-        <span className={styles['heatLegLbl']}>{t('progress.more')}</span>
+        <span className={styles['heatLegLbl']}>More</span>
       </div>
     </div>
   );
 }
 
-
-function LevelDrawer({ node, onClose, onLevelUp, isLevelingUp }: {
-  node: RoadmapLevelNode; onClose: () => void;
-  onLevelUp: () => void; isLevelingUp: boolean;
-}) {
-  const { t }    = useTranslation();
-  const navigate = useNavigate();
-  const color    = LEVEL_COLOR[node.displayName] ?? '#6366f1';
-  const R        = 27;
-  const circ     = 2 * Math.PI * R;
-  const off      = circ * (1 - node.readinessPercent / 100);
-
-  useEffect(() => {
-    const fn = (e: KeyboardEvent) => { if (e.key === 'Escape') onClose(); };
-    window.addEventListener('keydown', fn);
-    return () => window.removeEventListener('keydown', fn);
-  }, [onClose]);
-
-  const statusCls =
-    node.status === 'completed' ? styles['drawerStatusOk'] :
-    node.status === 'current'   ? styles['drawerStatusCur'] :
-    styles['drawerStatusLock'];
-
-  return (
-    <div
-      className={styles['drawerOverlay']}
-      onClick={(e) => { if (e.target === e.currentTarget) onClose(); }}
-      role="dialog" aria-modal="true"
-    >
-      <div className={styles['drawer']}>
-        {/* colour band at top */}
-        <div className={styles['drawerBand']} style={{ background: color }} />
-
-        {/* header */}
-        <div className={styles['drawerHead']}>
-          <div className={styles['drawerLevelCircle']}>
-            <svg className={styles['drawerCircleSvg']} viewBox="0 0 64 64">
-              <circle cx="32" cy="32" r={R} fill="none" stroke={color}
-                strokeWidth="3.5" className={styles['drawerRingTrack']}
-                style={{ opacity: 0.15 }} />
-              {node.status !== 'locked' && (
-                <circle cx="32" cy="32" r={R} fill="none" stroke={color}
-                  strokeWidth="3.5" strokeLinecap="round"
-                  strokeDasharray={circ} strokeDashoffset={off}
-                  transform="rotate(-90 32 32)"
-                  className={styles['drawerCircleAnim']} />
-              )}
-            </svg>
-            <div className={styles['drawerCircleNum']}
-              style={{ color }}>{node.readinessPercent}%</div>
-          </div>
-
-          <div className={styles['drawerMeta']}>
-            <div className={styles['drawerLvlName']} style={{ color }}>
-              {node.displayName}
-            </div>
-            <div className={`${styles['drawerStatusChip']} ${statusCls}`}>
-              {node.status === 'completed' && <CheckCircle2 size={11} />}
-              {node.status === 'current'   && <MapPin       size={11} />}
-              {node.status === 'locked'    && <Lock         size={11} />}
-              {t(`roadmap.${node.status}`)}
-            </div>
-            {node.estimatedDays[1] > 0 && (
-              <div className={styles['drawerEst']}>
-                ≈ {node.estimatedDays[0]}–{node.estimatedDays[1]} {t('roadmap.days')}
-              </div>
-            )}
-          </div>
-
-          <button type="button" className={styles['drawerClose']}
-            onClick={onClose} aria-label={t('common.close')}>
-            <X size={16} />
-          </button>
-        </div>
-
-        {/* readiness bar */}
-        <div className={styles['drawerReadBar']}>
-          <div className={styles['drawerReadFill']}
-            style={{ width: `${node.readinessPercent}%`, background: color }} />
-        </div>
-
-        {/* scrollable body */}
-        <div className={styles['drawerBody']}>
-
-          {node.isReadyForTest && node.status === 'current' && (
-            <button type="button" className={styles['drawerTestBtn']}
-              onClick={onLevelUp} disabled={isLevelingUp}>
-              <Trophy size={15} />
-              {isLevelingUp ? t('dashboard.levelingUp') : t('progress.takeLevelTest')}
-            </button>
-          )}
-
-          {/* skill tasks */}
-          {node.skills.length > 0 && (
-            <div className={styles['drawerSection']}>
-              <div className={styles['drawerSectionTitle']}>{t('roadmap.requirements')}</div>
-              {node.skills.map((sk) => {
-                const Icon = SKILL_ICON[sk.skill];
-                const sc   = SKILL_COLOR[sk.skill] ?? '#6366f1';
-                return (
-                  <div key={sk.skill}
-                    className={`${styles['dSkRow']} ${sk.isBlocking ? styles['dSkBlocking'] : ''}`}
-                  >
-                    <div className={styles['dSkIco']}
-                      style={{ color: sc, background: `${sc}18` }}>
-                      {Icon && <Icon size={13} />}
-                    </div>
-                    <div className={styles['dSkMain']}>
-                      <div className={styles['dSkNameRow']}>
-                        <span className={styles['dSkName']}>{sk.label}</span>
-                        <span className={styles['dSkSms']} style={{ color: sc }}>{sk.sms}</span>
-                      </div>
-                      <div className={styles['dSkBar']}>
-                        <div className={styles['dSkFill']}
-                          style={{ width: `${sk.sms}%`, background: sc }} />
-                      </div>
-                      <span className={styles['dSkMeta']}>
-                        {sk.completed}/{sk.required}
-                        {sk.remaining > 0 && ` · ${sk.remaining} ${t('roadmap.remaining')}`}
-                        {sk.accuracyMin > 0 && ` · ${Math.round(sk.accuracy)}%/${sk.accuracyMin}%`}
-                      </span>
-                    </div>
-                    <div className={styles['dSkCtaWrap']}>
-                      {sk.isBlocking && (
-                        <span className={styles['blockTag']}>{t('roadmap.blocking')}</span>
-                      )}
-                      {node.status === 'current' && sk.remaining > 0 && (
-                        <button type="button"
-                          className={styles['dSkCta']}
-                          style={{ '--sc': sc } as React.CSSProperties}
-                          onClick={() => navigate(sk.route)}>
-                          {sk.cta}
-                        </button>
-                      )}
-                    </div>
-                  </div>
-                );
-              })}
-            </div>
-          )}
-
-          {/* bonus resources */}
-          {node.bonusResources.length > 0 && (
-            <div className={styles['drawerSection']}>
-              <div className={styles['drawerSectionTitle']}>{t('roadmap.bonusResources')}</div>
-              {node.bonusResources.map((r) => (
-                <a key={r.url} href={r.url} target="_blank" rel="noopener noreferrer"
-                  className={styles['resCard']}>
-                  <div className={styles['resType']}>
-                    {r.type === 'video'   ? <Play       size={13} /> :
-                     r.type === 'podcast' ? <Headphones size={13} /> :
-                     <ExternalLink size={13} />}
-                  </div>
-                  <div className={styles['resInfo']}>
-                    <span className={styles['resTitle']}>{r.title}</span>
-                    <span className={styles['resDesc']}>{r.description}</span>
-                  </div>
-                  <ExternalLink size={11} className={styles['resArr']} />
-                </a>
-              ))}
-            </div>
-          )}
-
-          {node.status === 'locked' && (
-            <div className={styles['drawerState']}>
-              <Lock size={28} className={styles['drawerStateIco']} />
-              <p>{t('roadmap.lockedMsg')}</p>
-            </div>
-          )}
-          {node.status === 'completed' && (
-            <div className={styles['drawerState']}>
-              <CheckCircle2 size={28} className={styles['drawerStateOkIco']} />
-              <p>{t('roadmap.completedMsg')}</p>
-            </div>
-          )}
-        </div>
-      </div>
-    </div>
-  );
-}
 
 
 export default function ProgressPage() {
-  const { t }    = useTranslation();
-  const dispatch = useAppDispatch();
+  const dispatch    = useAppDispatch();
+  const navigate    = useNavigate();
 
   const user         = useAppSelector(selectUser);
   const dashData     = useAppSelector(selectProgressData);
@@ -476,33 +619,50 @@ export default function ProgressPage() {
   const rmLoading    = useAppSelector(selectRoadmapLoading);
   const rmError      = useAppSelector(selectRoadmapError);
 
-  const [selectedNode, setSelectedNode] = useState<RoadmapLevelNode | null>(null);
+  const [selectedLevel, setSelectedLevel] = useState<RoadmapLevelSummary | null>(null);
 
   useEffect(() => {
-    if (dashData === null && !dashLoading && dashError === null)  void dispatch(fetchDashboard());
-    if (roadmapData === null && !rmLoading && rmError === null)   void dispatch(fetchRoadmap());
+    if (dashData === null && !dashLoading && dashError === null)
+      void dispatch(fetchDashboard());
+    if (roadmapData === null && !rmLoading && rmError === null)
+      void dispatch(fetchRoadmap());
   }, [dashData, dashLoading, dashError, roadmapData, rmLoading, rmError, dispatch]);
 
-  const handleRetry  = useCallback(() => { void dispatch(fetchDashboard()); void dispatch(fetchRoadmap()); }, [dispatch]);
-  const handleLevelUp = useCallback(() => { void dispatch(requestLevelUp()); }, [dispatch]);
+  const handleRetry = useCallback(() => {
+    void dispatch(fetchDashboard());
+    void dispatch(fetchRoadmap());
+  }, [dispatch]);
+
+  const handleLevelUp = useCallback(() => void dispatch(requestLevelUp()), [dispatch]);
+
+  const handleNavigate = useCallback((slug: string) => {
+    navigate(`/grammar?topicSlug=${slug}`);
+  }, [navigate]);
 
   if (user === null) return null;
   if ((dashLoading && !dashData) || (rmLoading && !roadmapData))
-    return <FullPageSpinner label={t('progress.loading')} />;
+    return <FullPageSpinner label="Loading your progress…" />;
 
-  const totalMin   = dashData?.recentActivity.reduce((s, a) => s + a.minutesSpent, 0) ?? 0;
-  const active30   = dashData ? (() => {
-    const cut = new Date(); cut.setDate(cut.getDate() - 30);
+  const totalMin = dashData?.recentActivity.reduce((s, a) => s + a.minutesSpent, 0) ?? 0;
+  const active30 = dashData ? (() => {
+    const cut = new Date();
+    cut.setDate(cut.getDate() - 30);
     const cs  = cut.toISOString().slice(0, 10);
     return dashData.recentActivity.filter((a) => a.date >= cs && a.xpEarned > 0).length;
   })() : 0;
 
-  const currentNode = roadmapData?.nodes.find((n) => n.status === 'current') ?? null;
-  const anyErr      = dashError ?? rmError;
+  const anyErr           = dashError ?? rmError;
+  const readiness        = roadmapData?.curriculumReadinessPercent ?? 0;
+  const topics           = roadmapData?.currentLevelTopics ?? [];
+  const recommendedSlug  = roadmapData?.nextRecommendedTopicSlug ?? null;
+  const coreMastered     = roadmapData?.coreTopicsMasteredCount ?? 0;
+  const coreTotal        = roadmapData?.coreTopicsTotalCount ?? 0;
+  const isReadyForTest   = dashData?.progress.isReadyForTest ?? false;
+
+  const activeTopic = recommendedSlug ? topics.find((t) => t.slug === recommendedSlug) : null;
 
   return (
     <div className={styles['page']}>
-
       {/* ── Header ── */}
       <header className={styles['header']}>
         <div className={styles['headerLeft']}>
@@ -510,14 +670,16 @@ export default function ProgressPage() {
             <span className={styles['eyebrowDot']} />
             TOEFL Journey
           </div>
-          <h1 className={styles['pageTitle']}>{t('progress.title')}</h1>
-          <p className={styles['pageSubtitle']}>{t('progress.subtitle')}</p>
+          <h1 className={styles['pageTitle']}>Progress</h1>
+          <p className={styles['pageSubtitle']}>
+            Your learning path across all skills and grammar topics
+          </p>
         </div>
-        {dashData?.progress.isReadyForTest && (
+        {isReadyForTest && (
           <button type="button" className={styles['testBtn']}
             onClick={handleLevelUp} disabled={isLevelingUp}>
             <Trophy size={15} />
-            {isLevelingUp ? t('dashboard.levelingUp') : t('progress.takeLevelTest')}
+            {isLevelingUp ? 'Leveling up…' : 'Take Level Test'}
           </button>
         )}
       </header>
@@ -525,9 +687,10 @@ export default function ProgressPage() {
       {/* ── Error ── */}
       {anyErr && (
         <div className={styles['errBanner']}>
-          <AlertCircle size={15} /><span>{anyErr}</span>
+          <AlertCircle size={15} />
+          <span>{anyErr}</span>
           <button type="button" className={styles['retryBtn']} onClick={handleRetry}>
-            <RefreshCw size={13} /> {t('common.retry')}
+            <RefreshCw size={13} /> Retry
           </button>
         </div>
       )}
@@ -536,11 +699,11 @@ export default function ProgressPage() {
       {dashData && (
         <div className={styles['statsStrip']}>
           {([
-            { Icon: TrendingUp, val: dashData.currentLevel,            lbl: t('dashboard.statLevel'),  cls: 'pilPurple' },
-            { Icon: Flame,      val: String(dashData.streak),           lbl: t('dashboard.statStreak'), cls: 'pilAmber'  },
-            { Icon: Zap,        val: dashData.totalXp.toLocaleString(), lbl: t('dashboard.statXp'),     cls: 'pilGreen'  },
-            { Icon: Clock,      val: String(totalMin),                  lbl: t('progress.minutes'),     cls: 'pilBlue'   },
-            { Icon: Calendar,   val: String(active30),                  lbl: t('progress.activeDays'),  cls: 'pilRose'   },
+            { Icon: TrendingUp, val: dashData.currentLevel,             lbl: 'Current level', cls: 'pilPurple' },
+            { Icon: Flame,      val: String(dashData.streak),            lbl: 'Day streak',    cls: 'pilAmber'  },
+            { Icon: Zap,        val: dashData.totalXp.toLocaleString(),  lbl: 'Total XP',      cls: 'pilGreen'  },
+            { Icon: Clock,      val: String(totalMin),                   lbl: 'Minutes studied', cls: 'pilBlue' },
+            { Icon: Calendar,   val: String(active30),                   lbl: 'Active days (30d)', cls: 'pilRose' },
           ] as const).map(({ Icon, val, lbl, cls }) => (
             <div key={lbl} className={styles['statPill']}>
               <div className={`${styles['statPillIco']} ${styles[cls]}`}><Icon size={14} /></div>
@@ -553,73 +716,151 @@ export default function ProgressPage() {
         </div>
       )}
 
-      {/* ── Roadmap ── */}
+      {/* ── Roadmap section ── */}
       {roadmapData && (
-        <div className={styles['section']}>
-          <div className={styles['roadmapSection']}>
-            <div className={styles['roadmapTopRow']}>
-              <div>
-                <h2 className={styles['roadmapHeading']}>{t('progress.roadmap')}</h2>
-                <p className={styles['roadmapSub']}>{t('progress.roadmapHint')}</p>
-              </div>
-              <div className={styles['roadmapRight']}>
-                <div className={styles['totalBadge']}>{roadmapData.totalProgress}%</div>
-                <div className={styles['totalLabel']}>{t('progress.complete')}</div>
-                {roadmapData.projectedDate && (
-                  <div className={styles['projectedDate']}>
-                    {t('progress.projected')} {fmtDate(roadmapData.projectedDate)}
-                  </div>
-                )}
-              </div>
+        <div className={`${styles['section']} ${styles['roadmapSection']}`}>
+          <div className={styles['roadmapTopRow']}>
+            <div>
+              <h2 className={styles['sectionHeading']}>Level Roadmap</h2>
+              <p className={styles['roadmapSub']}>
+                Click any level to see its topics and requirements
+              </p>
             </div>
-
-            <div className={styles['overallBarWrap']}>
-              <div className={styles['overallBarTrack']}>
-                <div className={styles['overallBarFill']}
-                  style={{ width: `${roadmapData.totalProgress}%` }} />
-              </div>
+            <div className={styles['roadmapRight']}>
+              <div className={styles['readinessBig']}>{readiness}%</div>
+              <div className={styles['readinessLabel']}>curriculum ready</div>
             </div>
-
-            <SnakeTrack nodes={roadmapData.nodes} onNodeClick={setSelectedNode} />
           </div>
+
+          <div className={styles['roadmapBarWrap']}>
+            <div className={styles['roadmapBarTrack']}>
+              <div className={styles['roadmapBarFill']}
+                style={{ width: `${readiness}%` }} />
+            </div>
+            <span className={styles['roadmapBarHint']}>
+              {coreMastered}/{coreTotal} core topics mastered in {roadmapData.currentLevel}
+            </span>
+          </div>
+
+          <SnakeTrack
+            levels={roadmapData.levels}
+            readiness={readiness}
+            onNodeClick={setSelectedLevel}
+          />
         </div>
       )}
 
-      {/* ── Skill breakdown ── */}
-      {currentNode && <SkillBreakdown node={currentNode} />}
+      {/* ── Next recommended callout ── */}
+      {activeTopic && (
+        <div className={styles['nextCallout']}>
+          <div className={styles['nextCalloutLeft']}>
+            <span className={styles['nextCalloutEye']}>
+              <Sparkles size={12} /> Recommended next
+            </span>
+            <span className={styles['nextCalloutTitle']}>{activeTopic.title}</span>
+            <span className={styles['nextCalloutSummary']}>
+              {activeTopic.summary.slice(0, 90)}{activeTopic.summary.length > 90 ? '…' : ''}
+            </span>
+          </div>
+          <button
+            type="button"
+            className={styles['nextCalloutBtn']}
+            onClick={() => handleNavigate(activeTopic.slug)}
+          >
+            {activeTopic.status === 'in_progress' ? 'Continue' :
+             activeTopic.status === 'needs_review' ? 'Review' : 'Start'}
+            <ChevronRight size={15} />
+          </button>
+        </div>
+      )}
+
+      {/* ── Topic curriculum for current level ── */}
+      {topics.length > 0 && (
+        <div className={`${styles['section']} ${styles['topicSection']}`}>
+          <div className={styles['topicSectionHead']}>
+            <div>
+              <h2 className={styles['sectionHeading']}>
+                {roadmapData?.currentLevel} — Grammar Curriculum
+              </h2>
+              <p className={styles['topicSectionSub']}>
+                {topics.length} topics in curriculum order
+              </p>
+            </div>
+            {/* Compact status strip */}
+            <div className={styles['topicSummaryPills']}>
+              {([
+                { s: 'in_progress'  as TopicNodeStatus },
+                { s: 'available'    as TopicNodeStatus },
+                { s: 'mastered'     as TopicNodeStatus },
+                { s: 'needs_review' as TopicNodeStatus },
+                { s: 'locked'       as TopicNodeStatus },
+              ]).map(({ s }) => {
+                const count = topics.filter((t) => t.status === s).length;
+                if (count === 0) return null;
+                const cfg = TOPIC_STATUS_CFG[s];
+                return (
+                  <span key={s} className={styles['topicSumPill']}
+                    style={{ color: cfg.color, background: cfg.bg }}>
+                    {count}
+                  </span>
+                );
+              })}
+            </div>
+          </div>
+
+          <div className={styles['topicList']}>
+            {topics.map((node) => (
+              <TopicMiniCard
+                key={node.slug}
+                node={node}
+                isRecommended={node.slug === recommendedSlug}
+                onNavigate={handleNavigate}
+              />
+            ))}
+          </div>
+        </div>
+      )}
 
       {/* ── Heatmap ── */}
       {dashData && <Heatmap recentActivity={dashData.recentActivity} />}
 
       {/* ── Ready banner ── */}
-      {dashData?.progress.isReadyForTest && (
+      {isReadyForTest && dashData && (
         <div className={styles['readyBanner']}>
-          <Trophy size={18} className={styles['readyIco']} />
+          <Trophy size={20} className={styles['readyIco']} />
           <div>
-            <strong>{t('progress.readyTitle')}</strong>
-            <p>{t('progress.readyMsg', { level: dashData.currentLevel })}</p>
+            <strong>You're ready for the level test!</strong>
+            <p>All requirements for {dashData.currentLevel} have been met.</p>
           </div>
           <button type="button" className={styles['readyBtn']}
             onClick={handleLevelUp} disabled={isLevelingUp}>
-            {isLevelingUp ? t('dashboard.levelingUp') : `${t('progress.levelUp')} →`}
+            {isLevelingUp ? 'Processing…' : 'Level Up →'}
           </button>
         </div>
       )}
 
+      {/* ── Empty ── */}
       {!dashData && !roadmapData && !dashLoading && !rmLoading && !anyErr && (
         <div className={styles['emptyState']}>
           <BarChart2 size={40} />
-          <p>{t('progress.empty')}</p>
+          <p>No progress data yet. Start practicing to see your path here.</p>
         </div>
       )}
 
       {/* ── Drawer ── */}
-      {selectedNode && (
+      {selectedLevel && (
         <LevelDrawer
-          node={selectedNode}
-          onClose={() => setSelectedNode(null)}
+          lvl={selectedLevel}
+          topics={topics}
+          recommendedSlug={recommendedSlug}
+          readiness={readiness}
+          coreCount={coreTotal}
+          coreMastered={coreMastered}
+          onClose={() => setSelectedLevel(null)}
           onLevelUp={handleLevelUp}
           isLevelingUp={isLevelingUp}
+          isReadyForTest={isReadyForTest}
+          onNavigate={handleNavigate}
         />
       )}
     </div>

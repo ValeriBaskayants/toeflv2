@@ -11,6 +11,7 @@ import {
 import { Type } from 'class-transformer';
 import { Level } from '@prisma/client';
 
+
 class VocabularyEmbeddedDto {
   @IsString()
   word!: string;
@@ -45,6 +46,7 @@ class QuestionEmbeddedDto {
   options!: QuestionOptionDto[];
 }
 
+
 export class CreateReadingDto {
   @IsString()
   @MaxLength(200)
@@ -73,6 +75,11 @@ export class CreateReadingDto {
   @IsArray()
   @IsString({ each: true })
   tags?: string[];
+
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  grammarTopics?: string[];
 
   @IsOptional()
   @IsArray()

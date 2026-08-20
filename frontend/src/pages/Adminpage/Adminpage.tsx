@@ -19,6 +19,7 @@ import {
   AlertCircle,
   BarChart2,
   TerminalSquare,
+  Shuffle,
   type LucideIcon,
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/store';
@@ -55,6 +56,7 @@ const CONTENT_CONFIGS: ContentConfig[] = [
   { key: 'multipleChoice', label: 'Multiple Choice', short: 'MC', Icon: Target, color: '#6366f1' },
   { key: 'writingPrompts', label: 'Writing Prompts', short: 'WR', Icon: PenLine, color: '#ec4899' },
   { key: 'listening', label: 'Listening', short: 'LS', Icon: Headphones, color: '#f43f5e' },
+  { key: 'scramble', label: 'Sentence Scramble', short: 'SCR', Icon: Shuffle, color: '#0ea5e9' },
 ];
 
 function formatTime(iso: string): string {

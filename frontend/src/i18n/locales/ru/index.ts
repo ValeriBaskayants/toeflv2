@@ -5,9 +5,10 @@ import { listening }  from './listening';
 import { writing }    from './writing';
 import { vocabulary } from './vocabulary';
 import { mistakes }   from './mistakes';
-import { quiz } from './quiz';
-import { placement } from './placement';
-import { exercises } from './exercises';
+import { quiz }       from './quiz';
+import { placement }  from './placement';
+import { exercises }  from './exercises';
+import { scramble }   from './scramble'; 
 
 export const ru = {
   translation: {
@@ -16,6 +17,7 @@ export const ru = {
     dashboard,
     settings,
     features,
+    scramble,
     grammar,
     reading,
     listening,
@@ -24,6 +26,6 @@ export const ru = {
     mistakes,
     quiz,
     placement,
-    exercises
+    exercises,
   },
 } as const;

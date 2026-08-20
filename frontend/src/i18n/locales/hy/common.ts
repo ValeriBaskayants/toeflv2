@@ -20,7 +20,7 @@ export const navigation = {
   practiceTitle:  'Պրակտիկա',
   writing:        'Գրավոր խոսք',
   reading:        'Ընթերցանություն',
-  listening:      'Ունկնդրում', // Более профессионально, чем "Լսողություն"
+  listening:      'Ունկնդրում', 
   speaking:       'Բանավոր խոսք',
   grammar:        'Քերականություն',
   vocabulary:     'Բառապաշար',
@@ -28,6 +28,7 @@ export const navigation = {
   progress:       'Առաջընթաց',
   bookmarks:      'Պահպանված',
   mistakes:       'Իմ սխալները',
+  exercises:     'վարժություններ',
   quiz:           'Թեստեր',
 };
 

@@ -14,6 +14,7 @@ import { vocabularySlice } from './Slices/VocabularySlice';
 import { mistakesSlice } from './Slices/MistakesSlice';
 import { roadmapSlice } from './Slices/RoadmapSlice';
 import { exercisesSlice } from './Slices/ExercisesSlice';
+import { scrambleSlice } from './Slices/ScrambleSlice';
 
 export const store = configureStore({
   reducer: {
@@ -30,7 +31,8 @@ export const store = configureStore({
     vocabulary: vocabularySlice.reducer,
     mistakes: mistakesSlice.reducer,
     roadmap:roadmapSlice.reducer,
-    exercises:exercisesSlice.reducer
+    exercises:exercisesSlice.reducer,
+    scramble: scrambleSlice.reducer,
   },
 });
 

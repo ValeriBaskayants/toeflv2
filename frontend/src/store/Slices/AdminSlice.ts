@@ -8,6 +8,7 @@ import {
   MultipleChoiceApi,
   writingApi,
   listeningApi,
+  scrambleApi
 } from '@/api';
 import type { AdminStats, ContentType, ImportLog, ImportResult } from '@/types/admin/Admin.types';
 
@@ -43,6 +44,7 @@ const ALL_TYPES: ContentType[] = [
   'multipleChoice',
   'writingPrompts',
   'listening',
+  'scramble',
 ];
 
 const initialImports = ALL_TYPES.reduce(
@@ -97,6 +99,8 @@ export const importContent = createAsyncThunk<
           return writingApi.bulkCreatePrompts(data);
         case 'listening':
           return listeningApi.bulkCreate(data);
+        case 'scramble':
+          return scrambleApi.bulkCreate(data);
       }
     })();
     const { data: result } = await call;

@@ -14,7 +14,7 @@ import { selectActiveExercise, selectAnswers, selectSubmitIsLoading, selectSubmi
 import { selectSubmitError } from '@/store/Slices/ReadingsSlice';
 import type { Blank, BlankResult, Exercise } from '@/types/exercises/Exercise.types';
 
-// ─── Helpers ──────────────────────────────────────────────────────────────────
+
 
 type SentenceSegment =
     | { type: 'text'; content: string }
@@ -45,7 +45,7 @@ function getInputWidth(blank: Blank): string {
     return `${Math.max(longest.length, 6) + 2}ch`;
 }
 
-// ─── LevelBadge ───────────────────────────────────────────────────────────────
+
 
 function LevelBadge({ level }: { level: string }) {
     const color = LEVEL_COLOR[level] ?? '#6366f1';
@@ -59,7 +59,7 @@ function LevelBadge({ level }: { level: string }) {
     );
 }
 
-// ─── DifficultyPip ────────────────────────────────────────────────────────────
+
 
 function DifficultyPip({ difficulty }: { difficulty: string }) {
     const { t } = useTranslation('exercises');
@@ -72,7 +72,7 @@ function DifficultyPip({ difficulty }: { difficulty: string }) {
     );
 }
 
-// ─── BlankInput ───────────────────────────────────────────────────────────────
+
 
 interface BlankInputProps {
     blank: Blank;
@@ -129,7 +129,7 @@ function BlankInput({
     );
 }
 
-// ─── SentenceRenderer ─────────────────────────────────────────────────────────
+
 
 interface SentenceRendererProps {
     exercise: Exercise;
@@ -146,7 +146,7 @@ function SentenceRenderer({
     const firstInputRef = useRef<HTMLInputElement>(null);
     const segments = parseSentence(exercise.sentence, exercise.blanks);
 
-    // Focus first blank whenever a new exercise is opened
+    
     useEffect(() => {
         firstInputRef.current?.focus();
     }, [exercise.id]);
@@ -183,7 +183,7 @@ function SentenceRenderer({
     );
 }
 
-// ─── ResultPanel ──────────────────────────────────────────────────────────────
+
 
 interface ResultPanelProps {
     accuracy: number;
@@ -252,7 +252,7 @@ function ResultPanel({
     );
 }
 
-// ─── EmptyWorkspace ───────────────────────────────────────────────────────────
+
 
 function EmptyWorkspace() {
     const { t } = useTranslation('exercises');
@@ -265,7 +265,7 @@ function EmptyWorkspace() {
     );
 }
 
-// ─── ExerciseWorkspace ────────────────────────────────────────────────────────
+
 
 export function ExerciseWorkspace() {
     const { t } = useTranslation('exercises');

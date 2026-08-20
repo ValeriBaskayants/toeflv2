@@ -1,0 +1,48 @@
+.level,
+.pos,
+.status {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  white-space: nowrap;
+  vertical-align: middle;
+  font-size: 0.75rem;
+  line-height: 1;
+}
+
+.level {
+  padding: 0.25rem 0.5rem;
+  font-weight: 700;
+  border-radius: 0.375rem;
+  color: #ffffff;
+  background-color: var(--badge-color, #6366f1);
+  box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  letter-spacing: 0.025em;
+}
+
+.pos {
+  padding: 0.2rem 0.45rem;
+  font-weight: 500;
+  border-radius: 0.25rem;
+  color: #64748b;
+  background-color: #f1f5f9;
+  border: 1px solid #e2e8f0;
+  font-style: italic;
+}
+
+
+.status {
+  padding: 0.25rem 0.625rem;
+  font-weight: 600;
+  border-radius: 9999px;
+  color: var(--status-color, #64748b);
+  background-color: var(--status-bg, rgba(100, 116, 139, 0.1));
+  letter-spacing: 0.05em;
+  text-transform: uppercase;
+  font-size: 0.7rem;
+}
+
+.level:hover,
+.status:hover {
+  filter: brightness(0.95);
+}

@@ -30,7 +30,7 @@ import {
 import type { WritingPromptWithStatus } from '@/types/writing/Writing.types';
 import type { SubmissionWithPrompt } from '@/api/services/writing';
 import { FullPageSpinner } from '@/components/ui/Spinner';
-import styles from './WritingPage.module.css';
+import styles from './WritingArticlesPage.module.css';
 
 
 

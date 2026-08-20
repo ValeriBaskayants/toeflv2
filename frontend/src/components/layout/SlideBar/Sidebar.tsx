@@ -6,7 +6,6 @@ import {
   BookOpen,
   Headphones,
   Mic,
-  Layers,
   CheckCheck,
   BarChart3,
   Globe,
@@ -17,7 +16,6 @@ import {
   ShieldAlert,
   AlertTriangle,
   Dumbbell,
-  ListChecks,
   Bookmark,
 } from 'lucide-react';
 import i18n from '@/i18n';
@@ -157,9 +155,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             { to: '/listening', Icon: Headphones, label: 'navigation.listening' },
             { to: '/speaking', Icon: Mic, label: 'navigation.speaking' },
             { to: '/grammar', Icon: CheckCheck, label: 'navigation.grammar' },
-            { to: '/vocabulary', Icon: Layers, label: 'navigation.vocabulary' },
             { to: '/exercises', Icon: Dumbbell, label: 'navigation.exercises' },
-            { to: '/quiz', Icon: ListChecks, label: 'navigation.quiz' },
           ].map(({ to, Icon, label }) => (
             <NavLink
               key={to}

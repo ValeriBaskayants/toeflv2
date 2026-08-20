@@ -22,7 +22,8 @@ export type ContentType =
   | 'readings'
   | 'multipleChoice'
   | 'writingPrompts'
-  | 'listening';
+  | 'listening'
+  | 'scramble';
 
 export interface ImportLog {
   id: string;

@@ -27,6 +27,7 @@ export const navigation = {
   analyticsTitle: 'Аналитика',
   progress:       'Прогресс',
   bookmarks:      'Сохранённое',
+  exercises:      'упрожнения',
   mistakes:       'Мои ошибки',
   quiz:           'Тесты', // Заменено с Квиз на Тесты, так привычнее в СНГ-обучении
 };

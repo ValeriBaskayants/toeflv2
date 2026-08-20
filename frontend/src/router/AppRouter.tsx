@@ -1,3 +1,4 @@
+// frontend/src/router/AppRouter.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/pages/LoginPage/Loginpage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage/Authcallbackpage';
@@ -16,7 +17,10 @@ import ListeningPlayerPage from '@/pages/Listeningplayerpage/Listeningplayerpage
 import QuizPage from '@/pages/Quizpage/Quizpage';
 import { BookmarksPage } from '@/pages/Bookmarkspage/Bookmarkspage';
 import WritingEditorPage from '@/pages/Writingeditorpage/Writingeditorpage';
-import WritingPage from '@/pages/Writingpage/Writingpage';
+import WritingPage from '@/pages/WritingPage/WritingPage';
+import WritingArticlesPage from '@/pages/WritingArticlesPage/WritingArticlesPage';
+import ScrambleListPage from '@/pages/ScrambleListPage/ScrambleListPage';
+import ScrambleSessionPage from '@/pages/ScramblePage/ScrambleSessionPage';
 import MistakesPage from '@/pages/MistakePage/MistakesPage';
 import { VocabularyPage } from '@/pages/VocabularyPage/VocabularyPage';
 import { ExercisesPage } from '@/pages/ExercisesPage/ExercisesPage';
@@ -48,8 +52,12 @@ export function AppRouter() {
       >
         <Route path="/dashboard" element={<DashboardPage />} />
 
+        {/* Writing — хаб + два поджанра */}
         <Route path="/writing" element={<WritingPage />} />
-        <Route path="/writing/:promptId" element={<WritingEditorPage />} />
+        <Route path="/writing/articles" element={<WritingArticlesPage />} />
+        <Route path="/writing/articles/:promptId" element={<WritingEditorPage />} />
+        <Route path="/writing/scramble" element={<ScrambleListPage />} />
+        <Route path="/writing/scramble/session" element={<ScrambleSessionPage />} />
 
         <Route path="/reading" element={<ReadingListPage />} />
         <Route path="/reading/:slug" element={<ReadingReaderPage />} />

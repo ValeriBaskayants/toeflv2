@@ -5,6 +5,7 @@ import {
   RefreshCw, AlertCircle, BarChart2, ExternalLink,
   Lock, CheckCircle2, MapPin, X, Play, Sparkles,
   ChevronRight, RotateCcw, Circle,
+  type LucideIcon, 
 } from 'lucide-react';
 import { useAppSelector, useAppDispatch } from '@/store/store';
 import { selectUser }                     from '@/store/Slices/AuthSlice';
@@ -19,7 +20,7 @@ import {
 } from '@/store/Slices/RoadmapSlice';
 import type {
   RoadmapLevelSummary, RoadmapTopicNode,
-  TopicNodeStatus, TopicResource,
+  TopicNodeStatus,
 } from '@/types/roadmap/Roadmap.types';
 import type { DailyActivity } from '@/types/progress/Progress.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
@@ -28,8 +29,10 @@ import styles from './ProgressPage.module.css';
 
 
 const TOPIC_STATUS_CFG: Record<TopicNodeStatus, {
-  label: string; color: string; bg: string;
-  Icon: React.ComponentType<{ size?: number }>;
+  label: string;
+  color: string;
+  bg: string;
+  Icon: LucideIcon; 
 }> = {
   locked:       { label: 'Locked',      color: '#94a3b8', bg: 'rgba(148,163,184,0.12)', Icon: Lock },
   available:    { label: 'Available',   color: '#6366f1', bg: 'rgba(99,102,241,0.12)',  Icon: Circle },
@@ -69,29 +72,6 @@ function buildCells(act: DailyActivity[]) {
     const intensity: 0|1|2|3|4 = xp===0?0:xp<30?1:xp<80?2:xp<150?3:4;
     return { date, xp, intensity };
   });
-}
-
-
-
-function RadialProgress({ pct, color, size = 44 }: { pct: number; color: string; size?: number }) {
-  const r    = (size / 2) - 5;
-  const circ = 2 * Math.PI * r;
-  const off  = circ * (1 - Math.min(100, pct) / 100);
-  const cx   = size / 2;
-  return (
-    <div className={styles['radial']} style={{ width: size, height: size }}>
-      <svg viewBox={`0 0 ${size} ${size}`} style={{ width: '100%', height: '100%', overflow: 'visible' }}>
-        <circle cx={cx} cy={cx} r={r} fill="none" stroke={color}
-          strokeWidth="3" style={{ opacity: 0.15 }} />
-        <circle cx={cx} cy={cx} r={r} fill="none" stroke={color}
-          strokeWidth="3" strokeLinecap="round"
-          strokeDasharray={circ} strokeDashoffset={off}
-          transform={`rotate(-90 ${cx} ${cx})`}
-          className={styles['radialFill']} />
-      </svg>
-      <span className={styles['radialNum']}>{pct}</span>
-    </div>
-  );
 }
 
 

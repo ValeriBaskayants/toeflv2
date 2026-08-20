@@ -9,7 +9,7 @@ export const auth = {
   statLevels: 'Levels', statSkills: 'Skills', statRange: 'CEFR Range',
 };
 export const navigation = {
-  overview: 'Overview', dashboard: 'Dashboard', practiceTitle: 'Practice',
+  overview: 'Overview', dashboard: 'Dashboard', practiceTitle: 'Practice', exercises: 'Exercises',
   writing: 'Writing', reading: 'Reading', listening: 'Listening',
   speaking: 'Speaking', grammar: 'Grammar', vocabulary: 'Vocabulary',
   analyticsTitle: 'Analytics', progress: 'Progress',

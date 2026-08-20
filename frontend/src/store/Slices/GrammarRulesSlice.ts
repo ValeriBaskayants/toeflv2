@@ -1,86 +1,60 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import type {
-  GrammarRuleDetail,
-  GrammarRuleSummary,
-} from '@/types/grammar/Grammar.types';
+import type { GrammarRuleDetail, GrammarRuleSummary, GrammarTier } from '@/types/grammar/Grammar.types';
 import { grammarRulesApi, type GetGrammarRulesParams } from '@/api/services/grammar-rules';
 import type { Level } from '@/types/globalTypes';
 
-
-
 interface GrammarRulesState {
-  list:         GrammarRuleSummary[];
+  list: GrammarRuleSummary[];
   listIsLoading: boolean;
-  listError:     string | null;
-  activeLevel:   Level | null;
-  search:        string;             
+  listError: string | null;
+  activeLevel: Level | null;
+  activeTier: GrammarTier;
+  search: string;
 
-  detail:          GrammarRuleDetail | null;
+  detail: GrammarRuleDetail | null;
   detailIsLoading: boolean;
-  detailError:     string | null;
-  detailSlug:      string | null;
+  detailError: string | null;
+  detailSlug: string | null;
 }
 
 const initialState: GrammarRulesState = {
-  list:          [],
+  list: [],
   listIsLoading: false,
-  listError:     null,
-  activeLevel:   null,
-  search:        '',
+  listError: null,
+  activeLevel: null,
+  activeTier: 'FOUNDATION',
+  search: '',
 
-  detail:          null,
+  detail: null,
   detailIsLoading: false,
-  detailError:     null,
-  detailSlug:      null,
+  detailError: null,
+  detailSlug: null,
 };
 
-
-
-
-
-
-export const fetchGrammarRules = createAsyncThunk<
-  GrammarRuleSummary[],
-  GetGrammarRulesParams | undefined,
-  { rejectValue: string }
->(
+export const fetchGrammarRules = createAsyncThunk<GrammarRuleSummary[], GetGrammarRulesParams | undefined, { rejectValue: string }>(
   'grammarRules/fetchAll',
   async (params, { rejectWithValue }) => {
     try {
       const { data } = await grammarRulesApi.getAll(params);
       return data;
     } catch (error: unknown) {
-      return rejectWithValue(
-        error instanceof Error ? error.message : 'Failed to load grammar rules',
-      );
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to load grammar rules');
     }
   },
 );
 
-export const fetchGrammarRuleDetail = createAsyncThunk<
-  GrammarRuleDetail,
-  string,
-  { rejectValue: string }
->(
+export const fetchGrammarRuleDetail = createAsyncThunk<GrammarRuleDetail, string, { rejectValue: string }>(
   'grammarRules/fetchDetail',
   async (slug, { rejectWithValue }) => {
     try {
       const { data } = await grammarRulesApi.getBySlug(slug);
-
-      
-      
-      
       const { rule, relatedExercises, userAccuracy, bookmarked } = data;
       return { ...rule, relatedExercises, userAccuracy, bookmarked };
     } catch (error: unknown) {
-      return rejectWithValue(
-        error instanceof Error ? error.message : 'Failed to load grammar rule',
-      );
+      return rejectWithValue(error instanceof Error ? error.message : 'Failed to load grammar rule');
     }
   },
 );
-
-
 
 export const grammarRulesSlice = createSlice({
   name: 'grammarRules',
@@ -89,69 +63,65 @@ export const grammarRulesSlice = createSlice({
     setActiveLevel: (state, action: PayloadAction<Level | null>) => {
       state.activeLevel = action.payload;
     },
+    setActiveTier: (state, action: PayloadAction<GrammarTier>) => {
+      state.activeTier = action.payload;
+    },
     setSearch: (state, action: PayloadAction<string>) => {
       state.search = action.payload;
     },
     clearDetail: (state) => {
-      state.detail          = null;
-      state.detailError     = null;
+      state.detail = null;
+      state.detailError = null;
       state.detailIsLoading = false;
-      state.detailSlug      = null;
+      state.detailSlug = null;
     },
   },
+
   extraReducers: (builder) => {
     builder
       .addCase(fetchGrammarRules.pending, (state) => {
         state.listIsLoading = true;
-        state.listError     = null;
+        state.listError = null;
       })
       .addCase(fetchGrammarRules.fulfilled, (state, action) => {
-        state.list          = action.payload;
+        state.list = action.payload;
         state.listIsLoading = false;
       })
       .addCase(fetchGrammarRules.rejected, (state, action) => {
         state.listIsLoading = false;
-        state.listError     = action.payload ?? 'Unknown error';
+        state.listError = action.payload ?? 'Unknown error';
       })
 
       .addCase(fetchGrammarRuleDetail.pending, (state, action) => {
         state.detailIsLoading = true;
-        state.detailError     = null;
-        state.detailSlug      = action.meta.arg;
-        state.detail          = null;
+        state.detailError = null;
+        state.detailSlug = action.meta.arg;
+        state.detail = null;
       })
       .addCase(fetchGrammarRuleDetail.fulfilled, (state, action) => {
-        state.detail          = action.payload;
+        state.detail = action.payload;
         state.detailIsLoading = false;
       })
       .addCase(fetchGrammarRuleDetail.rejected, (state, action) => {
         state.detailIsLoading = false;
-        state.detailError     = action.payload ?? 'Unknown error';
+        state.detailError = action.payload ?? 'Unknown error';
       });
   },
 });
 
-
-
-export const { setActiveLevel, setSearch, clearDetail } = grammarRulesSlice.actions;
+export const { setActiveLevel, setActiveTier, setSearch, clearDetail } = grammarRulesSlice.actions;
 
 export const grammarRulesReducer = grammarRulesSlice.reducer;
-
-
 
 interface GrammarRootState {
   grammar: GrammarRulesState;
 }
 
-export const selectGrammarRulesList = (s: GrammarRootState) =>
-  s.grammar.list;
-
-
-
+export const selectGrammarRulesList = (s: GrammarRootState) => s.grammar.list;
 
 export const selectFilteredGrammarRules = (s: GrammarRootState) => {
   const { list, search } = s.grammar;
-  if (search.trim().length === 0) { return list; }
+  if (search.trim().length === 0) return list;
   const q = search.toLowerCase();
   return list.filter(
     (r) =>
@@ -161,23 +131,11 @@ export const selectFilteredGrammarRules = (s: GrammarRootState) => {
   );
 };
 
-export const selectGrammarRulesListIsLoading = (s: GrammarRootState) =>
-  s.grammar.listIsLoading;
-
-export const selectGrammarRulesListError = (s: GrammarRootState) =>
-  s.grammar.listError;
-
-export const selectActiveLevel = (s: GrammarRootState) =>
-  s.grammar.activeLevel;
-
-export const selectGrammarSearch = (s: GrammarRootState) =>
-  s.grammar.search;
-
-export const selectGrammarRuleDetail = (s: GrammarRootState) =>
-  s.grammar.detail;
-
-export const selectGrammarRuleDetailIsLoading = (s: GrammarRootState) =>
-  s.grammar.detailIsLoading;
-
-export const selectGrammarRuleDetailError = (s: GrammarRootState) =>
-  s.grammar.detailError;
+export const selectGrammarRulesListIsLoading = (s: GrammarRootState) => s.grammar.listIsLoading;
+export const selectGrammarRulesListError = (s: GrammarRootState) => s.grammar.listError;
+export const selectActiveLevel = (s: GrammarRootState) => s.grammar.activeLevel;
+export const selectActiveTier = (s: GrammarRootState) => s.grammar.activeTier;
+export const selectGrammarSearch = (s: GrammarRootState) => s.grammar.search;
+export const selectGrammarRuleDetail = (s: GrammarRootState) => s.grammar.detail;
+export const selectGrammarRuleDetailIsLoading = (s: GrammarRootState) => s.grammar.detailIsLoading;
+export const selectGrammarRuleDetailError = (s: GrammarRootState) => s.grammar.detailError;

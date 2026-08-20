@@ -13,3 +13,4 @@ export { listeningApi } from './services/listening';
 export { placementApi } from './services/placment';
 export { BookmarksApi } from './services/bookmarks';
 export { roadmapApi }       from './services/roadmap';   
+export { scrambleApi } from "./services/scramble"

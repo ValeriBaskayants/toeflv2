@@ -1,20 +1,11 @@
-import { useEffect, useCallback, useState, useMemo } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useEffect } from 'react';
+import { useParams, useNavigate, Link } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import {
-  ArrowLeft,
-  BookOpen,
-  AlertCircle,
-  RefreshCw,
-  Lightbulb,
-  AlignLeft,
-  GitCompare,
-  XCircle,
-  Tag,
-  Link2,
-  ChevronDown,
-  ChevronRight,
+  ArrowLeft, BookOpenCheck, GraduationCap, Sparkles, Scale,
+  AlertTriangle, Tag, Link2, Library, Dumbbell,
 } from 'lucide-react';
-import { useAppSelector, useAppDispatch } from '@/store/store';
+import { useAppDispatch, useAppSelector } from '@/store/store';
 import {
   fetchGrammarRuleDetail,
   clearDetail,
@@ -22,480 +13,241 @@ import {
   selectGrammarRuleDetailIsLoading,
   selectGrammarRuleDetailError,
 } from '@/store/Slices/GrammarRulesSlice';
-
-import { fetchBookmarks } from '@/store/Slices/BookMarksSlice';
 import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
-
-import type {
-  GrammarExample,
-  GrammarUsage,
-  GrammarSection,
-  GrammarComparison,
-} from '@/types/grammar/Grammar.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
+import { parseInlineMarkup } from '@/utils/parseInlineMarkup';
+import type { GrammarExample, GrammarComparison } from '@/types/grammar/Grammar.types';
 import styles from './GrammarRulePage.module.css';
 
-const LEVEL_COLOR: Record<string, string> = {
-  A1: '#22c55e',
-  A1_PLUS: '#16a34a',
-  A2: '#14b8a6',
-  A2_PLUS: '#0d9488',
-  B1: '#3b82f6',
-  B1_PLUS: '#2563eb',
-  B2: '#6366f1',
-  B2_PLUS: '#4f46e5',
-  C1: '#8b5cf6',
-  C2: '#a855f7',
-};
-
 const LEVEL_DISPLAY: Record<string, string> = {
-  A1: 'A1',
-  A1_PLUS: 'A1+',
-  A2: 'A2',
-  A2_PLUS: 'A2+',
-  B1: 'B1',
-  B1_PLUS: 'B1+',
-  B2: 'B2',
-  B2_PLUS: 'B2+',
-  C1: 'C1',
-  C2: 'C2',
+  A1: 'A1', A1_PLUS: 'A1+', A2: 'A2', A2_PLUS: 'A2+',
+  B1: 'B1', B1_PLUS: 'B1+', B2: 'B2', B2_PLUS: 'B2+', C1: 'C1', C2: 'C2',
 };
 
-type TabKey = 'overview' | 'usages' | 'mistakes' | 'compare';
-
-const TABS: Array<{ key: TabKey; label: string; icon: React.ReactNode }> = [
-  { key: 'overview', label: 'Overview', icon: <BookOpen size={14} /> },
-  { key: 'usages', label: 'Examples', icon: <AlignLeft size={14} /> },
-  { key: 'mistakes', label: 'Mistakes', icon: <XCircle size={14} /> },
-  { key: 'compare', label: 'Compare', icon: <GitCompare size={14} /> },
-];
-
-function ExampleBlock({ examples }: { examples: GrammarExample[] }) {
-  if (examples.length === 0) {
-    return null;
-  }
+function ExampleLine({ sentence, translation }: GrammarExample) {
   return (
-    <ul className={styles['exampleList']}>
-      {examples.map((ex, i) => (
-        <li key={i} className={styles['exampleItem']}>
-          <span className={styles['exampleSentence']}>{ex.sentence}</span>
-          {ex.translation !== undefined && ex.translation.length > 0 && (
-            <span className={styles['exampleTranslation']}>{ex.translation}</span>
-          )}
-        </li>
-      ))}
-    </ul>
+    <div className={styles['example']}>
+      <span className={styles['exampleBullet']}>○</span>
+      <div>
+        <p className={styles['exampleText']}>{parseInlineMarkup(sentence)}</p>
+        {(translation?.length ?? 0) > 0 && (
+          <p className={styles['exampleTranslation']}>{translation}</p>
+        )}
+      </div>
+    </div>
   );
 }
 
-function Accordion({
-  title,
-  subtitle,
-  children,
-  defaultOpen = false,
-  accentColor,
-}: {
+interface LetteredBlockProps {
+  letter?: string | undefined;
   title: string;
-  subtitle?: string;
-  children: React.ReactNode;
-  defaultOpen?: boolean;
-  accentColor?: string;
-}) {
-  const [open, setOpen] = useState(defaultOpen);
-
-  return (
-    <div className={`${styles['accordion']} ${open ? styles['accordionOpen'] : ''}`}>
-      <button
-        type="button"
-        className={styles['accordionTrigger']}
-        onClick={() => {
-          setOpen((v) => !v);
-        }}
-        aria-expanded={open}
-        style={accentColor ? ({ '--acc-color': accentColor } as React.CSSProperties) : undefined}
-      >
-        <div className={styles['accordionTriggerLeft']}>
-          <span className={styles['accordionTitle']}>{title}</span>
-          {subtitle !== undefined && (
-            <span className={styles['accordionSubtitle']}>{subtitle}</span>
-          )}
-        </div>
-        <span
-          className={`${styles['accordionChevron']} ${open ? styles['accordionChevronOpen'] : ''}`}
-        >
-          <ChevronDown size={16} />
-        </span>
-      </button>
-
-      {open && <div className={styles['accordionBody']}>{children}</div>}
-    </div>
-  );
+  body: string;
+  register?: string | undefined;
+  examples: GrammarExample[];
 }
 
-function OverviewTab({
-  coreConcept,
-  structure,
-  signalWords,
-}: {
-  coreConcept: string;
-  structure: string;
-  signalWords: string[];
-}) {
+function LetteredBlock({ letter, title, body, register, examples }: LetteredBlockProps) {
   return (
-    <div className={styles['tabContent']}>
-      {coreConcept.length > 0 && (
-        <section className={styles['overviewSection']}>
-          <div className={styles['sectionLabel']}>
-            <Lightbulb size={14} />
-            Core Concept
-          </div>
-          <p className={styles['overviewBody']}>{coreConcept}</p>
-        </section>
-      )}
-
-      {structure.length > 0 && (
-        <section className={styles['overviewSection']}>
-          <div className={styles['sectionLabel']}>
-            <AlignLeft size={14} />
-            Structure
-          </div>
-          <div className={styles['structureBlock']}>
-            <code className={styles['structureCode']}>{structure}</code>
-          </div>
-        </section>
-      )}
-
-      {signalWords.length > 0 && (
-        <section className={styles['overviewSection']}>
-          <div className={styles['sectionLabel']}>
-            <Tag size={14} />
-            Signal Words
-          </div>
-          <div className={styles['signalWordsList']}>
-            {signalWords.map((w) => (
-              <span key={w} className={styles['signalWord']}>
-                {w}
-              </span>
-            ))}
-          </div>
-        </section>
-      )}
-    </div>
-  );
-}
-
-function UsagesTab({ usages, sections }: { usages: GrammarUsage[]; sections: GrammarSection[] }) {
-  const hasContent = usages.length > 0 || sections.length > 0;
-
-  if (!hasContent) {
-    return (
-      <div className={styles['emptyTab']}>
-        <AlignLeft size={32} />
-        <p>No examples added yet.</p>
+    <section id={letter !== undefined ? `point-${letter}` : undefined} className={styles['block']}>
+      <div className={styles['blockHead']}>
+        {letter !== undefined && <span className={styles['blockLetter']}>{letter}</span>}
+        <h3 className={styles['blockTitle']}>{title}</h3>
+        {register !== undefined && <span className={styles['registerBadge']}>{register}</span>}
       </div>
-    );
-  }
-
-  return (
-    <div className={styles['tabContent']}>
-      {usages.length > 0 && (
-        <div className={styles['accordionGroup']}>
-          <p className={styles['groupLabel']}>Usage patterns</p>
-          {usages.map((usage, i) => (
-            <Accordion
-              key={i}
-              title={usage.title}
-              subtitle={usage.explanation}
-              defaultOpen={i === 0}
-            >
-              <p className={styles['usageExplanation']}>{usage.explanation}</p>
-              <ExampleBlock examples={usage.examples} />
-            </Accordion>
-          ))}
+      <p className={styles['blockBody']}>{parseInlineMarkup(body)}</p>
+      {(examples?.length ?? 0) > 0 && (
+        <div className={styles['examplesList']}>
+          {examples.map((ex, i) => <ExampleLine key={i} {...ex} />)}
         </div>
       )}
+    </section>
+  );
+}
 
-      {sections.length > 0 && (
-        <div className={styles['accordionGroup']}>
-          <p className={styles['groupLabel']}>Additional notes</p>
-          {sections.map((sec, i) => (
-            <Accordion key={i} title={sec.title} defaultOpen={false}>
-              <p className={styles['sectionContent']}>{sec.content}</p>
-              <ExampleBlock examples={sec.examples} />
-            </Accordion>
-          ))}
+function CompareBlock({ letter, compareWith, explanation, examples }: GrammarComparison) {
+  const { t } = useTranslation();
+  return (
+    <section id={letter !== undefined ? `point-${letter}` : undefined} className={styles['compareBlock']}>
+      <div className={styles['compareLabel']}>
+        <Scale size={14} />
+        {t('grammar.reader.compareWith')}: <em>{compareWith}</em>
+      </div>
+      <p className={styles['blockBody']}>{parseInlineMarkup(explanation)}</p>
+      {(examples?.length ?? 0) > 0 && (
+        <div className={styles['examplesList']}>
+          {examples.map((ex, i) => <ExampleLine key={i} {...ex} />)}
         </div>
       )}
-    </div>
-  );
-}
-
-function MistakesTab({ mistakes }: { mistakes: string[] }) {
-  if (mistakes.length === 0) {
-    return (
-      <div className={styles['emptyTab']}>
-        <XCircle size={32} />
-        <p>No common mistakes listed yet.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles['tabContent']}>
-      <div className={styles['mistakesBanner']}>
-        <XCircle size={15} />
-        Avoid these common errors — they appear frequently on the TOEFL.
-      </div>
-      <ul className={styles['mistakeList']}>
-        {mistakes.map((m, i) => (
-          <li key={i} className={styles['mistakeItem']}>
-            <span className={styles['mistakeNum']}>{i + 1}</span>
-            <span className={styles['mistakeText']}>{m}</span>
-          </li>
-        ))}
-      </ul>
-    </div>
-  );
-}
-
-function CompareTab({
-  comparisons,
-  onNavigate,
-}: {
-  comparisons: GrammarComparison[];
-  onNavigate: (topic: string) => void;
-}) {
-  if (comparisons.length === 0) {
-    return (
-      <div className={styles['emptyTab']}>
-        <GitCompare size={32} />
-        <p>No comparisons added yet.</p>
-      </div>
-    );
-  }
-
-  return (
-    <div className={styles['tabContent']}>
-      {comparisons.map((comp, i) => (
-        <Accordion key={i} title={`vs. ${comp.compareWith}`} defaultOpen={i === 0}>
-          <p className={styles['compExplanation']}>{comp.explanation}</p>
-          <ExampleBlock examples={comp.examples} />
-          <button
-            type="button"
-            className={styles['compLink']}
-            onClick={() => {
-              onNavigate(comp.compareWith);
-            }}
-          >
-            <Link2 size={12} />
-            View {comp.compareWith} rule
-            <ChevronRight size={12} />
-          </button>
-        </Accordion>
-      ))}
-    </div>
-  );
-}
-
-function Sidebar({
-  relatedTopics,
-  onNavigate,
-}: {
-  relatedTopics: string[];
-  onNavigate: (topic: string) => void;
-}) {
-  if (relatedTopics.length === 0) {
-    return null;
-  }
-
-  return (
-    <aside className={styles['sidebar']}>
-      <div className={styles['sidebarCard']}>
-        <h3 className={styles['sidebarTitle']}>Related Topics</h3>
-        <ul className={styles['relatedList']}>
-          {relatedTopics.map((topic) => (
-            <li key={topic}>
-              <button
-                type="button"
-                className={styles['relatedItem']}
-                onClick={() => {
-                  onNavigate(topic);
-                }}
-              >
-                <ChevronRight size={13} className={styles['relatedArrow']} />
-                {topic}
-              </button>
-            </li>
-          ))}
-        </ul>
-      </div>
-    </aside>
+    </section>
   );
 }
 
 export function GrammarRulePage() {
+  const { t } = useTranslation();
   const { slug } = useParams<{ slug: string }>();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
 
-  const rule = useAppSelector(selectGrammarRuleDetail);
+  const detail = useAppSelector(selectGrammarRuleDetail);
   const isLoading = useAppSelector(selectGrammarRuleDetailIsLoading);
   const error = useAppSelector(selectGrammarRuleDetailError);
 
-  const [activeTab, setActiveTab] = useState<TabKey>('overview');
-
   useEffect(() => {
-    void dispatch(fetchBookmarks());
-  }, [dispatch]);
-
-  useEffect(() => {
-    if (slug === undefined) {
-      return;
+    if (slug !== undefined) {
+      void dispatch(fetchGrammarRuleDetail(slug));
     }
-    void dispatch(fetchGrammarRuleDetail(slug));
     return () => {
       dispatch(clearDetail());
     };
   }, [slug, dispatch]);
 
-  const handleBack = useCallback(() => {
-    navigate('/grammar-rules');
-  }, [navigate]);
-
-  const handleRetry = useCallback(() => {
-    if (slug !== undefined) {
-      void dispatch(fetchGrammarRuleDetail(slug));
-    }
-  }, [slug, dispatch]);
-
-  const handleNavigateToTopic = useCallback(
-    (topic: string) => {
-      const guessedSlug = topic.toLowerCase().replace(/\s+/g, '-');
-      navigate(`/grammar-rules/${guessedSlug}`);
-    },
-    [navigate],
-  );
-
-  if (isLoading) {
-    return <FullPageSpinner label="Loading grammar rule…" />;
-  }
-
-  if (error !== null) {
-    return (
-      <div className={styles['page']}>
-        <button type="button" className={styles['backBtn']} onClick={handleBack}>
-          <ArrowLeft size={16} /> Back to Grammar Rules
-        </button>
+  if (isLoading || detail === null) {
+    if (error !== null) {
+      return (
         <div className={styles['errorState']}>
-          <AlertCircle size={40} />
-          <p className={styles['errorTitle']}>Couldn't load this rule</p>
-          <p className={styles['errorMsg']}>{error}</p>
-          <button type="button" className={styles['retryBtn']} onClick={handleRetry}>
-            <RefreshCw size={14} /> Try again
+          <AlertTriangle size={40} />
+          <p>{error}</p>
+          <button type="button" className={styles['backBtn']} onClick={() => navigate('/grammar')}>
+            <ArrowLeft size={15} /> {t('grammar.reader.backToList')}
           </button>
         </div>
-      </div>
-    );
+      );
+    }
+    return <FullPageSpinner label={t('grammar.loading')} />;
   }
 
-  if (rule === null) {
-    return null;
-  }
-
-  const accentColor = LEVEL_COLOR[rule.level] ?? '#6366f1';
-
-  const tabCounts = useMemo<Record<TabKey, number>>(() => {
-    if (!rule) return { overview: 0, usages: 0, mistakes: 0, compare: 0 };
-    return {
-      overview: (rule.coreConcept.length > 0 ? 1 : 0) + (rule.structure.length > 0 ? 1 : 0) + rule.signalWords.length,
-      usages: rule.usages.length + rule.sections.length,
-      mistakes: rule.commonMistakes.length,
-      compare: rule.comparisons.length,
-    };
-  }, [rule]);
+  const isAdvanced = detail.tier === 'ADVANCED';
 
   return (
     <div className={styles['page']}>
-      <button type="button" className={styles['backBtn']} onClick={handleBack}>
-        <ArrowLeft size={15} /> Grammar Rules
-      </button>
+      <div className={styles['topBar']}>
+        <Link to="/grammar" className={styles['backLink']}>
+          <ArrowLeft size={15} /> {t('grammar.reader.backToList')}
+        </Link>
+        <BookmarkButton targetId={detail.id} type="GRAMMAR_RULE" size="md" />
+      </div>
 
-      <header
-        className={styles['hero']}
-        style={{ '--hero-accent': accentColor } as React.CSSProperties}
-      >
-        <div className={styles['heroAccentLine']} />
-        <div className={styles['heroInner']}>
-          <div
-            style={{
-              display: 'flex',
-              justifyContent: 'space-between',
-              alignItems: 'center',
-              marginBottom: '1rem',
-            }}
-          >
-            <span
-              className={styles['heroBadge']}
-              style={{
-                background: `${accentColor}1a`,
-                color: accentColor,
-                borderColor: `${accentColor}33`,
-                margin: 0,
-              }}
-            >
-              {LEVEL_DISPLAY[rule.level] ?? rule.level}
+      <article className={styles['reader']}>
+        <header className={styles['readerHead']}>
+          <div className={styles['badgeRow']}>
+            <span className={styles['levelTag']}>{LEVEL_DISPLAY[detail.level] ?? detail.level}</span>
+            <span className={`${styles['tierBadge']} ${isAdvanced ? styles['tierAdvanced'] : styles['tierFoundation']}`}>
+              {isAdvanced ? <Sparkles size={13} /> : <GraduationCap size={13} />}
+              {isAdvanced ? t('grammar.reader.tierAdvanced') : t('grammar.reader.tierFoundation')}
             </span>
-
-            <BookmarkButton targetId={rule.id} type="GRAMMAR_RULE" size="md" label="Save Rule" />
           </div>
 
-          <h1 className={styles['heroTitle']}>{rule.topic}</h1>
-          {rule.summary.length > 0 && <p className={styles['heroSummary']}>{rule.summary}</p>}
-        </div>
-      </header>
+          <h1 className={styles['title']}>{detail.topic}</h1>
 
-      <div className={styles['body']}>
-        <div className={styles['main']}>
-          <div className={styles['tabBar']} role="tablist">
-            {TABS.map(({ key, label, icon }) => (
-              <button
-                key={key}
-                type="button"
-                role="tab"
-                aria-selected={activeTab === key}
-                className={`${styles['tab']} ${activeTab === key ? styles['tabActive'] : ''}`}
-                style={
-                  activeTab === key
-                    ? ({ '--tab-color': accentColor } as React.CSSProperties)
-                    : undefined
-                }
-                onClick={() => {
-                  setActiveTab(key);
-                }}
-              >
-                {icon}
-                {label}
-                {tabCounts[key] > 0 && <span className={styles['tabCount']}>{tabCounts[key]}</span>}
-              </button>
+          {(detail.sourceAttribution?.length ?? 0) > 0 && (
+            <p className={styles['attribution']}>
+              <Library size={13} /> {t('grammar.reader.source')}: {detail.sourceAttribution}
+            </p>
+          )}
+
+          {(detail.summary?.length ?? 0) > 0 && <p className={styles['lead']}>{parseInlineMarkup(detail.summary)}</p>}
+
+          {((detail.coreConcept?.length ?? 0) > 0 || (detail.structure?.length ?? 0) > 0) && (
+            <div className={styles['formulaBox']}>
+              {(detail.coreConcept?.length ?? 0) > 0 && (
+                <p className={styles['formulaLine']}>
+                  <BookOpenCheck size={15} /> {parseInlineMarkup(detail.coreConcept)}
+                </p>
+              )}
+              {(detail.structure?.length ?? 0) > 0 && (
+                <p className={styles['formulaStructure']}>{detail.structure}</p>
+              )}
+            </div>
+          )}
+        </header>
+
+        {(detail.usages?.length ?? 0) > 0 && (
+          <div className={styles['blockGroup']}>
+            {detail.usages.map((u, i) => (
+              <LetteredBlock key={i} letter={u.letter} title={u.title} body={u.explanation} register={u.register} examples={u.examples} />
             ))}
           </div>
+        )}
 
-          {activeTab === 'overview' && (
-            <OverviewTab
-              coreConcept={rule.coreConcept}
-              structure={rule.structure}
-              signalWords={rule.signalWords}
-            />
-          )}
-          {activeTab === 'usages' && <UsagesTab usages={rule.usages} sections={rule.sections} />}
-          {activeTab === 'mistakes' && <MistakesTab mistakes={rule.commonMistakes} />}
-          {activeTab === 'compare' && (
-            <CompareTab comparisons={rule.comparisons} onNavigate={handleNavigateToTopic} />
-          )}
-        </div>
+        {(detail.sections?.length ?? 0) > 0 && (
+          <div className={styles['blockGroup']}>
+            {detail.sections.map((s, i) => (
+              <LetteredBlock key={i} letter={s.letter} title={s.title} body={s.content} register={s.register} examples={s.examples} />
+            ))}
+          </div>
+        )}
 
-        <Sidebar relatedTopics={rule.relatedTopics} onNavigate={handleNavigateToTopic} />
-      </div>
+        {(detail.comparisons?.length ?? 0) > 0 && (
+          <div className={styles['blockGroup']}>
+            {detail.comparisons.map((c, i) => <CompareBlock key={i} {...c} />)}
+          </div>
+        )}
+
+        {(detail.commonMistakes?.length ?? 0) > 0 && (
+          <div className={styles['mistakesBox']}>
+            <AlertTriangle size={18} className={styles['mistakesIcon']} />
+            <div>
+              <p className={styles['mistakesTitle']}>{t('grammar.reader.commonMistakes')}</p>
+              <ul className={styles['mistakesList']}>
+                {detail.commonMistakes.map((m, i) => <li key={i}>{parseInlineMarkup(m)}</li>)}
+              </ul>
+            </div>
+          </div>
+        )}
+
+        {(detail.signalWords?.length ?? 0) > 0 && (
+          <div className={styles['tagSection']}>
+            <span className={styles['tagSectionLabel']}><Tag size={13} /> {t('grammar.reader.signalWords')}</span>
+            <div className={styles['tagRow']}>
+              {detail.signalWords.map((w) => <span key={w} className={styles['wordTag']}>{w}</span>)}
+            </div>
+          </div>
+        )}
+
+        {(detail.crossReferences?.length ?? 0) > 0 && (
+          <div className={styles['tagSection']}>
+            <span className={styles['tagSectionLabel']}><Link2 size={13} /> {t('grammar.reader.seeAlso')}</span>
+            <div className={styles['crossRefRow']}>
+              {detail.crossReferences.map((ref, i) => (
+                <a
+                  key={i}
+                  href={ref.targetSlug !== undefined ? `/grammar/${ref.targetSlug}` : `#point-${ref.targetAnchor ?? ''}`}
+                  className={styles['crossRefChip']}
+                >
+                  {ref.label}
+                </a>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(detail.relatedTopics?.length ?? 0) > 0 && (
+          <div className={styles['tagSection']}>
+            <span className={styles['tagSectionLabel']}>{t('grammar.reader.relatedTopics')}</span>
+            <div className={styles['crossRefRow']}>
+              {detail.relatedTopics.map((topicSlug) => (
+                <Link key={topicSlug} to={`/grammar/${topicSlug}`} className={styles['crossRefChip']}>
+                  {topicSlug.replace(/-/g, ' ')}
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+
+        {(detail.relatedExercises?.length ?? 0) > 0 && (
+          <div className={styles['exerciseSection']}>
+            <span className={styles['tagSectionLabel']}><Dumbbell size={13} /> {t('grammar.reader.relatedExercises')}</span>
+            <div className={styles['exerciseList']}>
+              {detail.relatedExercises.map((ex) => (
+                <Link key={ex.id} to={`/exercises/${ex.topic}`} className={styles['exerciseItem']}>
+                  <span className={styles['exerciseSentence']}>{ex.sentence}</span>
+                  <span className={styles['exerciseDifficulty']}>{ex.difficulty.toLowerCase()}</span>
+                </Link>
+              ))}
+            </div>
+          </div>
+        )}
+      </article>
     </div>
   );
 }

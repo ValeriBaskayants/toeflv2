@@ -510,3 +510,70 @@
     grid-template-columns: 1fr;
   }
 }
+
+
+.tierTabs {
+  display: inline-flex;
+  gap: 0.25rem;
+  padding: 0.25rem;
+  background: var(--surface-2);
+  border-radius: var(--radius-md);
+  margin-bottom: 1.5rem;
+}
+
+.tierTab {
+  display: flex;
+  align-items: center;
+  gap: 0.45rem;
+  padding: 0.55rem 1.1rem;
+  border-radius: calc(var(--radius-md) - 4px);
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-3);
+  transition: all var(--duration-fast) ease;
+}
+
+.tierTab:hover {
+  color: var(--text-1);
+}
+
+.tierTabActive {
+  background: var(--surface);
+  box-shadow: var(--shadow-sm);
+  color: var(--accent);
+}
+
+.tierTabAdvanced.tierTabActive {
+  color: #a855f7;
+}
+
+.tierChip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.3rem;
+  padding: 0.2rem 0.55rem;
+  border-radius: 100px;
+  font-size: 0.66rem;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.tierChipFoundation {
+  background: var(--accent-light);
+  color: var(--accent);
+}
+
+.tierChipAdvanced {
+  background: rgba(168, 85, 247, 0.12);
+  color: #a855f7;
+}
+
+[data-theme='dark'] .tierChipAdvanced {
+  background: rgba(168, 85, 247, 0.2);
+  color: #c084fc;
+}
+
+@media (max-width: 600px) {
+  .tierTabs { width: 100%; }
+  .tierTab { flex: 1; justify-content: center; padding: 0.6rem 0.5rem; font-size: 0.8rem; }
+}

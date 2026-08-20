@@ -31,8 +31,6 @@ interface SM2Result {
   lastReviewedAt: Date;
 }
 
-
-
 export interface MCQOption {
   id: string;
   text: string;
@@ -61,8 +59,6 @@ export interface ClozeCard {
 }
 
 export type VocabCard = MCQCard | ClozeCard;
-
-
 
 function addDays(date: Date, days: number): Date {
   const d = new Date(date);
@@ -97,10 +93,13 @@ function applySM2(card: SM2Card, quality: SM2Quality): SM2Result {
   );
 
   const status: WordLearningStatus =
-    repetitions === 0 ? 'NEW' :
-      repetitions < 3 ? 'LEARNING' :
-        repetitions < 6 || easinessFactor < 2.0 ? 'REVIEW' :
-          'MASTERED';
+    repetitions === 0
+      ? 'NEW'
+      : repetitions < 3
+        ? 'LEARNING'
+        : repetitions < 6 || easinessFactor < 2.0
+          ? 'REVIEW'
+          : 'MASTERED';
 
   return {
     easinessFactor,
@@ -116,14 +115,17 @@ function escapeRegExp(s: string): string {
   return s.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
 
-/** * Finds the first example sentence containing the word (or its forms) 
- * and splits it into { before, after } around the match. 
+/** * Finds the first example sentence containing the word (or its forms)
+ * and splits it into { before, after } around the match.
  */
-function buildClozeSplit(word: string, examples: string[], forms?: any): { before: string; after: string } | null {
+function buildClozeSplit(
+  word: string,
+  examples: string[],
+  forms?: any,
+): { before: string; after: string } | null {
   if (examples.length === 0) return null;
 
   const shuffled = [...examples].sort(() => Math.random() - 0.5);
-
 
   const variations: string[] = [word];
   if (forms && typeof forms === 'object') {
@@ -132,9 +134,7 @@ function buildClozeSplit(word: string, examples: string[], forms?: any): { befor
     });
   }
 
-
   const validVariations = [...new Set(variations.filter(Boolean))].map(escapeRegExp);
-
 
   const exactRegex = new RegExp(`\\b(${validVariations.join('|')})\\b`, 'i');
 
@@ -147,7 +147,6 @@ function buildClozeSplit(word: string, examples: string[], forms?: any): { befor
       };
     }
   }
-
 
   const fallbackRegex = new RegExp(`\\b${escapeRegExp(word)}(s|ed|ing|d|es)?\\b`, 'i');
 
@@ -174,7 +173,10 @@ function shuffle<T>(arr: T[]): T[] {
 }
 
 function normalizeAnswer(s: string): string {
-  return s.trim().toLowerCase().replace(/[^\p{L}\p{N}]/gu, '');
+  return s
+    .trim()
+    .toLowerCase()
+    .replace(/[^\p{L}\p{N}]/gu, '');
 }
 
 @Injectable()
@@ -182,9 +184,7 @@ export class VocabularyService {
   constructor(
     private readonly prisma: PrismaService,
     private readonly progressService: ProgressService,
-  ) { }
-
-
+  ) {}
 
   async findAll(query: GetVocabularyDto) {
     const where: Prisma.VocabularyWhereInput = {};
@@ -210,8 +210,6 @@ export class VocabularyService {
 
     return { total, learned, mastered, dueToday };
   }
-
-
 
   async reviewWord(userId: string, wordId: string, quality: SM2Quality, timezone?: string) {
     const existing = await this.prisma.userVocabularyProgress.findUnique({
@@ -250,7 +248,6 @@ export class VocabularyService {
       justMastered,
     };
   }
-
 
   async getFlashcards(userId: string, query: GetFlashcardsDto) {
     const now = new Date();
@@ -325,9 +322,10 @@ export class VocabularyService {
         take: remaining,
       });
 
-
-
-      entries = [...entries, ...newWords.map((word) => ({ word, status: 'NEW' as WordLearningStatus }))];
+      entries = [
+        ...entries,
+        ...newWords.map((word) => ({ word, status: 'NEW' as WordLearningStatus })),
+      ];
     }
 
     return Promise.all(
@@ -350,7 +348,6 @@ export class VocabularyService {
           wordLength: word.word.length,
         };
       }
-
     }
 
     const distractors = await this.getDistractors(word, DISTRACTOR_COUNT);
@@ -414,8 +411,6 @@ export class VocabularyService {
     return picked;
   }
 
-
-
   async submitAnswer(userId: string, dto: SubmitVocabAnswerDto, timezone?: string) {
     const word = await this.prisma.vocabulary.findUnique({ where: { id: dto.wordId } });
     if (word === null) throw new NotFoundException('Word not found');
@@ -434,7 +429,6 @@ export class VocabularyService {
 
       const userAnswer = normalizeAnswer(dto.answerText);
 
-
       const validAnswers = new Set([normalizeAnswer(word.word)]);
 
       if (word.forms && typeof word.forms === 'object') {
@@ -449,8 +443,14 @@ export class VocabularyService {
 
     const hintsUsed = dto.hintsUsed ?? 0;
     const quality: SM2Quality = isCorrect
-      ? hintsUsed >= 2 ? 3 : hintsUsed === 1 ? 4 : 5
-      : hintsUsed > 0 ? 1 : 0;
+      ? hintsUsed >= 2
+        ? 3
+        : hintsUsed === 1
+          ? 4
+          : 5
+      : hintsUsed > 0
+        ? 1
+        : 0;
 
     const progressResult = await this.reviewWord(userId, dto.wordId, quality, timezone);
 
@@ -462,8 +462,6 @@ export class VocabularyService {
       ...progressResult,
     };
   }
-
-
 
   async bulkCreate(words: CreateVocabularyDto[]): Promise<{
     totalProcessed: number;

@@ -16,7 +16,7 @@ const envSchema = z.object({
   CORS_ORIGIN: z.string().default('http://localhost:5173'),
   THROTTLE_TTL: z.coerce.number().default(60),
   THROTTLE_LIMIT: z.coerce.number().default(120),
-  ELEVENLABS_API_KEY: z.string()
+  ELEVENLABS_API_KEY: z.string(),
 });
 
 export default () => {

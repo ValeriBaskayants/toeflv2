@@ -8,25 +8,23 @@ export interface WeakSpot {
   level: string;
   wrongCount: number;
   correctCount: number;
-  accuracy: number; 
-  adjustedWeight: number; 
+  accuracy: number;
+  adjustedWeight: number;
   uniqueMistakesCount: number;
   status: MasteryStatus;
-  dueForReview: boolean; 
+  dueForReview: boolean;
 }
 
 export interface HeatmapCell {
   topic: string;
   level: string;
-  weight: number; 
-  count: number; 
+  weight: number;
+  count: number;
 }
 
 @Injectable()
 export class MistakesService {
   constructor(private readonly prisma: PrismaService) {}
-
-  
 
   async findAll(userId: string, source?: MistakeSource) {
     const where: Prisma.UserMistakeWhereInput = { userId };
@@ -47,10 +45,7 @@ export class MistakesService {
           },
         },
       },
-      orderBy: [
-        { nextReview: 'asc' },
-        { wrongCount: 'desc' },
-      ],
+      orderBy: [{ nextReview: 'asc' }, { wrongCount: 'desc' }],
     });
 
     const now = new Date();
@@ -64,12 +59,11 @@ export class MistakesService {
         ...m,
         accuracy,
         dueForReview,
-        
+
         adjustedWeight: Math.round(m.wrongCount * Math.max(0, (100 - accuracy) / 100)),
       };
     });
   }
-
 
   async getDueForReview(
     userId: string,

@@ -1,68 +1,63 @@
+
+
+
 import {
-  IsArray,
-  IsEnum,
-  IsInt,
-  IsOptional,
-  IsString,
-  MaxLength,
-  Min,
-  ValidateNested,
+  IsArray, IsBoolean, IsEnum, IsInt, IsNumber,
+  IsOptional, IsString, MaxLength, Min, ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Difficulty, Level } from '@prisma/client';
 
 class BlankDto {
-  @IsInt()
-  @Min(0)
+  @IsInt() @Min(0)
   position!: number;
 
   @IsString()
   answer!: string;
 
   @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
+  @IsArray() @IsString({ each: true })
   options?: string[];
 }
 
 export class CreateExerciseDto {
-  @IsString()
-  @MaxLength(100)
+  @IsString() @MaxLength(100)
   topic!: string;
 
   @IsEnum(Level)
   level!: Level;
 
-  @IsOptional()
-  @IsEnum(Difficulty)
+  @IsOptional() @IsEnum(Difficulty)
   difficulty?: Difficulty;
 
   @IsString()
   sentence!: string;
 
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => BlankDto)
+  @IsArray() @ValidateNested({ each: true }) @Type(() => BlankDto)
   blanks!: BlankDto[];
 
-  @IsOptional()
-  @IsString()
+  @IsOptional() @IsString()
   explanation?: string;
 
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
+  @IsOptional() @IsArray() @IsString({ each: true })
   tags?: string[];
 
-  @IsOptional()
-  @IsArray()
-  @IsString({ each: true })
+  
+  @IsOptional() @IsArray() @IsString({ each: true })
   topicSlugs?: string[];
+
+  
+  @IsOptional() @IsBoolean()
+  isAvailableForPlacement?: boolean;
+
+  @IsOptional() @IsNumber()
+  difficultyRating?: number;
+
+  @IsOptional() @IsNumber()
+  discriminationRating?: number;
 }
 
 export class BulkCreateExercisesDto {
-  @IsArray()
-  @ValidateNested({ each: true })
-  @Type(() => CreateExerciseDto)
+  @IsArray() @ValidateNested({ each: true }) @Type(() => CreateExerciseDto)
   exercises!: CreateExerciseDto[];
 }

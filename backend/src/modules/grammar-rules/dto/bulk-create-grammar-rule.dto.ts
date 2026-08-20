@@ -11,7 +11,7 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { Level } from '@prisma/client';
+import { Level, GrammarTier } from '@prisma/client';
 
 class ExampleDto {
   @IsString()
@@ -20,6 +20,21 @@ class ExampleDto {
   @IsOptional()
   @IsString()
   translation?: string;
+}
+
+class CrossReferenceDto {
+  @IsString()
+  @MaxLength(60)
+  label!: string;
+
+  @IsOptional()
+  @IsString()
+  targetSlug?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(30)
+  targetAnchor?: string;
 }
 
 class UsageDto {
@@ -33,6 +48,15 @@ class UsageDto {
   @ValidateNested({ each: true })
   @Type(() => ExampleDto)
   examples!: ExampleDto[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  letter?: string;
+
+  @IsOptional()
+  @IsString()
+  register?: string;
 }
 
 class SectionDto {
@@ -46,6 +70,15 @@ class SectionDto {
   @ValidateNested({ each: true })
   @Type(() => ExampleDto)
   examples!: ExampleDto[];
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  letter?: string;
+
+  @IsOptional()
+  @IsString()
+  register?: string;
 }
 
 class ComparisonDto {
@@ -59,8 +92,12 @@ class ComparisonDto {
   @ValidateNested({ each: true })
   @Type(() => ExampleDto)
   examples!: ExampleDto[];
-}
 
+  @IsOptional()
+  @IsString()
+  @MaxLength(2)
+  letter?: string;
+}
 
 class PracticeTargetsDto {
   @IsOptional()
@@ -100,14 +137,13 @@ class TopicResourceDto {
   url!: string;
 
   @IsString()
-  type!: string; 
+  type!: string;
 
   @IsOptional()
   @IsString()
   @MaxLength(500)
   description?: string;
 }
-
 
 export class CreateGrammarRuleDto {
   @IsString()
@@ -165,8 +201,6 @@ export class CreateGrammarRuleDto {
   @IsString({ each: true })
   relatedTopics?: string[];
 
-  // ── Curriculum / roadmap fields ─────────────────────────────────────────
-
   @IsOptional()
   @IsInt()
   @Min(0)
@@ -191,6 +225,21 @@ export class CreateGrammarRuleDto {
   @ValidateNested({ each: true })
   @Type(() => TopicResourceDto)
   resources?: TopicResourceDto[];
+
+  @IsOptional()
+  @IsEnum(GrammarTier)
+  tier?: GrammarTier;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(300)
+  sourceAttribution?: string;
+
+  @IsOptional()
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => CrossReferenceDto)
+  crossReferences?: CrossReferenceDto[];
 }
 
 export class BulkCreateGrammarRulesDto {

@@ -11,7 +11,6 @@ import {
 import { Type } from 'class-transformer';
 import { Level } from '@prisma/client';
 
-
 class VocabularyEmbeddedDto {
   @IsString()
   word!: string;
@@ -45,7 +44,6 @@ class QuestionEmbeddedDto {
   @Type(() => QuestionOptionDto)
   options!: QuestionOptionDto[];
 }
-
 
 export class CreateReadingDto {
   @IsString()

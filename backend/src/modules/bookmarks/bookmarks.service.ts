@@ -9,13 +9,12 @@ const BASE_SELECT = {
   createdAt: true,
 } satisfies Prisma.BookmarkSelect;
 
-
 export interface EnrichedBookmark {
   id: string;
   targetId: string;
   type: BookmarkType;
   createdAt: Date;
-  
+
   data: {
     title: string;
     level?: string;
@@ -51,14 +50,12 @@ export class BookmarksService {
 
     if (bookmarks.length === 0) return [];
 
-    
     const byType: Partial<Record<BookmarkType, string[]>> = {};
     for (const b of bookmarks) {
       if (byType[b.type] === undefined) byType[b.type] = [];
       byType[b.type]!.push(b.targetId);
     }
 
-    
     const [grammarRules, vocabularies, readings, writingPrompts, listeningMaterials] =
       await Promise.all([
         byType['GRAMMAR_RULE'] !== undefined
@@ -97,7 +94,6 @@ export class BookmarksService {
           : Promise.resolve([]),
       ]);
 
-    
     const dataMap = new Map<string, EnrichedBookmark['data']>();
 
     for (const r of grammarRules) {
@@ -110,7 +106,6 @@ export class BookmarksService {
       dataMap.set(r.id, { title: r.title, level: r.level, topic: r.topic, slug: r.slug });
     }
     for (const w of writingPrompts) {
-      
       dataMap.set(w.id, {
         title: w.prompt.slice(0, 60) + (w.prompt.length > 60 ? '…' : ''),
         level: w.level,

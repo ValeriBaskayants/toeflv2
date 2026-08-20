@@ -1,5 +1,5 @@
 import { Injectable, NotFoundException, BadRequestException } from '@nestjs/common';
-import { Level, Prisma } from '@prisma/client';
+import { Level, GrammarTier, Prisma } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import type { CreateGrammarRuleDto } from './dto/bulk-create-grammar-rule.dto';
 
@@ -12,6 +12,7 @@ const LIST_SELECT = {
   signalWords: true,
   relatedTopics: true,
   createdAt: true,
+  tier: true,
 } satisfies Prisma.GrammarRuleSelect;
 
 export interface GrammarRuleListItem {
@@ -23,6 +24,7 @@ export interface GrammarRuleListItem {
   signalWords: string[];
   relatedTopics: string[];
   createdAt: Date;
+  tier: GrammarTier;
 
   exerciseCount: number;
   userStatus: 'not_started' | 'in_progress' | 'mastered';
@@ -48,9 +50,11 @@ export class GrammarRulesService {
     userId: string;
     level?: Level;
     search?: string;
+    tier?: GrammarTier;
   }): Promise<GrammarRuleListItem[]> {
     const where: Prisma.GrammarRuleWhereInput = {};
     if (params.level !== undefined) where.level = params.level;
+    if (params.tier !== undefined) where.tier = params.tier;
     if (params.search !== undefined) {
       where.topic = { contains: params.search, mode: 'insensitive' };
     }
@@ -96,11 +100,7 @@ export class GrammarRulesService {
 
       let userStatus: GrammarRuleListItem['userStatus'] = 'not_started';
       if (mistake !== undefined) {
-        if (mistake.status === 'MASTERED') {
-          userStatus = 'mastered';
-        } else { 
-          userStatus = 'in_progress';
-        }
+        userStatus = mistake.status === 'MASTERED' ? 'mastered' : 'in_progress';
       }
 
       return {

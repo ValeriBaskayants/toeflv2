@@ -21,10 +21,11 @@ model Exercise {
   explanation String   @default("")
   tags        String[]
 
-  // Links this exercise to GrammarRule.slug(s) so completing it updates
-  // UserTopicMastery for the right curriculum topic. Usually one slug,
-  // but an exercise can train more than one topic at once.
-  topicSlugs  String[] @default([])
+  topicSlugs  String[] @default([])  
+
+  isAvailableForPlacement Boolean @default(false)
+  difficultyRating        Float   @default(0)
+  discriminationRating    Float   @default(1)
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
@@ -32,4 +33,5 @@ model Exercise {
   @@index([level, difficulty])
   @@index([topic])
   @@index([topicSlugs])
+  @@index([isAvailableForPlacement])
 }

@@ -22,6 +22,7 @@ import { PlacementModule } from './modules/placement/placement.module';
 import { BullModule } from '@nestjs/bullmq';
 import { RoadmapModule } from './modules/roadmap/roadmap.module';
 import { TtsModule } from './modules/tts/tts.module';
+import { ScrambleModule } from './modules/scramble/scramble.module';
 
 @Module({
   imports: [
@@ -64,11 +65,13 @@ import { TtsModule } from './modules/tts/tts.module';
     BookmarksModule,
     PlacementModule,
     TtsModule,
-    RoadmapModule
+    RoadmapModule,
+    ScrambleModule
+    
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
-export class AppModule { }
+export class AppModule {}

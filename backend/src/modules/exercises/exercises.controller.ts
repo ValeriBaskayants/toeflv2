@@ -19,17 +19,17 @@ class GetTopicsDto {
 @Controller('exercises')
 export class ExercisesController {
   constructor(private readonly service: ExercisesService) {}
-  
+
   @Get()
   findAll(@CurrentUser() user: JwtUserPayload, @Query() query: GetExercisesDto) {
     return this.service.findAll({ ...query, userId: user.id });
   }
-  
+
   @Get('topics')
   getTopics(@Query() query: GetTopicsDto) {
     return this.service.getTopics(query.level);
   }
-  
+
   @Post('submit')
   submitAnswer(
     @CurrentUser() user: JwtUserPayload,

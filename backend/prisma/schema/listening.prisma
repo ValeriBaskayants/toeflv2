@@ -31,16 +31,16 @@ type ListeningAnswerRecord {
 }
 
 type ListeningNote {
-  id         String
-  text       String
-  anchorSec  Float?
-  createdAt  String
+  id        String
+  text      String
+  anchorSec Float?
+  createdAt String
 }
 
 model ListeningMaterial {
   id        String            @id @default(auto()) @map("_id") @db.ObjectId
   title     String
-  topic     String            // thematic topic, e.g. "University Life"
+  topic     String
   level     Level
   type      ListeningType
   fullText  String
@@ -52,10 +52,11 @@ model ListeningMaterial {
 
   allowedModes ListeningMode[]
 
-  // Curriculum grammar tags — which GrammarRule.slug(s) this material
-  // exercises. Distinct from `topic` above (thematic), same pattern as
-  // ReadingMaterial.grammarTopics.
   grammarTopics String[] @default([])
+
+  isAvailableForPlacement Boolean @default(false)
+  difficultyRating        Float   @default(0)
+  discriminationRating    Float   @default(1)
 
   questions ListeningQuestion[]
   sessions  ListeningSession[]
@@ -66,6 +67,7 @@ model ListeningMaterial {
   @@index([level, type])
   @@index([topic])
   @@index([grammarTopics])
+  @@index([isAvailableForPlacement])
 }
 
 model ListeningQuestion {
@@ -99,8 +101,7 @@ model ListeningSession {
   playCount       Int @default(0)
   maxAllowedPlays Int
 
-  notes ListeningNote[]
-
+  notes   ListeningNote[]
   answers ListeningAnswerRecord[]
 
   correctCount Int?

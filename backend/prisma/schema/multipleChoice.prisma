@@ -1,18 +1,22 @@
+
 model MultipleChoice {
   id           String     @id @default(auto()) @map("_id") @db.ObjectId
-  
+
   question     String     @unique
   options      String[]
   correctIndex Int
   explanation  String     @default("")
-  
+
   topic        String     @default("")
-  level        Level     
+  level        Level
   difficulty   Difficulty @default(EASY)
 
-  // Links this question to GrammarRule.slug(s) — see Exercise.topicSlugs
-  // for the same pattern.
-  topicSlugs   String[]   @default([])
+  topicSlugs   String[]   @default([])  // GrammarRule.slug(s) this question trains
+
+  isAvailableForPlacement Boolean @default(false)
+  category                String  @default("")
+  difficultyRating        Float   @default(0)
+  discriminationRating    Float   @default(1)
 
   createdAt    DateTime   @default(now())
   updatedAt    DateTime   @updatedAt
@@ -20,4 +24,5 @@ model MultipleChoice {
   @@index([level, difficulty])
   @@index([topic])
   @@index([topicSlugs])
+  @@index([isAvailableForPlacement, category])
 }

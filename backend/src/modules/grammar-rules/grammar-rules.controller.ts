@@ -25,6 +25,7 @@ export class GrammarRulesController {
       userId: user.id,
       level: query.level,
       search: query.search,
+      tier: query.tier,
     });
   }
 

@@ -1,18 +1,13 @@
-
-
-
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
 
-
-
 const ELEVENLABS_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
 const ELEVENLABS_MODEL_ID = 'eleven_multilingual_v2';
 const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io/v1';
-const MAX_CHARS    = 2_500; 
-const TIMEOUT_MS   = 15_000;
+const MAX_CHARS = 2_500;
+const TIMEOUT_MS = 15_000;
 
 export interface TtsResult {
   audioBase64: string;
@@ -40,8 +35,6 @@ export class TtsService {
     rate?: number,
     lang?: string,
   ): Promise<TtsResult | TtsFallbackResult> {
-
-    
     const material = await this.prisma.listeningMaterial.findUnique({
       where: { id: materialId },
       select: { id: true, speakerLang: true },
@@ -51,7 +44,6 @@ export class TtsService {
       throw new NotFoundException(`Listening material ${materialId} not found`);
     }
 
-    
     const apiKey = this.config.get<string>('elevenlabs.apiKey');
     if (!apiKey) {
       this.logger.warn('ELEVENLABS_API_KEY not configured');
@@ -60,19 +52,16 @@ export class TtsService {
 
     const truncatedText = text.slice(0, MAX_CHARS);
 
-    
     const contentHash = createHash('sha256')
       .update(`${truncatedText}::${ELEVENLABS_VOICE_ID}::${ELEVENLABS_MODEL_ID}`)
       .digest('hex');
 
-    
     const cached = await this.prisma.ttsCache.findUnique({
       where: { contentHash },
       select: { audioBase64: true },
     });
 
     if (cached !== null) {
-      
       void this.prisma.ttsCache
         .update({
           where: { contentHash },
@@ -87,7 +76,6 @@ export class TtsService {
         materialId,
       });
 
-      
       return {
         audioBase64: cached.audioBase64,
         fallback: false,
@@ -95,7 +83,6 @@ export class TtsService {
       };
     }
 
-    
     this.logger.log('TTS_ELEVENLABS_REQUEST', {
       materialId,
       textLength: truncatedText.length,
@@ -103,28 +90,25 @@ export class TtsService {
     });
 
     try {
-      const response = await fetch(
-        `${ELEVENLABS_BASE_URL}/text-to-speech/${ELEVENLABS_VOICE_ID}`,
-        {
-          method: 'POST',
-          headers: {
-            'Accept': 'audio/mpeg',
-            'Content-Type': 'application/json',
-            'xi-api-key': apiKey,
-          },
-          body: JSON.stringify({
-            text: truncatedText,
-            model_id: ELEVENLABS_MODEL_ID,
-            voice_settings: {
-              stability: 0.5,
-              similarity_boost: 0.75,
-              style: 0.0,
-              use_speaker_boost: true,
-            },
-          }),
-          signal: AbortSignal.timeout(TIMEOUT_MS),
+      const response = await fetch(`${ELEVENLABS_BASE_URL}/text-to-speech/${ELEVENLABS_VOICE_ID}`, {
+        method: 'POST',
+        headers: {
+          Accept: 'audio/mpeg',
+          'Content-Type': 'application/json',
+          'xi-api-key': apiKey,
         },
-      );
+        body: JSON.stringify({
+          text: truncatedText,
+          model_id: ELEVENLABS_MODEL_ID,
+          voice_settings: {
+            stability: 0.5,
+            similarity_boost: 0.75,
+            style: 0.0,
+            use_speaker_boost: true,
+          },
+        }),
+        signal: AbortSignal.timeout(TIMEOUT_MS),
+      });
 
       if (!response.ok) {
         const status = response.status;
@@ -142,7 +126,6 @@ export class TtsService {
         return { fallback: true, reason: `http_${status}` };
       }
 
-      
       const arrayBuffer = await response.arrayBuffer();
       const audioBase64 = Buffer.from(arrayBuffer).toString('base64');
 
@@ -151,7 +134,6 @@ export class TtsService {
         audioSizeKb: Math.round(arrayBuffer.byteLength / 1024),
       });
 
-      
       void this.prisma.ttsCache
         .create({
           data: {
@@ -171,7 +153,6 @@ export class TtsService {
         fallback: false,
         cached: false,
       };
-
     } catch (err: unknown) {
       const isTimeout = err instanceof Error && err.name === 'AbortError';
       this.logger.error('TTS_ELEVENLABS_REQUEST_FAILED', {

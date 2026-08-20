@@ -12,15 +12,7 @@ export class TtsController {
   @Post('tts')
   @HttpCode(HttpStatus.OK)
   @Throttle({ default: { limit: 20, ttl: 60_000 } })
-  synthesize(
-    @CurrentUser() _user: JwtUserPayload,
-    @Body() dto: TtsRequestDto,
-  ) {
-    return this.ttsService.synthesize(
-      dto.materialId,
-      dto.text,
-      dto.rate,
-      dto.lang,  
-    );
+  synthesize(@CurrentUser() _user: JwtUserPayload, @Body() dto: TtsRequestDto) {
+    return this.ttsService.synthesize(dto.materialId, dto.text, dto.rate, dto.lang);
   }
 }

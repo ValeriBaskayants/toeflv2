@@ -3,6 +3,6 @@ import { TopicMasteryService } from './topic-mastery.service';
 
 @Module({
   providers: [TopicMasteryService],
-  exports:   [TopicMasteryService],
+  exports: [TopicMasteryService],
 })
 export class TopicMasteryModule {}

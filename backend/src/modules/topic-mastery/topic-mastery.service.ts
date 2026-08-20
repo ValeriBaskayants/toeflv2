@@ -43,7 +43,7 @@ export class TopicMasteryService {
     }
 
     const rules = await this.prisma.grammarRule.findMany({
-      where:  { slug: { in: uniqueSlugs } },
+      where: { slug: { in: uniqueSlugs } },
       select: { slug: true, level: true, practiceTargets: true },
     });
     const ruleMap = new Map(rules.map((r) => [r.slug, r]));
@@ -61,7 +61,9 @@ export class TopicMasteryService {
     accuracy: number | undefined,
   ): Promise<void> {
     if (rule === undefined) {
-      this.logger.warn(`TOPIC_SLUG_NOT_FOUND: "${slug}" — content references a topic that doesn't exist in the curriculum`);
+      this.logger.warn(
+        `TOPIC_SLUG_NOT_FOUND: "${slug}" — content references a topic that doesn't exist in the curriculum`,
+      );
       return;
     }
 
@@ -71,17 +73,18 @@ export class TopicMasteryService {
 
     const now = new Date();
 
-    const grammarCompleted   = existing?.grammarCompleted   ?? 0;
-    const grammarAccuracy    = existing?.grammarAccuracy    ?? 0;
-    const quizCompleted      = existing?.quizCompleted      ?? 0;
-    const quizAccuracy       = existing?.quizAccuracy       ?? 0;
-    const readingCompleted   = existing?.readingCompleted   ?? 0;
+    const grammarCompleted = existing?.grammarCompleted ?? 0;
+    const grammarAccuracy = existing?.grammarAccuracy ?? 0;
+    const quizCompleted = existing?.quizCompleted ?? 0;
+    const quizAccuracy = existing?.quizAccuracy ?? 0;
+    const readingCompleted = existing?.readingCompleted ?? 0;
     const listeningCompleted = existing?.listeningCompleted ?? 0;
 
-    const nextGrammarCompleted   = kind === 'grammar'   ? grammarCompleted + 1   : grammarCompleted;
-    const nextQuizCompleted      = kind === 'quiz'       ? quizCompleted + 1      : quizCompleted;
-    const nextReadingCompleted   = kind === 'reading'    ? readingCompleted + 1   : readingCompleted;
-    const nextListeningCompleted = kind === 'listening'  ? listeningCompleted + 1 : listeningCompleted;
+    const nextGrammarCompleted = kind === 'grammar' ? grammarCompleted + 1 : grammarCompleted;
+    const nextQuizCompleted = kind === 'quiz' ? quizCompleted + 1 : quizCompleted;
+    const nextReadingCompleted = kind === 'reading' ? readingCompleted + 1 : readingCompleted;
+    const nextListeningCompleted =
+      kind === 'listening' ? listeningCompleted + 1 : listeningCompleted;
 
     const nextGrammarAccuracy =
       kind === 'grammar' && accuracy !== undefined
@@ -97,58 +100,65 @@ export class TopicMasteryService {
       (rule.practiceTargets as PracticeTargetsShape | null) ?? DEFAULT_TARGETS;
 
     const meetsTargets =
-      nextGrammarCompleted   >= targets.grammarRequired &&
-      nextGrammarAccuracy    >= targets.grammarAccuracyMin &&
-      nextQuizCompleted      >= targets.quizRequired &&
-      nextReadingCompleted   >= targets.readingRequired &&
+      nextGrammarCompleted >= targets.grammarRequired &&
+      nextGrammarAccuracy >= targets.grammarAccuracyMin &&
+      nextQuizCompleted >= targets.quizRequired &&
+      nextReadingCompleted >= targets.readingRequired &&
       nextListeningCompleted >= targets.listeningRequired;
 
     const wasMastered = existing?.status === 'MASTERED';
-    const nextStatus = wasMastered ? 'MASTERED' : (meetsTargets ? 'MASTERED' : 'IN_PROGRESS');
+    const nextStatus = wasMastered ? 'MASTERED' : meetsTargets ? 'MASTERED' : 'IN_PROGRESS';
     const justMastered = !wasMastered && meetsTargets;
 
     await this.prisma.userTopicMastery.upsert({
       where: { userId_topicSlug: { userId, topicSlug: slug } },
       create: {
         userId,
-        topicSlug:          slug,
-        level:               rule.level,
-        grammarCompleted:    nextGrammarCompleted,
-        grammarAccuracy:     nextGrammarAccuracy,
-        quizCompleted:       nextQuizCompleted,
-        quizAccuracy:        nextQuizAccuracy,
-        readingCompleted:    nextReadingCompleted,
-        listeningCompleted:  nextListeningCompleted,
-        status:              nextStatus,
-        masteredAt:          justMastered ? now : null,
-        lastPracticedAt:     now,
+        topicSlug: slug,
+        level: rule.level,
+        grammarCompleted: nextGrammarCompleted,
+        grammarAccuracy: nextGrammarAccuracy,
+        quizCompleted: nextQuizCompleted,
+        quizAccuracy: nextQuizAccuracy,
+        readingCompleted: nextReadingCompleted,
+        listeningCompleted: nextListeningCompleted,
+        status: nextStatus,
+        masteredAt: justMastered ? now : null,
+        lastPracticedAt: now,
       },
       update: {
-        grammarCompleted:    nextGrammarCompleted,
-        grammarAccuracy:     nextGrammarAccuracy,
-        quizCompleted:       nextQuizCompleted,
-        quizAccuracy:        nextQuizAccuracy,
-        readingCompleted:    nextReadingCompleted,
-        listeningCompleted:  nextListeningCompleted,
-        status:              nextStatus,
+        grammarCompleted: nextGrammarCompleted,
+        grammarAccuracy: nextGrammarAccuracy,
+        quizCompleted: nextQuizCompleted,
+        quizAccuracy: nextQuizAccuracy,
+        readingCompleted: nextReadingCompleted,
+        listeningCompleted: nextListeningCompleted,
+        status: nextStatus,
         ...(justMastered ? { masteredAt: now } : {}),
-        lastPracticedAt:     now,
+        lastPracticedAt: now,
       },
     });
   }
 
-
-  async getMasteryMap(userId: string, slugs: string[]): Promise<Map<string, {
-    grammarCompleted: number;
-    grammarAccuracy: number;
-    quizCompleted: number;
-    quizAccuracy: number;
-    readingCompleted: number;
-    listeningCompleted: number;
-    status: string;
-    masteredAt: Date | null;
-    lastPracticedAt: Date | null;
-  }>> {
+  async getMasteryMap(
+    userId: string,
+    slugs: string[],
+  ): Promise<
+    Map<
+      string,
+      {
+        grammarCompleted: number;
+        grammarAccuracy: number;
+        quizCompleted: number;
+        quizAccuracy: number;
+        readingCompleted: number;
+        listeningCompleted: number;
+        status: string;
+        masteredAt: Date | null;
+        lastPracticedAt: Date | null;
+      }
+    >
+  > {
     if (slugs.length === 0) {
       return new Map();
     }

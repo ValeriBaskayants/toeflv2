@@ -91,33 +91,33 @@ export function PlacementBanner() {
           </button>
 
           {!isRetakeBanner && (
-            <button
-              type="button"
-              className={styles['secondaryBtn']}
-              onClick={handleRemindLater}
-              disabled={isActing}
-              aria-label={t('placement.remindLater')}
-            >
-              {isReminding
-                ? <span className={styles['spinner']} />
-                : <Bell size={14} />}
-              {t('placement.remindLater')}
-            </button>
-          )}
+            <div className={styles['subActions']}>
+              <button
+                type="button"
+                className={styles['secondaryBtn']}
+                onClick={handleRemindLater}
+                disabled={isActing}
+                aria-label={t('placement.remindLater')}
+              >
+                {isReminding
+                  ? <span className={styles['spinner']} />
+                  : <Bell size={14} />}
+                <span>{t('placement.remindLater')}</span>
+              </button>
 
-          {!isRetakeBanner && (
-            <button
-              type="button"
-              className={styles['skipBtn']}
-              onClick={handleSkip}
-              disabled={isActing}
-              aria-label={t('placement.skipToA1')}
-            >
-              {isSkipping
-                ? <span className={styles['spinner']} />
-                : <SkipForward size={13} />}
-              {t('placement.skipToA1')}
-            </button>
+              <button
+                type="button"
+                className={styles['skipBtn']}
+                onClick={handleSkip}
+                disabled={isActing}
+                aria-label={t('placement.skipToA1')}
+              >
+                {isSkipping
+                  ? <span className={styles['spinner']} />
+                  : <SkipForward size={13} />}
+                <span>{t('placement.skipToA1')}</span>
+              </button>
+            </div>
           )}
         </div>
       </div>

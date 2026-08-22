@@ -8,7 +8,6 @@ import {
   Mic,
   CheckCheck,
   BarChart3,
-  Globe,
   Sun,
   Moon,
   LogOut,
@@ -59,7 +58,6 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
   const { theme, toggleTheme } = useTheme();
   const currentLang = i18n.language.slice(0, 2);
 
-  // Due-review badge count from mistakes slice
   const dueCount = useAppSelector(selectDueCount);
 
   const handleLogout = async (): Promise<void> => {
@@ -86,7 +84,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
         <X size={18} />
       </button>
 
-      {/* Logo */}
+      {/* Brand Header */}
       <div className={styles['logo']}>
         <div className={styles['logoMark']}>
           <span className={styles['logoLetter']}>T</span>
@@ -107,7 +105,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             }
             onClick={onClose}
           >
-            <LayoutDashboard size={16} className={styles['navIcon']} />
+            <LayoutDashboard size={18} className={styles['navIcon']} />
             <span>{t('navigation.dashboard')}</span>
           </NavLink>
 
@@ -118,9 +116,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             }
             onClick={onClose}
           >
-            <BarChart3 size={16} className={styles['navIcon']} />
+            <BarChart3 size={18} className={styles['navIcon']} />
             <span>{t('navigation.progress')}</span>
           </NavLink>
+
           <NavLink
             to="/bookmarks"
             className={({ isActive }) =>
@@ -128,10 +127,10 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             }
             onClick={onClose}
           >
-            <Bookmark size={16} className={styles['navIcon']} />
+            <Bookmark size={18} className={styles['navIcon']} />
             <span>{t('navigation.bookmarks')}</span>
           </NavLink>
-          {/* Mistakes with due-review badge */}
+
           <NavLink
             to="/mistakes"
             className={({ isActive }) =>
@@ -139,7 +138,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             }
             onClick={onClose}
           >
-            <AlertTriangle size={16} className={styles['navIcon']} />
+            <AlertTriangle size={18} className={styles['navIcon']} />
             <span>{t('navigation.mistakes')}</span>
             {dueCount > 0 && <span className={styles['navBadge']}>{dueCount}</span>}
           </NavLink>
@@ -165,7 +164,7 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               }
               onClick={onClose}
             >
-              <Icon size={16} className={styles['navIcon']} />
+              <Icon size={18} className={styles['navIcon']} />
               <span>{t(label)}</span>
             </NavLink>
           ))}
@@ -182,17 +181,16 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
               }
               onClick={onClose}
             >
-              <ShieldAlert size={16} className={styles['navIcon']} />
+              <ShieldAlert size={18} className={styles['navIcon']} />
               <span>Admin Panel</span>
             </NavLink>
           </div>
         )}
       </nav>
 
-      {/* Bottom controls */}
+      {/* Bottom Hub */}
       <div className={styles['bottom']}>
-        <div className={styles['langRow']}>
-          <Globe size={14} className={styles['controlIcon']} />
+        <div className={styles['controlsCard']}>
           <div className={styles['langGroup']}>
             {LANGUAGES.map(({ code, label }) => (
               <button
@@ -200,28 +198,24 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
                 className={`${styles['langBtn']} ${currentLang === code ? styles['langBtnActive'] : ''}`}
                 onClick={() => handleLangChange(code)}
                 type="button"
-                aria-label={`Switch to ${label}`}
               >
                 {label}
               </button>
             ))}
           </div>
+
+          <button
+            className={styles['themeBtn']}
+            onClick={toggleTheme}
+            type="button"
+            aria-label="Toggle theme"
+          >
+            {theme === 'dark' ? <Sun size={16} /> : <Moon size={16} />}
+          </button>
         </div>
 
-        <button
-          className={styles['themeBtn']}
-          onClick={toggleTheme}
-          type="button"
-          aria-label="Toggle theme"
-        >
-          {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
-          <span>{theme === 'dark' ? t('settings.lightMode') : t('settings.darkMode')}</span>
-        </button>
-
-        <div className={styles['divider']} />
-
         {user !== null && (
-          <div className={styles['userRow']}>
+          <div className={styles['userCard']}>
             <UserAvatar name={user.name} avatar={user.avatar} />
             <div className={styles['userInfo']}>
               <span className={styles['userName']}>{user.name}</span>
@@ -229,14 +223,11 @@ export function Sidebar({ isOpen, onClose }: SidebarProps) {
             </div>
             <button
               className={styles['logoutBtn']}
-              onClick={() => {
-                void handleLogout();
-              }}
+              onClick={() => void handleLogout()}
               type="button"
-              aria-label={t('auth.signOut')}
               title={t('auth.signOut')}
             >
-              <LogOut size={15} />
+              <LogOut size={16} />
             </button>
           </div>
         )}

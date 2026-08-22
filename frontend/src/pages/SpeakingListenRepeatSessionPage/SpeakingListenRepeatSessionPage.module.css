@@ -1,0 +1,347 @@
+.page {
+  max-width: 720px;
+  margin: 0 auto;
+  padding: 1.75rem 1.5rem 3rem;
+  min-height: 80vh;
+  display: flex;
+  flex-direction: column;
+}
+
+.sessionHeader {
+  margin-bottom: 1rem;
+}
+
+.progressTrack {
+  height: 5px;
+  background: var(--surface-2);
+  border-radius: 100px;
+  overflow: hidden;
+  margin-bottom: 0.75rem;
+}
+
+.progressFill {
+  height: 100%;
+  background: linear-gradient(90deg, #f97316, #fb923c);
+  border-radius: 100px;
+  transition: width var(--duration-slow) var(--ease-spring);
+}
+
+.headerRow {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.stepLabel {
+  font-size: 0.78rem;
+  font-weight: 700;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.exitBtn {
+  margin-left: auto;
+  width: 32px;
+  height: 32px;
+  border-radius: var(--radius-sm);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-3);
+  transition: all var(--duration-fast) ease;
+}
+
+.exitBtn:hover {
+  background: var(--surface-2);
+  color: var(--text-1);
+}
+
+.scenarioTag {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  margin-bottom: 2rem;
+  text-align: center;
+}
+
+.stage {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.centerBlock {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  text-align: center;
+}
+
+.stageTitle {
+  font-size: 1.375rem;
+  font-weight: 800;
+  color: var(--text-1);
+}
+
+.stageHint {
+  font-size: 0.9rem;
+  color: var(--text-3);
+}
+
+.idleIcon {
+  color: #f97316;
+}
+
+.itemBadge {
+  width: 72px;
+  height: 72px;
+  border-radius: 50%;
+  background: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.75rem;
+  font-weight: 800;
+}
+
+.pulseCircle {
+  width: 100px;
+  height: 100px;
+  border-radius: 50%;
+  background: rgba(99, 102, 241, 0.12);
+  color: var(--accent);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  animation: pulseScale 1.4s ease-in-out infinite;
+}
+
+@keyframes pulseScale {
+  0%, 100% { transform: scale(1); }
+  50% { transform: scale(1.08); }
+}
+
+.beepCircle {
+  width: 60px;
+  height: 60px;
+  border-radius: 50%;
+  background: #fbbf24;
+  animation: beepFlash 0.6s ease-in-out infinite;
+}
+
+@keyframes beepFlash {
+  0%, 100% { opacity: 0.4; }
+  50% { opacity: 1; }
+}
+
+.radialTimer {
+  transform: rotate(-90deg);
+}
+
+.radialTrack {
+  fill: none;
+  stroke: var(--surface-2);
+  stroke-width: 8;
+}
+
+.radialProgress {
+  fill: none;
+  stroke: #ef4444;
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 1s linear;
+}
+
+.radialLabel {
+  transform: rotate(90deg);
+  transform-origin: center;
+  fill: var(--text-1);
+  font-size: 28px;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.recordingDot {
+  width: 12px;
+  height: 12px;
+  border-radius: 50%;
+  background: #ef4444;
+  animation: recordPulse 1s ease-in-out infinite;
+}
+
+@keyframes recordPulse {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+
+.doneIcon {
+  color: #22c55e;
+}
+
+.errorIcon {
+  color: var(--danger);
+}
+
+.spinner {
+  width: 36px;
+  height: 36px;
+  border: 3px solid var(--surface-2);
+  border-top-color: #f97316;
+  border-radius: 50%;
+  animation: spin 0.8s linear infinite;
+}
+
+@keyframes spin {
+  to { transform: rotate(360deg); }
+}
+
+.primaryBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.5rem;
+  padding: 0.875rem 1.75rem;
+  background: #f97316;
+  color: #fff;
+  border-radius: var(--radius-md);
+  font-size: 0.95rem;
+  font-weight: 700;
+  transition: all var(--duration-base) var(--ease-out);
+}
+
+.primaryBtn:hover {
+  background: #ea580c;
+  transform: translateY(-1px);
+}
+
+.reviewPage {
+  max-width: 780px;
+  margin: 0 auto;
+  padding: 2rem 1.5rem 4rem;
+}
+
+.reviewHeader {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+.reviewTrophy {
+  color: #f59e0b;
+}
+
+.reviewTitle {
+  font-size: 1.75rem;
+  font-weight: 800;
+  color: var(--text-1);
+}
+
+.reviewScoreRow {
+  display: flex;
+  gap: 2rem;
+  margin-top: 0.5rem;
+}
+
+.reviewScoreBox {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.25rem;
+}
+
+.reviewScoreVal {
+  font-size: 1.75rem;
+  font-weight: 800;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-1);
+}
+
+.reviewScoreLabel {
+  font-size: 0.75rem;
+  color: var(--text-3);
+  font-weight: 600;
+}
+
+.reviewList {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  margin-bottom: 2rem;
+}
+
+.reviewItem {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1.25rem;
+}
+
+.reviewItemHead {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 0.625rem;
+}
+
+.reviewItemNum {
+  width: 26px;
+  height: 26px;
+  border-radius: 50%;
+  background: rgba(249, 115, 22, 0.12);
+  color: #f97316;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.8rem;
+  font-weight: 800;
+}
+
+.reviewItemScore {
+  font-size: 0.85rem;
+  font-weight: 700;
+  color: var(--text-2);
+  font-family: 'JetBrains Mono', monospace;
+}
+
+.reviewReference {
+  font-size: 0.95rem;
+  color: var(--text-1);
+  margin-bottom: 0.75rem;
+}
+
+.reviewWords {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.35rem;
+  margin-bottom: 0.875rem;
+  font-size: 0.9rem;
+  font-weight: 600;
+}
+
+.reviewAudio {
+  width: 100%;
+  height: 36px;
+}
+
+[data-theme='dark'] .radialTrack {
+  stroke: var(--surface-2);
+}
+
+[data-theme='dark'] .reviewItem {
+  background: var(--surface);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 1.25rem 1rem 2.5rem;
+  }
+  .reviewScoreRow {
+    gap: 1.25rem;
+  }
+}

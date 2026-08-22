@@ -86,6 +86,7 @@ export interface LevelRequirement {
   writing: { required: number; avgScoreMin: number };
   listening: { required: number; accuracyMin: number };
   quiz: { required: number; accuracyMin: number };
+  speaking: { required: number; accuracyMin: number };
 }
 
 export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
@@ -96,6 +97,7 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 2, avgScoreMin: 55 },
     listening: { required: 4, accuracyMin: 55 },
     quiz: { required: 20, accuracyMin: 60 },
+    speaking: { required: 7, accuracyMin: 58 },
   },
   A1_PLUS: {
     grammar: { required: 70, accuracyMin: 63 },
@@ -104,6 +106,8 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 4, avgScoreMin: 58 },
     listening: { required: 7, accuracyMin: 58 },
     quiz: { required: 35, accuracyMin: 63 },
+    speaking: { required: 7, accuracyMin: 58 },
+
   },
   A2: {
     grammar: { required: 120, accuracyMin: 65 },
@@ -112,6 +116,8 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 7, avgScoreMin: 60 },
     listening: { required: 12, accuracyMin: 60 },
     quiz: { required: 55, accuracyMin: 67 },
+    speaking: { required: 7, accuracyMin: 58 },
+
   },
   A2_PLUS: {
     grammar: { required: 180, accuracyMin: 67 },
@@ -120,6 +126,8 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 10, avgScoreMin: 62 },
     listening: { required: 18, accuracyMin: 62 },
     quiz: { required: 80, accuracyMin: 70 },
+    speaking: { required: 7, accuracyMin: 58 },
+
   },
   B1: {
     grammar: { required: 250, accuracyMin: 70 },
@@ -128,6 +136,8 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 15, avgScoreMin: 65 },
     listening: { required: 28, accuracyMin: 65 },
     quiz: { required: 115, accuracyMin: 73 },
+    speaking: { required: 7, accuracyMin: 58 },
+
   },
   B1_PLUS: {
     grammar: { required: 340, accuracyMin: 73 },
@@ -136,6 +146,8 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 21, avgScoreMin: 68 },
     listening: { required: 40, accuracyMin: 68 },
     quiz: { required: 155, accuracyMin: 76 },
+    speaking: { required: 7, accuracyMin: 58 },
+
   },
   B2: {
     grammar: { required: 460, accuracyMin: 76 },
@@ -144,6 +156,8 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 28, avgScoreMin: 72 },
     listening: { required: 55, accuracyMin: 72 },
     quiz: { required: 210, accuracyMin: 79 },
+    speaking: { required: 7, accuracyMin: 58 },
+
   },
   B2_PLUS: {
     grammar: { required: 580, accuracyMin: 79 },
@@ -152,6 +166,8 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 38, avgScoreMin: 76 },
     listening: { required: 72, accuracyMin: 76 },
     quiz: { required: 270, accuracyMin: 82 },
+    speaking: { required: 7, accuracyMin: 58 },
+
   },
   C1: {
     grammar: { required: 750, accuracyMin: 82 },
@@ -160,6 +176,8 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 55, avgScoreMin: 80 },
     listening: { required: 100, accuracyMin: 80 },
     quiz: { required: 360, accuracyMin: 85 },
+    speaking: { required: 7, accuracyMin: 58 },
+
   },
   C2: {
     grammar: { required: 0, accuracyMin: 0 },
@@ -168,6 +186,8 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
     writing: { required: 0, avgScoreMin: 0 },
     listening: { required: 0, accuracyMin: 0 },
     quiz: { required: 0, accuracyMin: 0 },
+    speaking: { required: 7, accuracyMin: 58 },
+
   },
 } as const;
 

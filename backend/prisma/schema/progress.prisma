@@ -23,6 +23,7 @@ model LevelProgress {
  
   grammar    ProgressStats
   vocabulary VocabularyStats
+  speaking   ProgressStats
   reading    ProgressStats
   writing    WritingStats
   listening  ProgressStats

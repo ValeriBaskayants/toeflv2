@@ -9,6 +9,7 @@ import { quiz }       from './quiz';
 import { placement }  from './placement';
 import { exercises }  from './exercises';
 import { scramble }   from './scramble';
+import { speaking } from './speaking';
 
 export const en = {
   translation: {
@@ -27,5 +28,6 @@ export const en = {
     quiz,
     placement,
     exercises,
+    speaking
   },
 } as const;

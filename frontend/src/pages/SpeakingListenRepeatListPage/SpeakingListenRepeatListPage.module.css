@@ -1,0 +1,234 @@
+.page {
+  padding: 2.25rem 2.5rem 4rem;
+  max-width: 1040px;
+  margin: 0 auto;
+  animation: fadeIn var(--duration-slow) var(--ease-out) both;
+}
+
+.header {
+  margin-bottom: 1.75rem;
+}
+
+.pageTitle {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  font-size: 1.875rem;
+  font-weight: 800;
+  color: var(--text-1);
+  letter-spacing: -0.025em;
+  margin-bottom: 0.25rem;
+}
+
+.pageTitleIcon {
+  color: #f97316;
+}
+
+.pageSubtitle {
+  font-size: 0.9rem;
+  color: var(--text-3);
+}
+
+.filterBar {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  flex-wrap: wrap;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius-lg);
+  padding: 1rem 1.375rem;
+  margin-bottom: 1.75rem;
+  box-shadow: var(--shadow-sm);
+}
+
+.filterLabel {
+  font-size: 0.7rem;
+  font-weight: 700;
+  color: var(--text-3);
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  white-space: nowrap;
+}
+
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+}
+
+.chip {
+  padding: 0.3rem 0.7rem;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-sm);
+  font-size: 0.75rem;
+  font-weight: 700;
+  color: var(--text-2);
+  background: var(--surface);
+  transition: all var(--duration-fast) ease;
+}
+
+.chip:hover {
+  border-color: #f97316;
+  color: #f97316;
+}
+
+.chipActive {
+  background: #f97316 !important;
+  border-color: #f97316 !important;
+  color: #fff !important;
+}
+
+.emptyState {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 4rem 2rem;
+  text-align: center;
+}
+
+.emptyIcon {
+  color: var(--border);
+  opacity: 0.45;
+}
+
+.emptyTitle {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-2);
+}
+
+.emptyHint {
+  font-size: 0.85rem;
+  color: var(--text-3);
+}
+
+.grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.setCard {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1.375rem;
+  background: var(--surface);
+  border: 1.5px solid var(--border);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-sm);
+  transition: all var(--duration-base) var(--ease-out);
+}
+
+.setCard:hover {
+  border-color: color-mix(in srgb, #f97316 40%, transparent);
+  box-shadow: var(--shadow-md);
+  transform: translateY(-2px);
+}
+
+.setCardTop {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.levelBadge {
+  padding: 0.18rem 0.5rem;
+  background: rgba(249, 115, 22, 0.1);
+  color: #f97316;
+  border-radius: var(--radius-sm);
+  font-size: 0.65rem;
+  font-weight: 800;
+  letter-spacing: 0.04em;
+}
+
+.itemCount {
+  display: flex;
+  align-items: center;
+  gap: 0.3rem;
+  font-size: 0.72rem;
+  color: var(--text-3);
+}
+
+.scenario {
+  font-size: 1rem;
+  font-weight: 700;
+  color: var(--text-1);
+}
+
+.difficultyDots {
+  display: flex;
+  gap: 1rem;
+}
+
+.dotGroup {
+  display: flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.78rem;
+  color: var(--text-2);
+  font-weight: 600;
+}
+
+.dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+.dotShort {
+  background: #22c55e;
+}
+
+.dotMedium {
+  background: #f59e0b;
+}
+
+.dotLong {
+  background: #ef4444;
+}
+
+.startBtn {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.4rem;
+  margin-top: 0.25rem;
+  padding: 0.7rem;
+  background: #f97316;
+  color: #fff;
+  border-radius: var(--radius-sm);
+  font-size: 0.85rem;
+  font-weight: 700;
+  transition: all var(--duration-fast) ease;
+}
+
+.startBtn:hover {
+  background: #ea580c;
+}
+
+[data-theme='dark'] .chip {
+  background: var(--surface-2);
+  border-color: rgba(255, 255, 255, 0.12);
+}
+
+[data-theme='dark'] .setCard {
+  background: var(--surface);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+
+[data-theme='dark'] .levelBadge {
+  background: rgba(249, 115, 22, 0.2);
+  color: #fb923c;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 1.5rem 1.25rem 3rem;
+  }
+  .grid {
+    grid-template-columns: 1fr;
+  }
+}

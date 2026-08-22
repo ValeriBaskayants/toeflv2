@@ -1,9 +1,3 @@
-
-
-
-
-
-
 import {
   BadRequestException, ForbiddenException, Injectable, NotFoundException,
 } from '@nestjs/common';
@@ -63,8 +57,6 @@ function computeListeningScore(p: ScoringParams): ScoringResult {
 
   return { rawAccuracy, finalScore, xpEarned };
 }
-
-
 
 @Injectable()
 export class ListeningService {

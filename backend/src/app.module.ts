@@ -23,7 +23,9 @@ import { BullModule } from '@nestjs/bullmq';
 import { RoadmapModule } from './modules/roadmap/roadmap.module';
 import { TtsModule } from './modules/tts/tts.module';
 import { ScrambleModule } from './modules/scramble/scramble.module';
-
+import { AzureSpeechModule } from "./modules/azure-speech/azure-speech.module"
+import { RedisModule } from './modules/redis/redis.module';
+import { SpeakingRepeatModule } from './modules/speaking-repeat/speaking-repeat.module';
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -66,12 +68,15 @@ import { ScrambleModule } from './modules/scramble/scramble.module';
     PlacementModule,
     TtsModule,
     RoadmapModule,
-    ScrambleModule
-    
+    ScrambleModule,
+    AzureSpeechModule,
+    SpeakingRepeatModule,
+    RedisModule,
+
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },
     { provide: APP_GUARD, useClass: JwtAuthGuard },
   ],
 })
-export class AppModule {}
+export class AppModule { }

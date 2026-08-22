@@ -39,7 +39,8 @@ model User {
   topicMastery        UserTopicMastery[]
   placementTests      PlacementTest[]        
   scrambleSessions    ScrambleSession[]
-
+  speakingRepeatSessions SpeakingRepeatSession[]
+  
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 }

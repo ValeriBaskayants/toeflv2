@@ -1,4 +1,3 @@
-// frontend/src/router/AppRouter.tsx
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { LoginPage } from '@/pages/LoginPage/Loginpage';
 import { AuthCallbackPage } from '@/pages/AuthCallbackPage/Authcallbackpage';
@@ -21,21 +20,13 @@ import WritingPage from '@/pages/WritingPage/WritingPage';
 import WritingArticlesPage from '@/pages/WritingArticlesPage/WritingArticlesPage';
 import ScrambleListPage from '@/pages/ScrambleListPage/ScrambleListPage';
 import ScrambleSessionPage from '@/pages/ScramblePage/ScrambleSessionPage';
+import SpeakingPage from '@/pages/SpeakingPage/SpeakingPage';
+import SpeakingListenRepeatListPage from '@/pages/SpeakingListenRepeatListPage/SpeakingListenRepeatListPage';
+import SpeakingListenRepeatSessionPage from '@/pages/SpeakingListenRepeatSessionPage/SpeakingListenRepeatSessionPage';
 import MistakesPage from '@/pages/MistakePage/MistakesPage';
 import { VocabularyPage } from '@/pages/VocabularyPage/VocabularyPage';
 import { ExercisesPage } from '@/pages/ExercisesPage/ExercisesPage';
 import { ExerciseList } from '@/pages/ExerciseList/ExerciseList';
-
-function ComingSoonPage({ title }: { title: string }) {
-  return (
-    <div style={{ padding: '2.5rem', color: 'var(--text-1)' }}>
-      <h1 style={{ fontFamily: 'Syne, sans-serif', fontSize: '1.75rem', marginBottom: '0.5rem' }}>
-        {title}
-      </h1>
-      <p style={{ color: 'var(--text-3)', fontSize: '0.9rem' }}>This section is coming soon.</p>
-    </div>
-  );
-}
 
 export function AppRouter() {
   return (
@@ -52,7 +43,6 @@ export function AppRouter() {
       >
         <Route path="/dashboard" element={<DashboardPage />} />
 
-        {/* Writing — хаб + два поджанра */}
         <Route path="/writing" element={<WritingPage />} />
         <Route path="/writing/articles" element={<WritingArticlesPage />} />
         <Route path="/writing/articles/:promptId" element={<WritingEditorPage />} />
@@ -69,7 +59,10 @@ export function AppRouter() {
         <Route path="/grammar/:slug" element={<GrammarRulePage />} />
 
         <Route path="/vocabulary" element={<VocabularyPage />} />
-        <Route path="/speaking" element={<ComingSoonPage title="Speaking" />} />
+
+        <Route path="/speaking" element={<SpeakingPage />} />
+        <Route path="/speaking/listen-and-repeat" element={<SpeakingListenRepeatListPage />} />
+        <Route path="/speaking/listen-and-repeat/session" element={<SpeakingListenRepeatSessionPage />} />
 
         <Route path="/exercises" element={<ExercisesPage />} />
         <Route path="/exercises/:topic" element={<ExerciseList />} />

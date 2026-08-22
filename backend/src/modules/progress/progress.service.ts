@@ -42,7 +42,7 @@ export interface DashboardResponse {
   testUnlocked: boolean;
 }
 
-export type SkillKey = 'grammar' | 'reading' | 'listening' | 'quiz';
+ export type SkillKey = 'grammar' | 'reading' | 'listening' | 'quiz' | 'speaking';
 
 type ProgressStatsShape = { completed: number; accuracy: number };
 type VocabularyStatsShape = { required: number; learned: number };

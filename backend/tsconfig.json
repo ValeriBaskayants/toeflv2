@@ -29,7 +29,7 @@
     "noFallthroughCasesInSwitch": true,
     "noImplicitOverride": true,
     "noUncheckedIndexedAccess": true,
-
+    "types": ["multer"],
     "isolatedModules": true,
     "forceConsistentCasingInFileNames": true,
     "skipLibCheck": true

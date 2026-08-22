@@ -1,0 +1,82 @@
+enum SpeakingDifficulty {
+  SHORT
+  MEDIUM
+  LONG
+}
+
+enum SpeakingSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+type SpeakingWordScore {
+  word          String
+  accuracyScore Float
+  errorType     String 
+}
+
+type SpeakingItemResult {
+  itemId           String
+  referenceText    String
+  recognizedText   String
+  accuracyScore    Float
+  fluencyScore     Float
+  completenessScore Float
+  prosodyScore     Float?
+  itemScore        Float   // 0-5, наш composite
+  wordScores       SpeakingWordScore[]
+  userAudioBase64  String  
+  userAudioMimeType String @default("audio/webm")
+  attemptedAt      String
+}
+
+model SpeakingRepeatSet {
+  id       String @id @default(auto()) @map("_id") @db.ObjectId
+  scenario String 
+  level    Level
+  voiceId  String @default("en-US-AndrewNeural")
+
+  items    SpeakingRepeatItem[]
+  
+  sessions SpeakingRepeatSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([level])
+}
+
+model SpeakingRepeatItem {
+  id          String             @id @default(auto()) @map("_id") @db.ObjectId
+  setId       String             @db.ObjectId
+  set         SpeakingRepeatSet  @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  text        String             
+  difficulty  SpeakingDifficulty 
+  orderIndex  Int              
+  imageUrl    String?           
+
+  @@index([setId, orderIndex])
+}
+
+model SpeakingRepeatSession {
+  id       String                 @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String                 @db.ObjectId
+  user     User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  setId    String                 @db.ObjectId
+  set      SpeakingRepeatSet      @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  status   SpeakingSessionStatus  @default(IN_PROGRESS)
+  results  SpeakingItemResult[]
+
+  taskScore  Float?  
+  finalScore Int?    
+  xpEarned   Int?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId, status])
+  @@index([userId, setId])
+}

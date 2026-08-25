@@ -1,12 +1,13 @@
 import { Module } from '@nestjs/common';
-import { ScrambleController } from './scramble.controller';
 import { ScrambleService } from './scramble.service';
-import PrismaModule from '../prisma/prisma.module';
+import { ScrambleController } from './scramble.controller';
 import { ProgressModule } from '../progress/progress.module';
+import { MistakesModule } from '../mistakes/mistakes.module';
 
 @Module({
-  imports: [PrismaModule, ProgressModule],
+  imports: [ProgressModule, MistakesModule],
   controllers: [ScrambleController],
   providers: [ScrambleService],
+  exports: [ScrambleService],
 })
 export class ScrambleModule {}

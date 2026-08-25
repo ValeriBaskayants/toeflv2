@@ -7,4 +7,4 @@ import { MistakesController } from './mistakes.controller';
   providers: [MistakesService],
   exports: [MistakesService],
 })
-export class MistakeModule {}
+export class MistakesModule {}

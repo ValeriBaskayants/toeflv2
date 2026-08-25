@@ -28,6 +28,11 @@ export interface SkillBreakdown {
   isBottleneck: boolean;
 }
 
+export interface ModuleStat {
+  completedCount: number;
+  avgScore: number;
+}
+
 export interface DashboardResponse {
   currentLevel: string;
   totalXp: number;
@@ -40,15 +45,28 @@ export interface DashboardResponse {
   weakestSkill: string;
   nextMilestone: string;
   testUnlocked: boolean;
+  moduleStats: {
+    scramble: ModuleStat;
+    speaking: ModuleStat;
+  };
 }
 
- export type SkillKey = 'grammar' | 'reading' | 'listening' | 'quiz' | 'speaking';
+export type SkillKey = 'grammar' | 'reading' | 'listening' | 'quiz' | 'speaking' | 'scramble';
 
 type ProgressStatsShape = { completed: number; accuracy: number };
 type VocabularyStatsShape = { required: number; learned: number };
 type WritingStatsShape = { completed: number; avgScore: number; required: number };
 
 const ACTIVITY_DAYS = 30;
+
+const SKILL_BASE_XP: Record<SkillKey, number> = {
+  grammar: XP_BASE.GRAMMAR_CORRECT,
+  reading: XP_BASE.READING_COMPLETED,
+  listening: XP_BASE.LISTENING_MEDIUM,
+  quiz: XP_BASE.QUIZ_CORRECT,
+  speaking: XP_BASE.SPEAKING_BASE,
+  scramble: XP_BASE.SCRAMBLE_BASE,
+};
 
 @Injectable()
 export class ProgressService {
@@ -59,7 +77,7 @@ export class ProgressService {
   async getDashboard(userId: string): Promise<DashboardResponse> {
     const cutoffDate = this.cutoffDateString(ACTIVITY_DAYS);
 
-    const [user, progress, recentActivity] = await Promise.all([
+    const [user, progress, recentActivity, scrambleAgg, speakingAgg] = await Promise.all([
       this.prisma.user.findUnique({
         where: { id: userId },
         select: { currentLevel: true, totalXp: true, streak: true },
@@ -68,6 +86,16 @@ export class ProgressService {
       this.prisma.dailyActivity.findMany({
         where: { userId, date: { gte: cutoffDate } },
         orderBy: { date: 'asc' },
+      }),
+      this.prisma.scrambleSession.aggregate({
+        where: { userId, status: 'COMPLETED' },
+        _count: { _all: true },
+        _avg: { finalScore: true },
+      }),
+      this.prisma.speakingRepeatSession.aggregate({
+        where: { userId, status: 'COMPLETED' },
+        _count: { _all: true },
+        _avg: { finalScore: true },
       }),
     ]);
 
@@ -86,11 +114,18 @@ export class ProgressService {
       readinessPercent: readinessData.readinessPercent,
       skillBreakdown: readinessData.skillBreakdown,
       weakestSkill: readinessData.weakestSkill,
-      nextMilestone: this.buildNextMilestone(
-        readinessData.skillBreakdown,
-        readinessData.weakestSkill,
-      ),
+      nextMilestone: this.buildNextMilestone(readinessData.skillBreakdown, readinessData.weakestSkill),
       testUnlocked: progress.isReadyForTest,
+      moduleStats: {
+        scramble: {
+          completedCount: scrambleAgg._count._all,
+          avgScore: Math.round(scrambleAgg._avg.finalScore ?? 0),
+        },
+        speaking: {
+          completedCount: speakingAgg._count._all,
+          avgScore: Math.round(speakingAgg._avg.finalScore ?? 0),
+        },
+      },
     };
   }
 
@@ -141,13 +176,8 @@ export class ProgressService {
     timezone?: string;
   }): Promise<{ xpEarned: number; countedAsCompleted: boolean }> {
     const [user, progress] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: params.userId },
-        select: { streak: true },
-      }),
-      this.prisma.levelProgress.findUnique({
-        where: { userId: params.userId },
-      }),
+      this.prisma.user.findUnique({ where: { id: params.userId }, select: { streak: true } }),
+      this.prisma.levelProgress.findUnique({ where: { userId: params.userId } }),
     ]);
 
     if (progress === null) throw new NotFoundException('Level progress not found');
@@ -155,15 +185,13 @@ export class ProgressService {
     const current = progress[params.skill] as ProgressStatsShape;
 
     const countedAsCompleted = isSessionCountable(params.accuracy);
-
     const newAccuracy = emaAccuracy(current.completed, current.accuracy, params.accuracy);
-
     const newCompleted = countedAsCompleted ? current.completed + 1 : current.completed;
 
     const xpEarned =
       params.xpEarned ??
       computeXP({
-        base: XP_BASE.GRAMMAR_CORRECT,
+        base: SKILL_BASE_XP[params.skill],
         difficulty: params.difficulty,
         streak: user?.streak ?? 0,
         accuracy: params.accuracy,
@@ -200,10 +228,7 @@ export class ProgressService {
     xpEarned: number;
     timezone?: string;
   }): Promise<void> {
-    await this.recordSkillCompletion({
-      ...params,
-      skill: 'listening',
-    });
+    await this.recordSkillCompletion({ ...params, skill: 'listening' });
   }
 
   async recordVocabularyLearned(params: {
@@ -211,24 +236,15 @@ export class ProgressService {
     timezone?: string;
   }): Promise<{ xpEarned: number }> {
     const [user, progress] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: params.userId },
-        select: { streak: true },
-      }),
-      this.prisma.levelProgress.findUnique({
-        where: { userId: params.userId },
-        select: { vocabulary: true },
-      }),
+      this.prisma.user.findUnique({ where: { id: params.userId }, select: { streak: true } }),
+      this.prisma.levelProgress.findUnique({ where: { userId: params.userId }, select: { vocabulary: true } }),
     ]);
 
     if (progress === null) throw new NotFoundException('Level progress not found');
 
     const current = progress.vocabulary as VocabularyStatsShape;
 
-    const xpEarned = computeXP({
-      base: XP_BASE.VOCABULARY_MASTERED,
-      streak: user?.streak ?? 0,
-    });
+    const xpEarned = computeXP({ base: XP_BASE.VOCABULARY_MASTERED, streak: user?.streak ?? 0 });
 
     await this.prisma.levelProgress.update({
       where: { userId: params.userId },
@@ -253,14 +269,8 @@ export class ProgressService {
     timezone?: string;
   }): Promise<{ xpEarned: number }> {
     const [user, progress] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: params.userId },
-        select: { streak: true },
-      }),
-      this.prisma.levelProgress.findUnique({
-        where: { userId: params.userId },
-        select: { writing: true },
-      }),
+      this.prisma.user.findUnique({ where: { id: params.userId }, select: { streak: true } }),
+      this.prisma.levelProgress.findUnique({ where: { userId: params.userId }, select: { writing: true } }),
     ]);
 
     if (progress === null) throw new NotFoundException('Level progress not found');
@@ -295,10 +305,7 @@ export class ProgressService {
 
   async checkAndUnlockTest(userId: string): Promise<boolean> {
     const [user, progress] = await Promise.all([
-      this.prisma.user.findUnique({
-        where: { id: userId },
-        select: { currentLevel: true },
-      }),
+      this.prisma.user.findUnique({ where: { id: userId }, select: { currentLevel: true } }),
       this.prisma.levelProgress.findUnique({ where: { userId } }),
     ]);
 
@@ -339,67 +346,49 @@ export class ProgressService {
         },
       });
 
-      await tx.user.update({
-        where: { id: userId },
-        data: { currentLevel: nextLevel },
-      });
+      await tx.user.update({ where: { id: userId }, data: { currentLevel: nextLevel } });
     });
 
     this.logger.log('LEVEL_UP', { userId, from: user.currentLevel, to: nextLevel });
     return { newLevel: nextLevel };
   }
 
-  private computeReadiness(
-    progress: LevelProgress,
-    level: Level,
-  ): {
-    readinessPercent: number;
-    skillBreakdown: Record<string, SkillBreakdown>;
-    weakestSkill: string;
-  } {
+  private computeReadiness(progress: LevelProgress, level: Level) {
     const req = LEVEL_REQUIREMENTS[level];
 
     const grammarStats = progress.grammar as ProgressStatsShape;
     const readingStats = progress.reading as ProgressStatsShape;
     const listeningStats = progress.listening as ProgressStatsShape;
     const quizStats = progress.quiz as ProgressStatsShape;
+    const speakingStats = progress.speaking as ProgressStatsShape;
+    const scrambleStats = progress.scramble as ProgressStatsShape;
     const vocabStats = progress.vocabulary as VocabularyStatsShape;
     const writingStats = progress.writing as WritingStatsShape;
 
     const grammarSMS = computeSkillSMS(
-      grammarStats.completed,
-      req.grammar.required,
-      grammarStats.accuracy,
-      req.grammar.accuracyMin,
+      grammarStats.completed, req.grammar.required, grammarStats.accuracy, req.grammar.accuracyMin,
     );
     const readingSMS = computeSkillSMS(
-      readingStats.completed,
-      req.reading.required,
-      readingStats.accuracy,
-      req.reading.accuracyMin,
+      readingStats.completed, req.reading.required, readingStats.accuracy, req.reading.accuracyMin,
     );
     const listeningSMS = computeSkillSMS(
-      listeningStats.completed,
-      req.listening.required,
-      listeningStats.accuracy,
-      req.listening.accuracyMin,
+      listeningStats.completed, req.listening.required, listeningStats.accuracy, req.listening.accuracyMin,
     );
     const quizSMS = computeSkillSMS(
-      quizStats.completed,
-      req.quiz.required,
-      quizStats.accuracy,
-      req.quiz.accuracyMin,
+      quizStats.completed, req.quiz.required, quizStats.accuracy, req.quiz.accuracyMin,
+    );
+    const speakingSMS = computeSkillSMS(
+      speakingStats.completed, req.speaking.required, speakingStats.accuracy, req.speaking.accuracyMin,
+    );
+    const scrambleSMS = computeSkillSMS(
+      scrambleStats.completed, req.scramble.required, scrambleStats.accuracy, req.scramble.accuracyMin,
     );
     const writingSMS = computeWritingSMS(
-      writingStats.completed,
-      req.writing.required,
-      writingStats.avgScore,
-      req.writing.avgScoreMin,
+      writingStats.completed, req.writing.required, writingStats.avgScore, req.writing.avgScoreMin,
     );
-    const vocabSMS =
-      req.vocabulary.required > 0
-        ? Math.min(100, Math.round((vocabStats.learned / req.vocabulary.required) * 100))
-        : 100;
+    const vocabSMS = req.vocabulary.required > 0
+      ? Math.min(100, Math.round((vocabStats.learned / req.vocabulary.required) * 100))
+      : 100;
 
     const scores: Record<string, number> = {
       grammar: grammarSMS,
@@ -408,77 +397,41 @@ export class ProgressService {
       writing: writingSMS,
       listening: listeningSMS,
       quiz: quizSMS,
+      speaking: speakingSMS,
+      scramble: scrambleSMS,
     };
 
     const smsList = Object.values(scores);
     const avgSMS = smsList.reduce((s, v) => s + v, 0) / smsList.length;
-
     const hasWeakness = smsList.some((sms) => sms < WEAKNESS_GATE_THRESHOLD);
     const readinessPercent = hasWeakness
       ? Math.min(WEAKNESS_GATE_CAP, Math.round(avgSMS))
       : Math.round(avgSMS);
 
+    function buildEntry(
+      sms: number, completed: number, required: number, accuracy: number, accuracyMin: number,
+    ): SkillBreakdown {
+      return {
+        sms,
+        completed,
+        required,
+        accuracy,
+        accuracyMin,
+        remainingCount: Math.max(0, required - completed),
+        accuracyGap: Math.max(0, accuracyMin - accuracy),
+        isBottleneck: sms < WEAKNESS_GATE_THRESHOLD,
+      };
+    }
+
     const skillBreakdown: Record<string, SkillBreakdown> = {
-      grammar: {
-        sms: grammarSMS,
-        completed: grammarStats.completed,
-        required: req.grammar.required,
-        accuracy: grammarStats.accuracy,
-        accuracyMin: req.grammar.accuracyMin,
-        remainingCount: Math.max(0, req.grammar.required - grammarStats.completed),
-        accuracyGap: Math.max(0, req.grammar.accuracyMin - grammarStats.accuracy),
-        isBottleneck: grammarSMS < WEAKNESS_GATE_THRESHOLD,
-      },
-      vocabulary: {
-        sms: vocabSMS,
-        completed: vocabStats.learned,
-        required: req.vocabulary.required,
-        accuracy: 100,
-        accuracyMin: 0,
-        remainingCount: Math.max(0, req.vocabulary.required - vocabStats.learned),
-        accuracyGap: 0,
-        isBottleneck: vocabSMS < WEAKNESS_GATE_THRESHOLD,
-      },
-      reading: {
-        sms: readingSMS,
-        completed: readingStats.completed,
-        required: req.reading.required,
-        accuracy: readingStats.accuracy,
-        accuracyMin: req.reading.accuracyMin,
-        remainingCount: Math.max(0, req.reading.required - readingStats.completed),
-        accuracyGap: Math.max(0, req.reading.accuracyMin - readingStats.accuracy),
-        isBottleneck: readingSMS < WEAKNESS_GATE_THRESHOLD,
-      },
-      writing: {
-        sms: writingSMS,
-        completed: writingStats.completed,
-        required: req.writing.required,
-        accuracy: writingStats.avgScore,
-        accuracyMin: req.writing.avgScoreMin,
-        remainingCount: Math.max(0, req.writing.required - writingStats.completed),
-        accuracyGap: Math.max(0, req.writing.avgScoreMin - writingStats.avgScore),
-        isBottleneck: writingSMS < WEAKNESS_GATE_THRESHOLD,
-      },
-      listening: {
-        sms: listeningSMS,
-        completed: listeningStats.completed,
-        required: req.listening.required,
-        accuracy: listeningStats.accuracy,
-        accuracyMin: req.listening.accuracyMin,
-        remainingCount: Math.max(0, req.listening.required - listeningStats.completed),
-        accuracyGap: Math.max(0, req.listening.accuracyMin - listeningStats.accuracy),
-        isBottleneck: listeningSMS < WEAKNESS_GATE_THRESHOLD,
-      },
-      quiz: {
-        sms: quizSMS,
-        completed: quizStats.completed,
-        required: req.quiz.required,
-        accuracy: quizStats.accuracy,
-        accuracyMin: req.quiz.accuracyMin,
-        remainingCount: Math.max(0, req.quiz.required - quizStats.completed),
-        accuracyGap: Math.max(0, req.quiz.accuracyMin - quizStats.accuracy),
-        isBottleneck: quizSMS < WEAKNESS_GATE_THRESHOLD,
-      },
+      grammar: buildEntry(grammarSMS, grammarStats.completed, req.grammar.required, grammarStats.accuracy, req.grammar.accuracyMin),
+      vocabulary: buildEntry(vocabSMS, vocabStats.learned, req.vocabulary.required, 100, 0),
+      reading: buildEntry(readingSMS, readingStats.completed, req.reading.required, readingStats.accuracy, req.reading.accuracyMin),
+      writing: buildEntry(writingSMS, writingStats.completed, req.writing.required, writingStats.avgScore, req.writing.avgScoreMin),
+      listening: buildEntry(listeningSMS, listeningStats.completed, req.listening.required, listeningStats.accuracy, req.listening.accuracyMin),
+      quiz: buildEntry(quizSMS, quizStats.completed, req.quiz.required, quizStats.accuracy, req.quiz.accuracyMin),
+      speaking: buildEntry(speakingSMS, speakingStats.completed, req.speaking.required, speakingStats.accuracy, req.speaking.accuracyMin),
+      scramble: buildEntry(scrambleSMS, scrambleStats.completed, req.scramble.required, scrambleStats.accuracy, req.scramble.accuracyMin),
     };
 
     const weakestSkill = Object.entries(scores).reduce(
@@ -503,6 +456,8 @@ export class ProgressService {
       writing: 'writing submissions',
       listening: 'listening sessions',
       quiz: 'quiz questions',
+      speaking: 'speaking sessions',
+      scramble: 'sentence-building exercises',
     };
 
     const label = labels[weakestSkill] ?? weakestSkill;

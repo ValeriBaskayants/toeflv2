@@ -1,12 +1,17 @@
-
 enum ScrambleMode {
-  EASY    
-  MEDIUM  
-  HARD    
-  EXPERT  
+  EASY
+  MEDIUM
+  HARD
+  EXPERT
 }
 
 enum ScrambleSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum ScrambleBlockStatus {
   IN_PROGRESS
   COMPLETED
   ABANDONED
@@ -25,85 +30,108 @@ enum GrammarRole {
   OTHER
 }
 
-// Одно слово в предложении с грамматической ролью
 type ScrambleWord {
-  id       String
-  word     String
-  role     GrammarRole
-  position Int          // правильная позиция в предложении (0-based)
-  isDistractor Boolean @default(false) // лишнее слово (не входит в ответ)
+  id           String
+  word         String
+  role         GrammarRole
+  position     Int
+  isDistractor Boolean     @default(false)
 }
 
-// Результат одной попытки пользователя
 type ScrambleAttempt {
-  attemptNumber Int
-  submittedOrder String[]  // id слов в том порядке как пользователь поставил
-  isCorrect     Boolean
-  timeSpentSec  Float
-  usedHint      Boolean
-  submittedAt   String
+  attemptNumber  Int
+  submittedOrder String[]
+  isCorrect      Boolean
+  timeSpentSec   Float
+  usedHint       Boolean
+  submittedAt    String
+}
+
+type ScrambleBlockResult {
+  exerciseId     String
+  isCorrect      Boolean
+  submittedOrder String[]
+  timeSpentSec   Float
+  usedHint       Boolean
+  answeredAt     String
 }
 
 model ScrambleExercise {
-  id          String   @id @default(auto()) @map("_id") @db.ObjectId
+  id          String         @id @default(auto()) @map("_id") @db.ObjectId
+  prompt      String         @default("")
+  sentence    String
+  words       ScrambleWord[]
+  translation String?
+  explanation String?
 
-  // Контент
-  sentence    String           // правильное предложение целиком
-  words       ScrambleWord[]   // все слова включая distractors
-  translation String?          // перевод для подсказки (опционально)
-  explanation String?          // объяснение структуры предложения
-
-  // Метаданные
-  level       Level
-  topic       String           // "present_simple", "conditionals", etc.
+  level        Level
+  topic        String
   allowedModes ScrambleMode[]
 
-  // Сложность
-  wordCount       Int          // слов в правильном ответе
-  distractorCount Int @default(0) // лишних слов
+  wordCount       Int
+  distractorCount Int @default(0)
 
-  // Тайминг (секунды на выполнение)
   timeLimitEasy   Int @default(60)
   timeLimitMedium Int @default(45)
   timeLimitHard   Int @default(30)
   timeLimitExpert Int @default(25)
 
-  sessions ScrambleSession[]
+  isAvailableForPlacement Boolean @default(false)
+  difficultyRating        Float?
+  discriminationRating    Float?
 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  sessions  ScrambleSession[]
+  createdAt DateTime          @default(now())
+  updatedAt DateTime          @updatedAt
 
   @@index([level])
   @@index([topic])
   @@index([level, allowedModes])
+  @@index([isAvailableForPlacement, difficultyRating])
 }
 
 model ScrambleSession {
-  id         String   @id @default(auto()) @map("_id") @db.ObjectId
-
-  userId     String   @db.ObjectId
-  user       User     @relation(fields: [userId], references: [id], onDelete: Cascade)
-
-  exerciseId String   @db.ObjectId
+  id         String           @id @default(auto()) @map("_id") @db.ObjectId
+  userId     String           @db.ObjectId
+  user       User             @relation(fields: [userId], references: [id], onDelete: Cascade)
+  exerciseId String           @db.ObjectId
   exercise   ScrambleExercise @relation(fields: [exerciseId], references: [id], onDelete: Cascade)
 
-  mode       ScrambleMode
-  status     ScrambleSessionStatus @default(IN_PROGRESS)
+  mode     ScrambleMode
+  status   ScrambleSessionStatus @default(IN_PROGRESS)
+  attempts ScrambleAttempt[]
+  bestAttempt Int?
 
-  attempts   ScrambleAttempt[]
-  bestAttempt Int?              // номер лучшей попытки
-
-  // Результат
-  isCorrect   Boolean?
+  isCorrect    Boolean?
   timeSpentSec Float?
-  usedHint    Boolean @default(false)
-  finalScore  Int?
-  xpEarned    Int?
+  usedHint     Boolean @default(false)
+  finalScore   Int?
+  xpEarned     Int?
 
-  startedAt   DateTime @default(now())
+  startedAt   DateTime  @default(now())
   completedAt DateTime?
 
   @@index([userId])
   @@index([userId, exerciseId])
   @@index([userId, status])
+}
+
+model ScrambleBlock {
+  id          String                @id @default(auto()) @map("_id") @db.ObjectId
+  userId      String                @db.ObjectId
+  user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  level       Level
+  exerciseIds String[]              @db.ObjectId
+  results     ScrambleBlockResult[]
+  status      ScrambleBlockStatus   @default(IN_PROGRESS)
+
+  correctCount      Int?
+  finalScorePercent Int?
+  xpEarned          Int?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId, status])
+  @@index([userId, level])
 }

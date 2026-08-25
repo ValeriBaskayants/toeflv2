@@ -1,13 +1,14 @@
-// backend/src/modules/speaking-repeat/speaking-repeat.module.ts
 import { Module } from '@nestjs/common';
-import { SpeakingRepeatController } from './speaking-repeat.controller';
 import { SpeakingRepeatService } from './speaking-repeat.service';
-import { AzureSpeechModule } from '../azure-speech/azure-speech.module';
+import { SpeakingRepeatController } from './speaking-repeat.controller';
 import { ProgressModule } from '../progress/progress.module';
+import { AzureSpeechModule } from '../azure-speech/azure-speech.module';
+import { MistakesModule } from '../mistakes/mistakes.module';
 
 @Module({
-  imports: [AzureSpeechModule, ProgressModule],
+  imports: [ProgressModule, AzureSpeechModule, MistakesModule],
   controllers: [SpeakingRepeatController],
   providers: [SpeakingRepeatService],
+  exports: [SpeakingRepeatService],
 })
 export class SpeakingRepeatModule {}

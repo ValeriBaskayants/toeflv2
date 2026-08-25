@@ -1,7 +1,5 @@
-
-
-
 import { Body, Controller, Get, Param, Post, Query, UseGuards } from '@nestjs/common';
+import { ScrambleMode } from '@prisma/client';
 import { ScrambleService } from './scramble.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
@@ -12,27 +10,21 @@ import {
   GetScrambleDto,
   StartScrambleSessionDto,
   SubmitScrambleDto,
+  StartScrambleBlockDto,
+  SubmitScrambleBlockItemDto,
 } from './dto/scramble.dto';
 
 @Controller('scramble')
 export class ScrambleController {
   constructor(private readonly service: ScrambleService) {}
 
-  
-
   @Get()
-  findAll(
-    @CurrentUser() user: JwtUserPayload,
-    @Query() query: GetScrambleDto,
-  ) {
+  findAll(@CurrentUser() user: JwtUserPayload, @Query() query: GetScrambleDto) {
     return this.service.findAll(query, user.id);
   }
 
   @Get('sessions')
-  getUserSessions(
-    @CurrentUser() user: JwtUserPayload,
-    @Query('exerciseId') exerciseId?: string,
-  ) {
+  getUserSessions(@CurrentUser() user: JwtUserPayload, @Query('exerciseId') exerciseId?: string) {
     return this.service.getUserSessions(user.id, exerciseId);
   }
 
@@ -40,16 +32,13 @@ export class ScrambleController {
   findById(
     @Param('id') id: string,
     @CurrentUser() user: JwtUserPayload,
-    @Query('mode') mode?: string,
+    @Query('mode') mode?: ScrambleMode,
   ) {
-    return this.service.findById(id, user.id, mode as any);
+    return this.service.findById(id, user.id, mode);
   }
 
   @Post('sessions')
-  startSession(
-    @CurrentUser() user: JwtUserPayload,
-    @Body() dto: StartScrambleSessionDto,
-  ) {
+  startSession(@CurrentUser() user: JwtUserPayload, @Body() dto: StartScrambleSessionDto) {
     return this.service.startSession(user.id, dto);
   }
 
@@ -62,7 +51,29 @@ export class ScrambleController {
     return this.service.submitAnswer(user.id, sessionId, dto);
   }
 
-  
+  @Post('blocks')
+  startBlock(@CurrentUser() user: JwtUserPayload, @Body() dto: StartScrambleBlockDto) {
+    return this.service.startBlock(user.id, dto.level);
+  }
+
+  @Get('blocks/:id/current')
+  getCurrentBlockItem(@CurrentUser() user: JwtUserPayload, @Param('id') blockId: string) {
+    return this.service.getCurrentBlockItem(user.id, blockId);
+  }
+
+  @Post('blocks/:id/submit')
+  submitBlockItem(
+    @CurrentUser() user: JwtUserPayload,
+    @Param('id') blockId: string,
+    @Body() dto: SubmitScrambleBlockItemDto,
+  ) {
+    return this.service.submitBlockItem(user.id, blockId, dto);
+  }
+
+  @Get('blocks/:id/review')
+  getBlockReview(@CurrentUser() user: JwtUserPayload, @Param('id') blockId: string) {
+    return this.service.getBlockReview(user.id, blockId);
+  }
 
   @Post('bulk')
   @UseGuards(RolesGuard)

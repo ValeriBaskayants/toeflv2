@@ -6,35 +6,36 @@ enum PlacementStatus {
   REMIND_LATER
 }
 
-model PlacementTest {
-  id      String @id @default(auto()) @map("_id") @db.ObjectId
-  userId  String @db.ObjectId @unique
+enum PlacementSectionType {
+  READING
+  LISTENING
+  WRITING
+  SPEAKING
+}
 
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+model PlacementTest {
+  id     String @id @default(auto()) @map("_id") @db.ObjectId
+  userId String @db.ObjectId @unique
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
   status PlacementStatus @default(PENDING)
 
-  theta         Json @default("{\"grammar\":0,\"vocabulary\":0,\"reading\":0,\"listening\":0}")
-  standardError Json @default("{\"grammar\":2,\"vocabulary\":2,\"reading\":2,\"listening\":2}")
-
-  questions Json @default("[]")
-  answers   Json @default("[]")
-
-  remindAfter DateTime?
-
-  startedAt      DateTime?
-  lastActivityAt DateTime?
-
-  completedAt     DateTime?
-  lastCompletedAt DateTime?
+  sections          Json @default("{}")
+  bestSectionScores Json @default("{}")
 
   detectedLevel   Level?
   confidenceScore Int?
 
-  attemptCount Int @default(0)
+  attemptCount    Int       @default(0)
+  startedAt       DateTime?
+  lastActivityAt  DateTime?
+  completedAt     DateTime?
+  lastCompletedAt DateTime?
 
-  testDurationSeconds      Int?
-  averageAnswerTimeSeconds Float?
+  remindAfter    DateTime?
+  processingLock Boolean   @default(false)
+
+  testDurationSeconds Int?
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt

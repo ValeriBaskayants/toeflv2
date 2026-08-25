@@ -1,60 +1,101 @@
-
-
-
-
-
-
-import { BadRequestException, Injectable, Logger } from '@nestjs/common';
-import { Level } from '@prisma/client';
+import { BadRequestException, Injectable, Logger, NotFoundException } from '@nestjs/common';
+import { Level, Prisma, PlacementSectionType } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
+import { AzureSpeechService, AzureQuotaExceededError } from '../azure-speech/azure-speech.service';
 import { buildInitialProgress } from '../../constants/level-requirements';
 import type { AnswerPlacementDto } from './dto/placement.dto';
 import {
   AbilityDimension,
-  DimensionTheta,
-  DimensionSE,
   PRIOR_MEAN,
-  MAX_QUESTIONS,
-  MIN_QUESTIONS,
   SE_CONVERGENCE,
   INITIAL_SE,
   FETCH_WINDOW,
+  EXPOSURE_CONTROL_POOL_SIZE,
+  RETAKE_COOLDOWN_MS,
+  ABANDON_THRESHOLD_MS,
+  LOCK_STALE_MS,
+  SECTION_ORDER,
+  SECTION_QUESTION_LIMITS,
+  SECTION_WEIGHTS,
+  SPEAKING_ITEM_COUNT,
   info2PL,
   CONTENT_TARGET,
   LEVEL_BOUNDARIES,
   GRID_MIN,
+  GRID_MAX,
   eapForDimension,
 } from '../../constants/placement-constants';
 
-const DIMENSION_WEIGHTS: Readonly<Record<AbilityDimension, number>> = {
-  GRAMMAR:    0.3,
-  VOCABULARY: 0.3,
-  READING:    0.2,
-  LISTENING:  0.2,
-} as const;
-
-const RETAKE_COOLDOWN_MS   = 30 * 24 * 60 * 60 * 1000;
-const INACTIVITY_TIMEOUT_MS = 2 * 60 * 60 * 1000;
-
 interface QuestionSnapshot {
-  sourceId:        string;
-  dimension:       AbilityDimension;
-  text:            string;
-  options:         string[];
-  correctIndex:    number;
-  difficulty:      number;
-  discrimination:  number;
+  sourceId: string;
+  dimension: AbilityDimension;
+  text: string;
+  options: string[];
+  correctIndex: number;
+  difficulty: number;
+  discrimination: number;
 }
+
+type QuestionWithTiming = QuestionSnapshot & { shownAt?: string };
 
 interface AnswerRecord {
-  questionIndex:   number;
-  selectedIndex:   number;
-  isCorrect:       boolean;
-  answeredAt:      string;
+  questionIndex: number;
+  selectedIndex: number;
+  isCorrect: boolean;
+  answeredAt: string;
   questionStartAt: string;
-  thetaSnapshot:   DimensionTheta;
-  seSnapshot:      DimensionSE;
+  thetaSnapshot: number;
+  seSnapshot: number;
 }
+
+interface CATSectionState {
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  theta: number;
+  se: number;
+  questions: QuestionWithTiming[];
+  answers: AnswerRecord[];
+  resultTheta: number | null;
+  startedAt: string | null;
+  completedAt: string | null;
+  lastActivityAt: string | null;
+}
+
+interface SpeakingItemAttempt {
+  itemId: string;
+  accuracyScore: number;
+  fluencyScore: number;
+  completenessScore: number;
+}
+
+interface SpeakingSectionState {
+  status: 'NOT_STARTED' | 'IN_PROGRESS' | 'COMPLETED';
+  itemIds: string[];
+  attempts: SpeakingItemAttempt[];
+  resultScore: number | null;
+  startedAt: string | null;
+  completedAt: string | null;
+}
+
+type SectionsMap = {
+  READING: CATSectionState;
+  LISTENING: CATSectionState;
+  WRITING: CATSectionState;
+  SPEAKING: SpeakingSectionState;
+};
+
+interface BestSectionScore {
+  score: number;
+  level: Level;
+  achievedAt: string;
+}
+
+type BestSectionScoresMap = Partial<Record<PlacementSectionType, BestSectionScore>>;
+
+const SECTION_DIMENSIONS: Record<'READING' | 'LISTENING' | 'WRITING', AbilityDimension[]> = {
+  READING: ['READING', 'VOCABULARY'],
+  LISTENING: ['LISTENING'],
+  WRITING: ['GRAMMAR'],
+};
 
 @Injectable()
 export class PlacementService {
@@ -66,95 +107,111 @@ export class PlacementService {
   >();
   private readonly CACHE_TTL_MS = 5 * 60 * 1000;
 
-  constructor(private readonly prisma: PrismaService) {}
-
-  
+  constructor(
+    private readonly prisma: PrismaService,
+    private readonly azureSpeech: AzureSpeechService,
+  ) {}
 
   async getOrCreate(userId: string) {
     const existing = await this.prisma.placementTest.findUnique({ where: { userId } });
     if (existing !== null) return existing;
 
     return this.prisma.placementTest.create({
-      data: {
-        userId,
-        status:        'PENDING',
-        theta:         this.initialTheta()  as object,
-        standardError: this.initialSE()     as object,
-        questions:     [] as object,
-        answers:       [] as object,
-      },
+      data: { userId, status: 'PENDING', sections: this.freshSections() as object },
     });
   }
 
-  
-
   async getStatus(userId: string) {
     const test = await this.getOrCreate(userId);
-    const now  = new Date();
-
-    let status = test.status;
-    if (
-      status === 'IN_PROGRESS' &&
-      test.lastActivityAt !== null &&
-      now.getTime() - test.lastActivityAt.getTime() > INACTIVITY_TIMEOUT_MS
-    ) {
-      await this.prisma.placementTest.update({
-        where: { id: test.id },
-        data:  { status: 'PENDING' },
-      });
-      status = 'PENDING';
-    }
-
-    const showBanner =
-      status === 'PENDING' ||
-      status === 'IN_PROGRESS' ||
-      (status === 'REMIND_LATER' && (test.remindAfter === null || test.remindAfter <= now));
+    const now = new Date();
 
     const canRetake =
-      status === 'COMPLETED' &&
+      test.status === 'COMPLETED' &&
       test.lastCompletedAt !== null &&
       now.getTime() - test.lastCompletedAt.getTime() >= RETAKE_COOLDOWN_MS;
 
+    const daysUntilRetake =
+      test.status === 'COMPLETED' && test.lastCompletedAt !== null && !canRetake
+        ? Math.ceil((RETAKE_COOLDOWN_MS - (now.getTime() - test.lastCompletedAt.getTime())) / 86400000)
+        : 0;
+
+    const sections = test.sections as unknown as SectionsMap;
+    const currentSection = test.status === 'IN_PROGRESS' ? this.firstIncompleteSection(sections) : null;
+
     return {
-      status,
-      showBanner,
-      detectedLevel:   test.detectedLevel,
+      status: test.status,
+      currentSection,
+      sectionStatuses: SECTION_ORDER.reduce(
+        (acc, s) => ({ ...acc, [s]: sections[s]?.status ?? 'NOT_STARTED' }),
+        {} as Record<PlacementSectionType, string>,
+      ),
+      detectedLevel: test.detectedLevel,
       confidenceScore: test.confidenceScore,
-      attemptCount:    test.attemptCount,
+      attemptCount: test.attemptCount,
       canRetake,
+      daysUntilRetake,
       lastCompletedAt: test.lastCompletedAt,
     };
   }
 
-  
+  async getResultCard(userId: string) {
+    const test = await this.prisma.placementTest.findUnique({ where: { userId } });
+
+    if (test === null || test.detectedLevel === null) {
+      throw new NotFoundException('No completed placement result yet.');
+    }
+
+    const best = test.bestSectionScores as unknown as BestSectionScoresMap;
+    const now = new Date();
+
+    const canRetake =
+      test.lastCompletedAt !== null && now.getTime() - test.lastCompletedAt.getTime() >= RETAKE_COOLDOWN_MS;
+
+    const daysUntilRetake = canRetake
+      ? 0
+      : test.lastCompletedAt !== null
+        ? Math.ceil((RETAKE_COOLDOWN_MS - (now.getTime() - test.lastCompletedAt.getTime())) / 86400000)
+        : 0;
+
+    return {
+      overallLevel: test.detectedLevel,
+      confidenceScore: test.confidenceScore,
+      attemptCount: test.attemptCount,
+      lastCompletedAt: test.lastCompletedAt,
+      canRetake,
+      daysUntilRetake,
+      sections: SECTION_ORDER.map((type) => ({
+        type,
+        score: best[type]?.score ?? null,
+        level: best[type]?.level ?? null,
+        achievedAt: best[type]?.achievedAt ?? null,
+      })),
+    };
+  }
 
   async start(userId: string) {
     const test = await this.getOrCreate(userId);
-    const now  = new Date();
+    const now = new Date();
 
     if (test.status === 'IN_PROGRESS') {
-      const isTimedOut =
+      const isStale =
         test.lastActivityAt !== null &&
-        now.getTime() - test.lastActivityAt.getTime() > INACTIVITY_TIMEOUT_MS;
+        now.getTime() - test.lastActivityAt.getTime() > ABANDON_THRESHOLD_MS;
 
-      if (!isTimedOut) {
-        throw new BadRequestException(
-          'You have an active test in progress. Please complete it or wait for the session to expire.',
-        );
+      if (!isStale) {
+        return { currentSection: this.firstIncompleteSection(test.sections as unknown as SectionsMap) };
       }
-      this.logger.log('PLACEMENT_TIMED_OUT_RESTART', { userId });
+
+      this.logger.log('PLACEMENT_ABANDONED_RESTART', { userId });
     }
 
     if (test.status === 'COMPLETED') {
       const canRetake =
-        test.lastCompletedAt !== null &&
-        now.getTime() - test.lastCompletedAt.getTime() >= RETAKE_COOLDOWN_MS;
+        test.lastCompletedAt !== null && now.getTime() - test.lastCompletedAt.getTime() >= RETAKE_COOLDOWN_MS;
 
       if (!canRetake) {
         const daysLeft = test.lastCompletedAt
-          ? Math.ceil(
-              (RETAKE_COOLDOWN_MS - (now.getTime() - test.lastCompletedAt.getTime())) / 86400000,
-            )
+          ? Math.ceil((RETAKE_COOLDOWN_MS - (now.getTime() - test.lastCompletedAt.getTime())) / 86400000)
           : 30;
         throw new BadRequestException(
           `You can retake the placement test in ${daysLeft} day${daysLeft !== 1 ? 's' : ''}.`,
@@ -164,66 +221,140 @@ export class PlacementService {
       this.logger.log('PLACEMENT_RETAKE_STARTED', {
         userId,
         previousLevel: test.detectedLevel,
-        attemptCount:  test.attemptCount,
+        attemptCount: test.attemptCount,
       });
     }
 
-    const theta         = this.initialTheta();
-    const firstQuestion = await this.fetchNextQuestion([], theta, {
-      GRAMMAR: 0, VOCABULARY: 0, READING: 0, LISTENING: 0,
-    });
-
-    if (firstQuestion === null) {
-      throw new BadRequestException(
-        'Not enough placement questions available. Please contact support.',
-      );
-    }
-
-    const firstWithTiming = { ...firstQuestion, shownAt: now.toISOString() };
-
-    const updated = await this.prisma.placementTest.update({
+    await this.prisma.placementTest.update({
       where: { userId },
       data: {
-        status:        'IN_PROGRESS',
-        theta:         theta              as object,
-        standardError: this.initialSE()  as object,
-        questions:     [firstWithTiming] as object,
-        answers:       []                as object,
-        startedAt:     now,
+        status: 'IN_PROGRESS',
+        sections: this.freshSections() as object,
+        startedAt: now,
         lastActivityAt: now,
-        detectedLevel:  null,
+        detectedLevel: null,
         confidenceScore: null,
+        processingLock: false,
       },
     });
 
+    return { currentSection: 'READING' as PlacementSectionType };
+  }
+
+  async startSection(userId: string, sectionType: PlacementSectionType) {
+    const test = await this.getInProgressTest(userId);
+    const sections = test.sections as unknown as SectionsMap;
+
+    this.assertSectionUnlocked(sections, sectionType);
+
+    if (sectionType === 'SPEAKING') {
+      return this.startSpeakingSection(test.id, sections);
+    }
+
+    return this.startCatSection(test.id, sections, sectionType);
+  }
+
+  private async startCatSection(
+    testId: string,
+    sections: SectionsMap,
+    sectionType: 'READING' | 'LISTENING' | 'WRITING',
+  ) {
+    const section = sections[sectionType];
+
+    if (section.status === 'IN_PROGRESS') {
+      const nextIndex = section.answers.length;
+      const nextQuestion = section.questions[nextIndex];
+      if (nextQuestion === undefined) {
+        throw new BadRequestException('Inconsistent section state. Please contact support.');
+      }
+      return {
+        section: sectionType,
+        resumed: true,
+        question: this.publicQuestion(nextQuestion, nextIndex, section.answers.length, sectionType),
+      };
+    }
+
+    const theta = PRIOR_MEAN;
+    const firstQuestion = await this.fetchNextQuestion([], theta, SECTION_DIMENSIONS[sectionType], {});
+
+    if (firstQuestion === null) {
+      throw new BadRequestException(`Not enough ${sectionType} placement questions available.`);
+    }
+
+    const now = new Date();
+    section.status = 'IN_PROGRESS';
+    section.theta = theta;
+    section.se = INITIAL_SE;
+    section.questions = [{ ...firstQuestion, shownAt: now.toISOString() }];
+    section.answers = [];
+    section.startedAt = now.toISOString();
+    section.lastActivityAt = now.toISOString();
+
+    sections[sectionType] = section;
+
+    await this.prisma.placementTest.update({
+      where: { id: testId },
+      data: { sections: sections as object, lastActivityAt: now },
+    });
+
     return {
-      test: updated,
-      nextQuestion: this.publicQuestion(firstQuestion, 0, 0, MAX_QUESTIONS),
-      maxQuestions: MAX_QUESTIONS,
+      section: sectionType,
+      resumed: false,
+      question: this.publicQuestion(firstQuestion, 0, 0, sectionType),
     };
   }
 
-  
-
-  async answer(userId: string, dto: AnswerPlacementDto) {
-    const test = await this.prisma.placementTest.findUnique({ where: { userId } });
-
-    if (test === null || test.status !== 'IN_PROGRESS') {
-      throw new BadRequestException('No active placement test.');
+  async answerSection(userId: string, sectionType: PlacementSectionType, dto: AnswerPlacementDto) {
+    if (sectionType === 'SPEAKING') {
+      throw new BadRequestException('Use the speaking-specific endpoint for this section.');
     }
 
-    type QuestionWithTiming = QuestionSnapshot & { shownAt?: string };
-    const questions = test.questions as unknown as QuestionWithTiming[];
-    const answers   = test.answers   as unknown as AnswerRecord[];
-    const question  = questions[dto.questionIndex];
+    const test = await this.getInProgressTest(userId);
 
+    const claimed = await this.prisma.placementTest.updateMany({
+      where: {
+        id: test.id,
+        OR: [{ processingLock: false }, { updatedAt: { lt: new Date(Date.now() - LOCK_STALE_MS) } }],
+      },
+      data: { processingLock: true },
+    });
+
+    if (claimed.count === 0) {
+      throw new BadRequestException('Your previous answer is still being processed. Please try again shortly.');
+    }
+
+    try {
+      return await this.processSectionAnswer(userId, test.id, sectionType, dto);
+    } finally {
+      await this.prisma.placementTest.updateMany({
+        where: { id: test.id },
+        data: { processingLock: false },
+      });
+    }
+  }
+
+  private async processSectionAnswer(
+    userId: string,
+    testId: string,
+    sectionType: 'READING' | 'LISTENING' | 'WRITING',
+    dto: AnswerPlacementDto,
+  ) {
+    const test = await this.prisma.placementTest.findUniqueOrThrow({ where: { id: testId } });
+    const sections = test.sections as unknown as SectionsMap;
+    const section = sections[sectionType];
+
+    if (section.status !== 'IN_PROGRESS') {
+      throw new BadRequestException(`Section ${sectionType} is not in progress.`);
+    }
+
+    const question = section.questions[dto.questionIndex];
     if (question === undefined) {
       throw new BadRequestException(`Question ${dto.questionIndex} not found.`);
     }
 
-    const answeredIndices = new Set(answers.map((a) => a.questionIndex));
-    if (answeredIndices.has(dto.questionIndex)) {
-      throw new BadRequestException('Question already answered.');
+    const existing = section.answers.find((a) => a.questionIndex === dto.questionIndex);
+    if (existing !== undefined) {
+      return this.buildSectionAnswerReplay(section, sectionType, dto.questionIndex);
     }
 
     if (dto.selectedIndex >= question.options.length) {
@@ -233,67 +364,234 @@ export class PlacementService {
     }
 
     const isCorrect = dto.selectedIndex === question.correctIndex;
-    const now       = new Date();
+    const now = new Date();
+    const dims = SECTION_DIMENSIONS[sectionType];
 
-    const { theta: newTheta, standardError: newSE } = this.estimateAllWithNewAnswer(
-      answers, questions, dto.questionIndex, isCorrect,
+    const { theta: newTheta, se: newSE } = this.estimateSectionTheta(
+      section.answers,
+      section.questions,
+      dto.questionIndex,
+      isCorrect,
+      dims,
     );
 
-    const questionStartAt = question.shownAt ?? new Date(now.getTime() - 30000).toISOString();
-
     const answerRecord: AnswerRecord = {
-      questionIndex:  dto.questionIndex,
-      selectedIndex:  dto.selectedIndex,
+      questionIndex: dto.questionIndex,
+      selectedIndex: dto.selectedIndex,
       isCorrect,
-      answeredAt:     now.toISOString(),
-      questionStartAt,
-      thetaSnapshot:  newTheta,
-      seSnapshot:     newSE,
+      answeredAt: now.toISOString(),
+      questionStartAt: question.shownAt ?? new Date(now.getTime() - 30000).toISOString(),
+      thetaSnapshot: newTheta,
+      seSnapshot: newSE,
     };
 
-    const allAnswers    = [...answers, answerRecord];
-    const answeredCount = allAnswers.length;
-    const maxSE         = Math.max(newSE.grammar, newSE.vocabulary, newSE.reading, newSE.listening);
+    section.answers = [...section.answers, answerRecord];
+    section.theta = newTheta;
+    section.se = newSE;
+    section.lastActivityAt = now.toISOString();
 
-    const converged =
-      answeredCount >= MIN_QUESTIONS &&
-      (maxSE <= SE_CONVERGENCE || answeredCount >= MAX_QUESTIONS);
+    const limits = SECTION_QUESTION_LIMITS[sectionType];
+    const answeredCount = section.answers.length;
+    const converged = answeredCount >= limits.min && (newSE <= SE_CONVERGENCE || answeredCount >= limits.max);
 
     if (converged) {
-      return this.finalize(userId, test, newTheta, newSE, questions, allAnswers);
+      return this.completeCatSection(userId, testId, sections, sectionType, newTheta, newSE, isCorrect);
     }
 
-    const typeCounts  = this.countByDimension(allAnswers, questions);
-    const excludedIds = questions.map((q) => q.sourceId);
-    const nextQuestion = await this.fetchNextQuestion(excludedIds, newTheta, typeCounts);
+    const excludedIds = section.questions.map((q) => q.sourceId);
+    const typeCounts = this.countByDimension(section.answers, section.questions, dims);
+    const nextQuestion = await this.fetchNextQuestion(excludedIds, newTheta, dims, typeCounts);
 
     if (nextQuestion === null) {
-      return this.finalize(userId, test, newTheta, newSE, questions, allAnswers);
+      return this.completeCatSection(userId, testId, sections, sectionType, newTheta, newSE, isCorrect);
     }
 
-    const nextWithTiming = { ...nextQuestion, shownAt: now.toISOString() };
+    section.questions = [...section.questions, { ...nextQuestion, shownAt: now.toISOString() }];
+    sections[sectionType] = section;
 
     await this.prisma.placementTest.update({
-      where: { id: test.id },
-      data: {
-        theta:          newTheta                             as object,
-        standardError:  newSE                               as object,
-        answers:        allAnswers                           as object,
-        questions:      [...questions, nextWithTiming]       as object,
-        lastActivityAt: now,
-      },
+      where: { id: testId },
+      data: { sections: sections as object, lastActivityAt: now },
     });
 
     return {
-      converged: false,
+      sectionCompleted: false,
       isCorrect,
-      questionsAnswered: answeredCount,
-      nextQuestion: this.publicQuestion(nextQuestion, questions.length, answeredCount, MAX_QUESTIONS),
-      progressHint: this.buildProgressHint(newTheta, newSE, answeredCount),
+      question: this.publicQuestion(nextQuestion, section.questions.length - 1, answeredCount, sectionType),
     };
   }
 
-  
+  private async completeCatSection(
+    userId: string,
+    testId: string,
+    sections: SectionsMap,
+    sectionType: 'READING' | 'LISTENING' | 'WRITING',
+    theta: number,
+    se: number,
+    isCorrect: boolean,
+  ) {
+    const section = sections[sectionType];
+    const now = new Date();
+
+    section.status = 'COMPLETED';
+    section.completedAt = now.toISOString();
+    section.resultTheta = theta;
+    sections[sectionType] = section;
+
+    await this.updateBestScoreAndPersist(testId, sections, sectionType, theta);
+
+    const allDone = SECTION_ORDER.every((s) => sections[s].status === 'COMPLETED');
+    if (allDone) {
+      return this.finalizeAttempt(userId, testId, sections);
+    }
+
+    return {
+      sectionCompleted: true,
+      section: sectionType,
+      nextSection: this.firstIncompleteSection(sections),
+      isCorrect,
+    };
+  }
+
+  private buildSectionAnswerReplay(
+    section: CATSectionState,
+    sectionType: PlacementSectionType,
+    questionIndex: number,
+  ) {
+    if (section.questions.length > questionIndex + 1) {
+      return {
+        sectionCompleted: false,
+        isCorrect: section.answers[questionIndex]?.isCorrect ?? false,
+        question: this.publicQuestion(
+          section.questions[questionIndex + 1]!,
+          questionIndex + 1,
+          section.answers.length,
+          sectionType,
+        ),
+      };
+    }
+    return {
+      sectionCompleted: section.status === 'COMPLETED',
+      isCorrect: section.answers[questionIndex]?.isCorrect ?? false,
+      question: null,
+    };
+  }
+
+  private async startSpeakingSection(testId: string, sections: SectionsMap) {
+    const section = sections.SPEAKING;
+
+    if (section.status === 'IN_PROGRESS' && section.itemIds.length > 0) {
+      const items = await this.prisma.speakingRepeatItem.findMany({
+        where: { id: { in: section.itemIds } },
+      });
+      return {
+        section: 'SPEAKING' as const,
+        items,
+        attemptedItemIds: section.attempts.map((a) => a.itemId),
+      };
+    }
+
+    const items = await this.prisma.speakingRepeatItem.findMany({
+      where: { isAvailableForPlacement: true },
+      orderBy: { placementDifficultyRank: 'asc' },
+      take: SPEAKING_ITEM_COUNT,
+    });
+
+    if (items.length < SPEAKING_ITEM_COUNT) {
+      throw new BadRequestException('Not enough speaking placement items configured.');
+    }
+
+    section.status = 'IN_PROGRESS';
+    section.itemIds = items.map((i) => i.id);
+    section.attempts = [];
+    section.startedAt = new Date().toISOString();
+    sections.SPEAKING = section;
+
+    await this.prisma.placementTest.update({
+      where: { id: testId },
+      data: { sections: sections as object, lastActivityAt: new Date() },
+    });
+
+    return { section: 'SPEAKING' as const, items, attemptedItemIds: [] };
+  }
+
+  async submitSpeakingAttempt(userId: string, itemId: string, audioBuffer: Buffer) {
+    const test = await this.getInProgressTest(userId);
+    const sections = test.sections as unknown as SectionsMap;
+    const section = sections.SPEAKING;
+
+    if (section.status !== 'IN_PROGRESS' || !section.itemIds.includes(itemId)) {
+      throw new BadRequestException('Item is not part of the active speaking section.');
+    }
+    if (section.attempts.some((a) => a.itemId === itemId)) {
+      throw new BadRequestException('This item has already been answered.');
+    }
+
+    const item = await this.prisma.speakingRepeatItem.findUniqueOrThrow({ where: { id: itemId } });
+
+    let scores;
+    try {
+      scores = await this.azureSpeech.assessPronunciation(audioBuffer, item.text);
+    } catch (err: unknown) {
+      if (err instanceof AzureQuotaExceededError) {
+        throw new BadRequestException(
+          'Monthly speech assessment quota reached. Please retry the speaking section later.',
+        );
+      }
+      throw err;
+    }
+
+    section.attempts = [
+      ...section.attempts,
+      {
+        itemId,
+        accuracyScore: scores.accuracyScore,
+        fluencyScore: scores.fluencyScore,
+        completenessScore: scores.completenessScore,
+      },
+    ];
+
+    const isSectionDone = section.attempts.length === section.itemIds.length;
+
+    if (isSectionDone) {
+      const avgComposite =
+        section.attempts.reduce(
+          (s, a) => s + (a.accuracyScore * 0.4 + a.fluencyScore * 0.3 + a.completenessScore * 0.3),
+          0,
+        ) / section.attempts.length;
+
+      section.status = 'COMPLETED';
+      section.completedAt = new Date().toISOString();
+      section.resultScore = Math.round(avgComposite);
+      sections.SPEAKING = section;
+
+      const speakingLevel = this.speakingScoreToLevel(section.resultScore);
+      await this.updateBestScoreAndPersistDirect(test.id, sections, 'SPEAKING', section.resultScore, speakingLevel);
+
+      const allDone = SECTION_ORDER.every((s) => sections[s].status === 'COMPLETED');
+      if (allDone) {
+        return this.finalizeAttempt(userId, test.id, sections);
+      }
+
+      return {
+        sectionCompleted: true,
+        section: 'SPEAKING' as const,
+        nextSection: this.firstIncompleteSection(sections),
+      };
+    }
+
+    sections.SPEAKING = section;
+    await this.prisma.placementTest.update({
+      where: { id: test.id },
+      data: { sections: sections as object, lastActivityAt: new Date() },
+    });
+
+    return {
+      sectionCompleted: false,
+      itemsAnswered: section.attempts.length,
+      totalItems: section.itemIds.length,
+    };
+  }
 
   async skip(userId: string) {
     const test = await this.getOrCreate(userId);
@@ -304,7 +602,7 @@ export class PlacementService {
 
     await this.prisma.placementTest.update({
       where: { userId },
-      data:  { status: 'SKIPPED' },
+      data: { status: 'SKIPPED' },
     });
 
     await this.applyLevel(userId, 'A1').catch((err) =>
@@ -314,204 +612,283 @@ export class PlacementService {
     return { skipped: true, assignedLevel: 'A1' };
   }
 
-  
-
   async remindLater(userId: string) {
     const remindAfter = new Date(Date.now() + 4 * 24 * 60 * 60 * 1000);
     await this.prisma.placementTest.update({
       where: { userId },
-      data:  { status: 'REMIND_LATER', remindAfter },
+      data: { status: 'REMIND_LATER', remindAfter },
     });
     return { remindAfter };
   }
 
-  
-
-  private async finalize(
-    userId:  string,
-    test:    { id: string; attemptCount: number; completedAt: Date | null },
-    theta:   DimensionTheta,
-    standardError: DimensionSE,
-    questions: QuestionSnapshot[],
-    answers:   AnswerRecord[],
+  private async updateBestScoreAndPersist(
+    testId: string,
+    sections: SectionsMap,
+    sectionType: 'READING' | 'LISTENING' | 'WRITING',
+    theta: number,
   ) {
-    const aggregate =
-      theta.grammar    * DIMENSION_WEIGHTS.GRAMMAR    +
-      theta.vocabulary * DIMENSION_WEIGHTS.VOCABULARY +
-      theta.reading    * DIMENSION_WEIGHTS.READING    +
-      theta.listening  * DIMENSION_WEIGHTS.LISTENING;
+    const score = this.thetaToNormalizedScore(theta);
+    const level = this.thetaToLevel(theta);
+    await this.updateBestScoreAndPersistDirect(testId, sections, sectionType, score, level);
+  }
 
-    const detectedLevel = this.thetaToLevel(aggregate);
+  private async updateBestScoreAndPersistDirect(
+    testId: string,
+    sections: SectionsMap,
+    sectionType: PlacementSectionType,
+    score: number,
+    level: Level,
+  ) {
+    const test = await this.prisma.placementTest.findUniqueOrThrow({ where: { id: testId } });
+    const best = test.bestSectionScores as unknown as BestSectionScoresMap;
+    const current = best[sectionType];
 
-    const avgSE =
-      (standardError.grammar + standardError.vocabulary +
-       standardError.reading  + standardError.listening) / 4;
-
-    const confidenceScore = Math.round(
-      Math.max(0, Math.min(100, ((INITIAL_SE - avgSE) / (INITIAL_SE - SE_CONVERGENCE)) * 100)),
-    );
-
-    const { testDurationSeconds, averageAnswerTimeSeconds } = this.calculateTestDuration(answers);
-
-    const isFirstCompletion   = test.completedAt === null;
-    const currentAttemptCount = (test.attemptCount ?? 0) + 1;
+    if (current === undefined || score > current.score) {
+      best[sectionType] = { score, level, achievedAt: new Date().toISOString() };
+    }
 
     await this.prisma.placementTest.update({
-      where: { id: test.id },
+      where: { id: testId },
       data: {
-        status:         'COMPLETED',
-        theta:          theta         as object,
-        standardError:  standardError as object,
-        detectedLevel,
-        confidenceScore,
-        questions:      questions     as object,
-        answers:        answers       as object,
-        completedAt:    isFirstCompletion ? new Date() : undefined,
-        lastCompletedAt: new Date(),
-        testDurationSeconds,
-        averageAnswerTimeSeconds,
-        attemptCount:   currentAttemptCount,
+        sections: sections as object,
+        bestSectionScores: best as object,
+        lastActivityAt: new Date(),
       },
     });
+  }
 
-    await this.applyLevel(userId, detectedLevel).catch((err) =>
-      this.logger.error('Error applying level after completion', { userId, detectedLevel, err }),
+  private async finalizeAttempt(userId: string, testId: string, sections: SectionsMap) {
+    const test = await this.prisma.placementTest.findUniqueOrThrow({ where: { id: testId } });
+    const best = test.bestSectionScores as unknown as BestSectionScoresMap;
+
+    const readingTheta = this.levelScoreToTheta(best.READING?.score ?? 0);
+    const listeningTheta = this.levelScoreToTheta(best.LISTENING?.score ?? 0);
+    const writingTheta = this.levelScoreToTheta(best.WRITING?.score ?? 0);
+    const speakingTheta = this.levelScoreToTheta(best.SPEAKING?.score ?? 0);
+
+    const aggregate =
+      readingTheta * SECTION_WEIGHTS.READING +
+      listeningTheta * SECTION_WEIGHTS.LISTENING +
+      writingTheta * SECTION_WEIGHTS.WRITING +
+      speakingTheta * SECTION_WEIGHTS.SPEAKING;
+
+    const detectedLevel = this.thetaToLevel(aggregate);
+    const confidenceScore = Math.round(
+      ([best.READING, best.LISTENING, best.WRITING, best.SPEAKING].filter(Boolean).length / 4) * 100,
     );
 
+    const isFirstCompletion = test.completedAt === null;
+    const currentAttemptCount = (test.attemptCount ?? 0) + 1;
+
+    await this.prisma.$transaction(async (tx) => {
+      await tx.placementTest.update({
+        where: { id: testId },
+        data: {
+          status: 'COMPLETED',
+          sections: sections as object,
+          detectedLevel,
+          confidenceScore,
+          completedAt: isFirstCompletion ? new Date() : undefined,
+          lastCompletedAt: new Date(),
+          attemptCount: currentAttemptCount,
+          processingLock: false,
+        },
+      });
+
+      await this.applyLevelTx(tx, userId, detectedLevel);
+    });
+
     this.logger.log('PLACEMENT_COMPLETED', {
-      userId, detectedLevel,
-      aggregate: aggregate.toFixed(2),
-      theta: {
-        g: theta.grammar.toFixed(2), v: theta.vocabulary.toFixed(2),
-        r: theta.reading.toFixed(2), l: theta.listening.toFixed(2),
-      },
-      se: {
-        g: standardError.grammar.toFixed(3), v: standardError.vocabulary.toFixed(3),
-        r: standardError.reading.toFixed(3),  l: standardError.listening.toFixed(3),
-      },
+      userId,
+      detectedLevel,
       confidenceScore,
-      questionsAnswered: answers.length,
-      testDurationSeconds,
-      isRetake:     !isFirstCompletion,
       attemptCount: currentAttemptCount,
+      bestSectionScores: best,
     });
 
     return {
-      converged: true,
+      testCompleted: true,
       detectedLevel,
       confidenceScore,
-      theta,
-      standardError,
-      questionsAnswered:    answers.length,
-      testDurationSeconds,
-      dimensionBreakdown:   this.buildDimensionBreakdown(theta, standardError),
-      isRetake:             !isFirstCompletion,
+      sections: SECTION_ORDER.map((type) => ({
+        type,
+        score: best[type]?.score ?? null,
+        level: best[type]?.level ?? null,
+      })),
     };
   }
 
-  
-  
-  
-
   private async applyLevel(userId: string, level: Level): Promise<void> {
-    await this.prisma.user.update({
-      where: { id: userId },
-      data:  { currentLevel: level },
-    });
+    await this.prisma.$transaction(async (tx) => this.applyLevelTx(tx, userId, level));
+  }
 
-    const progressData = {
-      ...buildInitialProgress(level),
-      isReadyForTest: false,
-      testUnlockedAt: null,
-    };
+  private async applyLevelTx(tx: Prisma.TransactionClient, userId: string, level: Level): Promise<void> {
+    await tx.user.update({ where: { id: userId }, data: { currentLevel: level } });
 
-    await this.prisma.levelProgress.upsert({
-      where:  { userId },
+    const progressData = { ...buildInitialProgress(level), isReadyForTest: false, testUnlockedAt: null };
+
+    await tx.levelProgress.upsert({
+      where: { userId },
       update: progressData,
       create: { userId, ...progressData },
     });
 
-    
-    
-    await this.prisma.userTopicMastery.deleteMany({ where: { userId } });
+    await tx.userTopicMastery.deleteMany({ where: { userId } });
 
     this.logger.log('PLACEMENT_LEVEL_APPLIED', { userId, level });
   }
 
-  
+  private freshSections(): SectionsMap {
+    const emptyCat = (): CATSectionState => ({
+      status: 'NOT_STARTED',
+      theta: PRIOR_MEAN,
+      se: INITIAL_SE,
+      questions: [],
+      answers: [],
+      resultTheta: null,
+      startedAt: null,
+      completedAt: null,
+      lastActivityAt: null,
+    });
 
-  private estimateAllWithNewAnswer(
-    answers:        AnswerRecord[],
-    questions:      QuestionSnapshot[],
-    newAnswerIndex: number,
-    isCorrect:      boolean,
-  ): { theta: DimensionTheta; standardError: DimensionSE } {
-    const dims: AbilityDimension[] = ['GRAMMAR', 'VOCABULARY', 'READING', 'LISTENING'];
-    const theta         = this.initialTheta();
-    const standardError = this.initialSE();
-
-    for (const dim of dims) {
-      const responses = answers
-        .map((a) => {
-          const q = questions[a.questionIndex];
-          if (q === undefined || q.dimension !== dim) return null;
-          return { difficulty: q.difficulty, discrimination: q.discrimination, correct: a.isCorrect };
-        })
-        .filter((r): r is NonNullable<typeof r> => r !== null);
-
-      const newQ = questions[newAnswerIndex];
-      if (newQ !== undefined && newQ.dimension === dim) {
-        responses.push({
-          difficulty:     newQ.difficulty,
-          discrimination: newQ.discrimination,
-          correct:        isCorrect,
-        });
-      }
-
-      const { estimate, se } = eapForDimension(responses);
-
-      switch (dim) {
-        case 'GRAMMAR':    theta.grammar    = estimate; standardError.grammar    = se; break;
-        case 'VOCABULARY': theta.vocabulary = estimate; standardError.vocabulary = se; break;
-        case 'READING':    theta.reading    = estimate; standardError.reading    = se; break;
-        case 'LISTENING':  theta.listening  = estimate; standardError.listening  = se; break;
-      }
-    }
-
-    return { theta, standardError };
+    return {
+      READING: emptyCat(),
+      LISTENING: emptyCat(),
+      WRITING: emptyCat(),
+      SPEAKING: {
+        status: 'NOT_STARTED',
+        itemIds: [],
+        attempts: [],
+        resultScore: null,
+        startedAt: null,
+        completedAt: null,
+      },
+    };
   }
 
-  
+  private firstIncompleteSection(sections: SectionsMap): PlacementSectionType | null {
+    for (const type of SECTION_ORDER) {
+      if (sections[type].status !== 'COMPLETED') return type;
+    }
+    return null;
+  }
+
+  private assertSectionUnlocked(sections: SectionsMap, sectionType: PlacementSectionType) {
+    const idx = SECTION_ORDER.indexOf(sectionType);
+    for (let i = 0; i < idx; i++) {
+      if (sections[SECTION_ORDER[i]!].status !== 'COMPLETED') {
+        throw new BadRequestException(`Complete the ${SECTION_ORDER[i]} section first.`);
+      }
+    }
+  }
+
+  private async getInProgressTest(userId: string) {
+    const test = await this.prisma.placementTest.findUnique({ where: { userId } });
+
+    if (test === null || test.status !== 'IN_PROGRESS') {
+      throw new BadRequestException('No active placement test.');
+    }
+
+    if (test.lastActivityAt !== null && Date.now() - test.lastActivityAt.getTime() > ABANDON_THRESHOLD_MS) {
+      throw new BadRequestException('Your test session expired due to inactivity. Please start again.');
+    }
+
+    return test;
+  }
+
+  private estimateSectionTheta(
+    answers: AnswerRecord[],
+    questions: QuestionSnapshot[],
+    newAnswerIndex: number,
+    isCorrect: boolean,
+    dims: AbilityDimension[],
+  ): { theta: number; se: number } {
+    const responses = answers
+      .map((a) => {
+        const q = questions[a.questionIndex];
+        if (q === undefined || !dims.includes(q.dimension)) return null;
+        return { difficulty: q.difficulty, discrimination: q.discrimination, correct: a.isCorrect };
+      })
+      .filter((r): r is NonNullable<typeof r> => r !== null);
+
+    const newQ = questions[newAnswerIndex];
+    if (newQ !== undefined && dims.includes(newQ.dimension)) {
+      responses.push({ difficulty: newQ.difficulty, discrimination: newQ.discrimination, correct: isCorrect });
+    }
+
+    const { estimate, se } = eapForDimension(responses);
+    return { theta: estimate, se };
+  }
+
+  private countByDimension(
+    answers: AnswerRecord[],
+    questions: QuestionSnapshot[],
+    dims: AbilityDimension[],
+  ): Record<AbilityDimension, number> {
+    const counts = Object.fromEntries(dims.map((d) => [d, 0])) as Record<AbilityDimension, number>;
+    for (const a of answers) {
+      const q = questions[a.questionIndex];
+      if (q !== undefined && dims.includes(q.dimension)) counts[q.dimension]++;
+    }
+    return counts;
+  }
 
   private async fetchNextQuestion(
     excludeIds: string[],
-    theta:      DimensionTheta,
-    typeCounts: Record<AbilityDimension, number>,
+    theta: number,
+    dims: AbilityDimension[],
+    typeCounts: Partial<Record<AbilityDimension, number>>,
   ): Promise<QuestionSnapshot | null> {
-    const dim      = this.selectDimension(typeCounts);
-    const thetaVal = theta[dim.toLowerCase() as keyof DimensionTheta];
+    const ranked = this.rankDimensions(dims, typeCounts);
 
-    const candidates = await this.fetchCandidates(excludeIds, dim, thetaVal, FETCH_WINDOW);
-
-    if (candidates.length === 0) {
-      const widened = await this.fetchCandidates(excludeIds, dim, thetaVal, Infinity);
-      if (widened.length === 0) return null;
-      widened.sort((a, b) => b.info - a.info);
-      return widened[0] ?? null;
+    for (const dim of ranked) {
+      let candidates = await this.fetchCandidates(excludeIds, dim, theta, FETCH_WINDOW);
+      if (candidates.length === 0) {
+        candidates = await this.fetchCandidates(excludeIds, dim, theta, Infinity);
+      }
+      if (candidates.length > 0) {
+        return this.pickWithExposureControl(candidates);
+      }
     }
 
+    return null;
+  }
+
+  private rankDimensions(
+    dims: AbilityDimension[],
+    typeCounts: Partial<Record<AbilityDimension, number>>,
+  ): AbilityDimension[] {
+    if (dims.length === 1) return dims;
+
+    const total = dims.reduce((s, d) => s + (typeCounts[d] ?? 0), 0) + 1;
+
+    return [...dims]
+      .map((dim) => {
+        const count = typeCounts[dim] ?? 0;
+        const actual = count / total;
+        const uncertainty = 1.0 / (count + 1);
+        const balanceBonus = Math.max(0, CONTENT_TARGET[dim] - actual) * 2.0;
+        return { dim, score: uncertainty + balanceBonus };
+      })
+      .sort((a, b) => b.score - a.score)
+      .map((s) => s.dim);
+  }
+
+  private pickWithExposureControl(candidates: Array<QuestionSnapshot & { info: number }>): QuestionSnapshot {
     candidates.sort((a, b) => b.info - a.info);
-    return candidates[0] ?? null;
+    const poolSize = Math.min(candidates.length, EXPOSURE_CONTROL_POOL_SIZE);
+    const pick = Math.floor(Math.random() * poolSize);
+    return candidates[pick]!;
   }
 
   private async fetchCandidates(
     excludeIds: string[],
-    dim:        AbilityDimension,
-    thetaVal:   number,
-    window:     number,
+    dim: AbilityDimension,
+    thetaVal: number,
+    window: number,
   ): Promise<Array<QuestionSnapshot & { info: number }>> {
     const cacheKey = this.getCacheKey(dim, thetaVal, window);
-    const cached   = this.getFromCache(cacheKey);
+    const cached = this.getFromCache(cacheKey);
 
     const result =
       cached ??
@@ -525,24 +902,25 @@ export class PlacementService {
   }
 
   private async fetchCandidatesFromDB(
-    dim:      AbilityDimension,
+    dim: AbilityDimension,
     thetaVal: number,
-    window:   number,
+    window: number,
   ): Promise<Array<QuestionSnapshot & { info: number }>> {
-    const diffWhere =
-      window === Infinity ? {} : { gte: thetaVal - window, lte: thetaVal + window };
+    const diffWhere = window === Infinity ? {} : { gte: thetaVal - window, lte: thetaVal + window };
 
-    const [exercises, mcqs, listeningQuestions] = await Promise.all([
+    const [exercises, scrambles, mcqs, listeningQuestions] = await Promise.all([
       dim === 'GRAMMAR'
         ? this.prisma.exercise.findMany({
-            where: {
-              isAvailableForPlacement: true,
-              ...(window !== Infinity && { difficultyRating: diffWhere }),
-            },
-            select: {
-              id: true, sentence: true, blanks: true,
-              difficultyRating: true, discriminationRating: true,
-            },
+            where: { isAvailableForPlacement: true, ...(window !== Infinity && { difficultyRating: diffWhere }) },
+            select: { id: true, sentence: true, blanks: true, difficultyRating: true, discriminationRating: true },
+            take: 15,
+          })
+        : Promise.resolve([]),
+
+      dim === 'GRAMMAR'
+        ? this.prisma.scrambleExercise.findMany({
+            where: { isAvailableForPlacement: true, ...(window !== Infinity && { difficultyRating: diffWhere }) },
+            select: { id: true, sentence: true, words: true, difficultyRating: true, discriminationRating: true },
             take: 15,
           })
         : Promise.resolve([]),
@@ -555,8 +933,12 @@ export class PlacementService {
               ...(window !== Infinity && { difficultyRating: diffWhere }),
             },
             select: {
-              id: true, question: true, options: true, correctIndex: true,
-              difficultyRating: true, discriminationRating: true,
+              id: true,
+              question: true,
+              options: true,
+              correctIndex: true,
+              difficultyRating: true,
+              discriminationRating: true,
             },
             take: 15,
           })
@@ -571,10 +953,11 @@ export class PlacementService {
               },
             },
             select: {
-              id: true, question: true, options: true, correctIndex: true,
-              listeningMaterial: {
-                select: { id: true, difficultyRating: true, discriminationRating: true },
-              },
+              id: true,
+              question: true,
+              options: true,
+              correctIndex: true,
+              listeningMaterial: { select: { id: true, difficultyRating: true, discriminationRating: true } },
             },
             take: 15,
           })
@@ -590,81 +973,56 @@ export class PlacementService {
       }
     }
 
+    for (const sc of scrambles) {
+      const snap = this.scrambleToSnapshot(sc);
+      if (snap !== null) {
+        result.push({ ...snap, info: info2PL(thetaVal, snap.difficulty, snap.discrimination) });
+      }
+    }
+
     for (const mcq of mcqs) {
-      const b = mcq.difficultyRating     ?? 0;
+      const b = mcq.difficultyRating ?? 0;
       const a = mcq.discriminationRating ?? 1;
       result.push({
-        sourceId:       mcq.id,
-        dimension:      dim,
-        text:           mcq.question,
-        options:        mcq.options,
-        correctIndex:   mcq.correctIndex,
-        difficulty:     b,
+        sourceId: mcq.id,
+        dimension: dim,
+        text: mcq.question,
+        options: mcq.options,
+        correctIndex: mcq.correctIndex,
+        difficulty: b,
         discrimination: a,
-        info:           info2PL(thetaVal, b, a),
+        info: info2PL(thetaVal, b, a),
       });
     }
 
     for (const lq of listeningQuestions) {
-      const b = lq.listeningMaterial?.difficultyRating     ?? 0;
+      const b = lq.listeningMaterial?.difficultyRating ?? 0;
       const a = lq.listeningMaterial?.discriminationRating ?? 1;
       result.push({
-        sourceId:       lq.id,
-        dimension:      'LISTENING',
-        text:           lq.question,
-        options:        lq.options,
-        correctIndex:   lq.correctIndex,
-        difficulty:     b,
+        sourceId: lq.id,
+        dimension: 'LISTENING',
+        text: lq.question,
+        options: lq.options,
+        correctIndex: lq.correctIndex,
+        difficulty: b,
         discrimination: a,
-        info:           info2PL(thetaVal, b, a),
+        info: info2PL(thetaVal, b, a),
       });
     }
 
     return result;
   }
 
-  private selectDimension(typeCounts: Record<AbilityDimension, number>): AbilityDimension {
-    const total = (Object.values(typeCounts) as number[]).reduce((s, n) => s + n, 0) + 1;
-    const dims: AbilityDimension[] = ['GRAMMAR', 'VOCABULARY', 'READING', 'LISTENING'];
-
-    const scored = dims.map((dim) => {
-      const count       = typeCounts[dim];
-      const actual      = count / total;
-      const uncertainty = 1.0 / (count + 1);
-      const balanceBonus = Math.max(0, CONTENT_TARGET[dim] - actual) * 2.0;
-      return { dim, score: uncertainty + balanceBonus };
-    });
-
-    scored.sort((a, b) => b.score - a.score);
-    return scored[0]?.dim ?? 'GRAMMAR';
-  }
-
-  private countByDimension(
-    answers:   AnswerRecord[],
-    questions: QuestionSnapshot[],
-  ): Record<AbilityDimension, number> {
-    const counts: Record<AbilityDimension, number> = {
-      GRAMMAR: 0, VOCABULARY: 0, READING: 0, LISTENING: 0,
-    };
-    for (const a of answers) {
-      const q = questions[a.questionIndex];
-      if (q !== undefined) counts[q.dimension]++;
-    }
-    return counts;
-  }
-
-  
-
   private exerciseToSnapshot(ex: {
-    id:                  string;
-    sentence:            string;
-    blanks:              unknown;
-    difficultyRating:    number | null;
+    id: string;
+    sentence: string;
+    blanks: unknown;
+    difficultyRating: number | null;
     discriminationRating: number | null;
   }): QuestionSnapshot | null {
     type BlankShape = { answer: string; options: string[] };
     const blanks = ex.blanks as BlankShape[];
-    const first  = blanks[0];
+    const first = blanks[0];
     if (first === undefined) return null;
 
     const distractors = first.options.filter((o) => o !== first.answer);
@@ -675,25 +1033,65 @@ export class PlacementService {
     }
     if (distractors.length < 3) return null;
 
-    const shuffled = this.deterministicShuffle(
-      [first.answer, ...distractors.slice(0, 3)],
-      ex.id,
-    );
+    const shuffled = this.deterministicShuffle([first.answer, ...distractors.slice(0, 3)], ex.id);
 
     return {
-      sourceId:       ex.id,
-      dimension:      'GRAMMAR',
-      text:           ex.sentence,
-      options:        shuffled,
-      correctIndex:   shuffled.indexOf(first.answer),
-      difficulty:     ex.difficultyRating     ?? 0,
+      sourceId: ex.id,
+      dimension: 'GRAMMAR',
+      text: ex.sentence,
+      options: shuffled,
+      correctIndex: shuffled.indexOf(first.answer),
+      difficulty: ex.difficultyRating ?? 0,
       discrimination: ex.discriminationRating ?? 1,
     };
   }
 
+  private scrambleToSnapshot(ex: {
+    id: string;
+    sentence: string;
+    words: unknown;
+    difficultyRating: number | null;
+    discriminationRating: number | null;
+  }): QuestionSnapshot | null {
+    type WordShape = { word: string; position: number; isDistractor: boolean };
+    const words = ex.words as WordShape[];
+    const correctWords = words.filter((w) => !w.isDistractor).sort((a, b) => a.position - b.position);
+    if (correctWords.length < 3) return null;
+
+    const wrongVariants = this.generateWrongOrderVariants(correctWords, ex.id);
+    if (wrongVariants.length < 3) return null;
+
+    const options = this.deterministicShuffle([ex.sentence, ...wrongVariants.slice(0, 3)], ex.id);
+
+    return {
+      sourceId: ex.id,
+      dimension: 'GRAMMAR',
+      text: 'Which sentence is grammatically correct?',
+      options,
+      correctIndex: options.indexOf(ex.sentence),
+      difficulty: ex.difficultyRating ?? 0,
+      discrimination: ex.discriminationRating ?? 1,
+    };
+  }
+
+  private generateWrongOrderVariants(correctWords: Array<{ word: string }>, seed: string): string[] {
+    const base = correctWords.map((w) => w.word);
+    const correctSentence = base.join(' ');
+    const variants = new Set<string>();
+
+    for (let i = 0; i < base.length - 1; i++) {
+      const swapped = [...base];
+      [swapped[i], swapped[i + 1]] = [swapped[i + 1]!, swapped[i]!];
+      const candidate = swapped.join(' ');
+      if (candidate !== correctSentence) variants.add(candidate);
+    }
+
+    return this.deterministicShuffle([...variants], seed).slice(0, 3);
+  }
+
   private deterministicShuffle<T>(arr: T[], seed: string): T[] {
     const copy = [...arr];
-    let hash   = 0;
+    let hash = 0;
     for (let i = 0; i < seed.length; i++) {
       hash = (hash * 31 + (seed.codePointAt(i) ?? 0)) >>> 0;
     }
@@ -705,7 +1103,17 @@ export class PlacementService {
     return copy;
   }
 
-  
+  private thetaToNormalizedScore(theta: number): number {
+    return Math.round(((theta - GRID_MIN) / (GRID_MAX - GRID_MIN)) * 100);
+  }
+
+  private levelScoreToTheta(score: number): number {
+    return GRID_MIN + (score / 100) * (GRID_MAX - GRID_MIN);
+  }
+
+  private speakingScoreToLevel(score: number): Level {
+    return this.thetaToLevel(this.levelScoreToTheta(score));
+  }
 
   private thetaToLevel(theta: number): Level {
     for (const b of LEVEL_BOUNDARIES) {
@@ -714,89 +1122,16 @@ export class PlacementService {
     return theta <= GRID_MIN ? 'A1' : 'C2';
   }
 
-  
-
-  private calculateTestDuration(answers: AnswerRecord[]): {
-    testDurationSeconds:     number;
-    averageAnswerTimeSeconds: number;
-  } {
-    if (answers.length === 0) {
-      return { testDurationSeconds: 0, averageAnswerTimeSeconds: 0 };
-    }
-
-    let totalMs = 0;
-    for (const a of answers) {
-      const start = new Date(a.questionStartAt).getTime();
-      const end   = new Date(a.answeredAt).getTime();
-      totalMs    += Math.min(end - start, 5 * 60 * 1000);
-    }
-
-    const testDurationSeconds     = Math.floor(totalMs / 1000);
-    const averageAnswerTimeSeconds =
-      answers.length > 0 ? testDurationSeconds / answers.length : 0;
-
-    return { testDurationSeconds, averageAnswerTimeSeconds };
-  }
-
-  
-
-  private publicQuestion(
-    q:            QuestionSnapshot,
-    index:        number,
-    answered:     number,
-    maxQuestions: number,
-  ) {
+  private publicQuestion(q: QuestionSnapshot, index: number, answered: number, section: PlacementSectionType) {
     return {
       index,
-      dimension:        q.dimension,
-      text:             q.text,
-      options:          q.options,
+      section,
+      dimension: q.dimension,
+      text: q.text,
+      options: q.options,
       questionsAnswered: answered,
-      estimatedTotal:   maxQuestions,
-      progressPercent:  Math.round((answered / maxQuestions) * 100),
     };
   }
-
-  private buildProgressHint(
-    theta:         DimensionTheta,
-    se:            DimensionSE,
-    answeredCount: number,
-  ): string {
-    if (answeredCount < MIN_QUESTIONS) {
-      return 'Keep going — we are still calibrating your level.';
-    }
-    const maxSE = Math.max(se.grammar, se.vocabulary, se.reading, se.listening);
-    if (maxSE <= SE_CONVERGENCE * 1.5) {
-      return 'Almost done — just a few more questions to confirm your level.';
-    }
-    return 'Good progress! Continue to improve accuracy of your result.';
-  }
-
-  private buildDimensionBreakdown(
-    theta: DimensionTheta,
-    se:    DimensionSE,
-  ): Array<{ dimension: string; theta: number; se: number; level: Level; confidence: string }> {
-    const dims: Array<{ key: AbilityDimension; label: string }> = [
-      { key: 'GRAMMAR',    label: 'Grammar'    },
-      { key: 'VOCABULARY', label: 'Vocabulary' },
-      { key: 'READING',    label: 'Reading'    },
-      { key: 'LISTENING',  label: 'Listening'  },
-    ];
-
-    return dims.map(({ key, label }) => {
-      const t = theta[key.toLowerCase() as keyof DimensionTheta];
-      const s = se[key.toLowerCase()    as keyof DimensionSE];
-      return {
-        dimension:  label,
-        theta:      Math.round(t * 100) / 100,
-        se:         Math.round(s * 100) / 100,
-        level:      this.thetaToLevel(t),
-        confidence: s <= SE_CONVERGENCE ? 'High' : s <= SE_CONVERGENCE * 1.5 ? 'Medium' : 'Low',
-      };
-    });
-  }
-
-  
 
   private getCacheKey(dim: AbilityDimension, thetaVal: number, window: number): string {
     return `${dim}:${thetaVal.toFixed(2)}:${window === Infinity ? 'INF' : window.toFixed(1)}`;
@@ -818,15 +1153,5 @@ export class PlacementService {
       if (typeof firstKey === 'string') this.questionCache.delete(firstKey);
     }
     this.questionCache.set(key, { data, timestamp: Date.now() });
-  }
-
-  
-
-  private initialTheta(): DimensionTheta {
-    return { grammar: PRIOR_MEAN, vocabulary: PRIOR_MEAN, reading: PRIOR_MEAN, listening: PRIOR_MEAN };
-  }
-
-  private initialSE(): DimensionSE {
-    return { grammar: INITIAL_SE, vocabulary: INITIAL_SE, reading: INITIAL_SE, listening: INITIAL_SE };
   }
 }

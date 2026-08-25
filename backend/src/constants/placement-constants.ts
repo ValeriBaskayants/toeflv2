@@ -1,4 +1,4 @@
-import { Level } from '@prisma/client';
+import { Level, PlacementSectionType } from '@prisma/client';
 
 export type AbilityDimension = 'GRAMMAR' | 'VOCABULARY' | 'READING' | 'LISTENING';
 
@@ -8,6 +8,7 @@ export interface DimensionTheta {
   reading: number;
   listening: number;
 }
+
 export interface DimensionSE {
   grammar: number;
   vocabulary: number;
@@ -33,10 +34,35 @@ export const INITIAL_SE = PRIOR_SD;
 
 export const SE_CONVERGENCE = 0.4;
 
-export const MAX_QUESTIONS = 35;
-export const MIN_QUESTIONS = 18;
-
 export const FETCH_WINDOW = 1.5;
+
+export const EXPOSURE_CONTROL_POOL_SIZE = 4;
+
+export const RETAKE_COOLDOWN_MS = 30 * 24 * 60 * 60 * 1000;
+export const ABANDON_THRESHOLD_MS = 24 * 60 * 60 * 1000;
+export const LOCK_STALE_MS = 30 * 1000;
+
+export const SECTION_ORDER: PlacementSectionType[] = ['READING', 'LISTENING', 'WRITING', 'SPEAKING'];
+
+export const SECTION_QUESTION_LIMITS: Record<
+  'READING' | 'LISTENING' | 'WRITING',
+  { min: number; max: number }
+> = {
+  READING: { min: 6, max: 12 },
+  LISTENING: { min: 4, max: 8 },
+  WRITING: { min: 6, max: 12 },
+};
+
+export const MAX_QUESTION_INDEX = 11;
+
+export const SECTION_WEIGHTS: Record<PlacementSectionType, number> = {
+  READING: 0.3,
+  LISTENING: 0.25,
+  WRITING: 0.3,
+  SPEAKING: 0.15,
+};
+
+export const SPEAKING_ITEM_COUNT = 3;
 
 export const CONTENT_TARGET: Readonly<Record<AbilityDimension, number>> = {
   GRAMMAR: 0.3,

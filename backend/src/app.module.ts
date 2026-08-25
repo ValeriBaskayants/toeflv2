@@ -15,7 +15,7 @@ import { VocabularyModule } from './modules/vocabulary/vocabulary.module';
 import { WritingModule } from './modules/writing/writing.module';
 import { ListeningModule } from './modules/listening/listening.module';
 import { MultipleChoiceModule } from './modules/multiple-choice/multiple-choice.module';
-import { MistakeModule } from './modules/mistakes/mistakes.module';
+import { MistakesModule } from './modules/mistakes/mistakes.module';
 import { BookmarksModule } from './modules/bookmarks/bookmarks.module';
 import { AdminModule } from './modules/admin/admin.module';
 import { PlacementModule } from './modules/placement/placement.module';
@@ -26,6 +26,7 @@ import { ScrambleModule } from './modules/scramble/scramble.module';
 import { AzureSpeechModule } from "./modules/azure-speech/azure-speech.module"
 import { RedisModule } from './modules/redis/redis.module';
 import { SpeakingRepeatModule } from './modules/speaking-repeat/speaking-repeat.module';
+
 @Module({
   imports: [
     ConfigModule.forRoot({
@@ -63,7 +64,7 @@ import { SpeakingRepeatModule } from './modules/speaking-repeat/speaking-repeat.
     WritingModule,
     ListeningModule,
     MultipleChoiceModule,
-    MistakeModule,
+    MistakesModule,
     BookmarksModule,
     PlacementModule,
     TtsModule,

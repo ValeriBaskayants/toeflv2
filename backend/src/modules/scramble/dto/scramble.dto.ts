@@ -1,15 +1,20 @@
-
-
-
 import {
-  IsString, IsNotEmpty, IsEnum, IsArray, IsBoolean,
-  IsInt, IsOptional, Min, Max, ValidateNested, MaxLength,
-  ArrayMinSize, ArrayMaxSize,
+  IsString,
+  IsNotEmpty,
+  IsEnum,
+  IsArray,
+  IsBoolean,
+  IsInt,
+  IsOptional,
+  Min,
+  Max,
+  ValidateNested,
+  MaxLength,
+  ArrayMinSize,
+  ArrayMaxSize,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { ScrambleMode, GrammarRole, Level } from '@prisma/client';
-
-
 
 export class ScrambleWordDto {
   @IsString()
@@ -34,6 +39,11 @@ export class ScrambleWordDto {
 }
 
 export class CreateScrambleExerciseDto {
+  @IsString()
+  @IsOptional()
+  @MaxLength(300)
+  prompt?: string;
+
   @IsString()
   @IsNotEmpty()
   @MaxLength(500)
@@ -75,8 +85,6 @@ export class BulkCreateScrambleDto {
   items!: CreateScrambleExerciseDto[];
 }
 
-
-
 export class GetScrambleDto {
   @IsEnum(Level)
   @IsOptional()
@@ -91,8 +99,6 @@ export class GetScrambleDto {
   mode?: ScrambleMode;
 }
 
-
-
 export class StartScrambleSessionDto {
   @IsString()
   @IsNotEmpty()
@@ -102,10 +108,28 @@ export class StartScrambleSessionDto {
   mode!: ScrambleMode;
 }
 
-
-
 export class SubmitScrambleDto {
-  
+  @IsArray()
+  @IsString({ each: true })
+  @ArrayMinSize(1)
+  @ArrayMaxSize(30)
+  wordOrder!: string[];
+
+  @IsInt()
+  @Min(0)
+  @Max(600)
+  timeSpentSec!: number;
+
+  @IsBoolean()
+  usedHint!: boolean;
+}
+
+export class StartScrambleBlockDto {
+  @IsEnum(Level)
+  level!: Level;
+}
+
+export class SubmitScrambleBlockItemDto {
   @IsArray()
   @IsString({ each: true })
   @ArrayMinSize(1)

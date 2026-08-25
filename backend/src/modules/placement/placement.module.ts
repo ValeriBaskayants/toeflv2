@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { PlacementController } from './placement.controller';
 import { PlacementService } from './placement.service';
+import { PlacementController } from './placement.controller';
+import { AzureSpeechModule } from '../azure-speech/azure-speech.module';
 
 @Module({
+  imports: [AzureSpeechModule],
   controllers: [PlacementController],
-  exports: [PlacementService],
   providers: [PlacementService],
 })
 export class PlacementModule {}

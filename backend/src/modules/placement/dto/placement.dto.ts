@@ -1,10 +1,10 @@
 import { IsInt, Min, Max } from 'class-validator';
-import { MAX_QUESTIONS } from 'src/constants/placement-constants';
+import { MAX_QUESTION_INDEX } from 'src/constants/placement-constants';
 
 export class AnswerPlacementDto {
   @IsInt()
   @Min(0)
-  @Max(MAX_QUESTIONS - 1)
+  @Max(MAX_QUESTION_INDEX)
   questionIndex!: number;
 
   @IsInt()

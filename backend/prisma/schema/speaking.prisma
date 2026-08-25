@@ -13,65 +13,72 @@ enum SpeakingSessionStatus {
 type SpeakingWordScore {
   word          String
   accuracyScore Float
-  errorType     String 
+  errorType     String
 }
 
 type SpeakingItemResult {
-  itemId           String
-  referenceText    String
-  recognizedText   String
-  accuracyScore    Float
-  fluencyScore     Float
-  completenessScore Float
-  prosodyScore     Float?
-  itemScore        Float   // 0-5, наш composite
-  wordScores       SpeakingWordScore[]
-  userAudioBase64  String  
-  userAudioMimeType String @default("audio/webm")
-  attemptedAt      String
+  itemId             String
+  referenceText      String
+  recognizedText     String
+  accuracyScore      Float
+  fluencyScore       Float
+  completenessScore  Float
+  prosodyScore       Float?
+  repetitionAccuracy Float
+  itemScore          Float
+  wordScores         SpeakingWordScore[]
+  userAudioBase64    String
+  userAudioMimeType  String              @default("audio/webm")
+  attemptedAt        String
 }
 
 model SpeakingRepeatSet {
   id       String @id @default(auto()) @map("_id") @db.ObjectId
-  scenario String 
+  scenario String
   level    Level
   voiceId  String @default("en-US-AndrewNeural")
 
   items    SpeakingRepeatItem[]
-  
   sessions SpeakingRepeatSession[]
 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
   @@index([level])
+  @@index([level, scenario])
 }
 
 model SpeakingRepeatItem {
-  id          String             @id @default(auto()) @map("_id") @db.ObjectId
-  setId       String             @db.ObjectId
-  set         SpeakingRepeatSet  @relation(fields: [setId], references: [id], onDelete: Cascade)
+  id         String             @id @default(auto()) @map("_id") @db.ObjectId
+  setId      String             @db.ObjectId
+  set        SpeakingRepeatSet  @relation(fields: [setId], references: [id], onDelete: Cascade)
+  text       String
+  difficulty SpeakingDifficulty
+  orderIndex Int
+  imageUrl   String?
 
-  text        String             
-  difficulty  SpeakingDifficulty 
-  orderIndex  Int              
-  imageUrl    String?           
+  recordingWindowSec Int @default(8)
+
+  isAvailableForPlacement Boolean @default(false)
+  placementDifficultyRank Int?
 
   @@index([setId, orderIndex])
+  @@index([isAvailableForPlacement, placementDifficultyRank])
 }
 
 model SpeakingRepeatSession {
-  id       String                 @id @default(auto()) @map("_id") @db.ObjectId
-  userId   String                 @db.ObjectId
-  user     User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
-  setId    String                 @db.ObjectId
-  set      SpeakingRepeatSet      @relation(fields: [setId], references: [id], onDelete: Cascade)
+  id     String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId String            @db.ObjectId
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  setId  String            @db.ObjectId
+  set    SpeakingRepeatSet @relation(fields: [setId], references: [id], onDelete: Cascade)
 
-  status   SpeakingSessionStatus  @default(IN_PROGRESS)
-  results  SpeakingItemResult[]
+  status        SpeakingSessionStatus @default(IN_PROGRESS)
+  results       SpeakingItemResult[]
+  playedItemIds String[]              @default([])
 
-  taskScore  Float?  
-  finalScore Int?    
+  taskScore  Float?
+  finalScore Int?
   xpEarned   Int?
 
   startedAt   DateTime  @default(now())

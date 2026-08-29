@@ -16,7 +16,7 @@ import {
   clearPlacementError,
 } from '@/store/Slices/PlacementSlice';
 import { clearProgress } from '@/store/Slices/ProgressSlice';
-import type { Dimension, DimensionResult } from '@/types/Placement/Placement.types';
+import type { Dimension, DimensionResult } from '@/types/placement/Placement.types';
 import styles from './Placementpage.module.css';
 
 

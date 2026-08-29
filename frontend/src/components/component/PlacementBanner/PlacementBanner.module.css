@@ -1,43 +1,43 @@
 .banner {
   position: relative;
-  padding: 1.5rem 1.75rem;
+  padding: 1.5rem 1.85rem;
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, var(--accent) 10%, var(--surface)) 0%,
-    color-mix(in srgb, #818cf8 6%, var(--surface)) 100%
+    color-mix(in srgb, var(--accent) 12%, var(--surface)) 0%,
+    color-mix(in srgb, #818cf8 8%, var(--surface)) 100%
   );
-  border: 1px solid color-mix(in srgb, var(--accent) 25%, var(--border));
-  border-radius: var(--radius-lg);
-  margin-bottom: 1.75rem;
+  border: 1px solid color-mix(in srgb, var(--accent) 30%, var(--border));
+  border-radius: var(--radius-lg, 16px);
+  margin-bottom: 0.5rem;
   overflow: hidden;
-  animation: slideDown 0.4s var(--ease-out) both;
+  box-shadow: var(--shadow-sm, 0 2px 8px rgba(0,0,0,0.04));
+  animation: slideDown 0.4s var(--ease-out, ease-out) both;
 }
 
-/* Retake variant — чуть другой акцент */
 .bannerRetake {
   background: linear-gradient(
     135deg,
-    color-mix(in srgb, #8b5cf6 10%, var(--surface)) 0%,
-    color-mix(in srgb, #a855f7 6%, var(--surface)) 100%
+    color-mix(in srgb, #8b5cf6 12%, var(--surface)) 0%,
+    color-mix(in srgb, #a855f7 8%, var(--surface)) 100%
   );
-  border-color: color-mix(in srgb, #8b5cf6 25%, var(--border));
+  border-color: color-mix(in srgb, #8b5cf6 30%, var(--border));
 }
 
 @keyframes slideDown {
-  from { opacity: 0; transform: translateY(-8px); }
+  from { opacity: 0; transform: translateY(-10px); }
   to   { opacity: 1; transform: translateY(0); }
 }
 
 .glow {
   position: absolute;
-  top: -40px;
-  right: -40px;
-  width: 200px;
-  height: 200px;
+  top: -50px;
+  right: -50px;
+  width: 220px;
+  height: 220px;
   border-radius: 50%;
   background: radial-gradient(
     circle,
-    color-mix(in srgb, var(--accent) 20%, transparent) 0%,
+    color-mix(in srgb, var(--accent) 25%, transparent) 0%,
     transparent 70%
   );
   pointer-events: none;
@@ -46,6 +46,7 @@
 .content {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 2rem;
   position: relative;
   z-index: 1;
@@ -54,33 +55,33 @@
 .left {
   display: flex;
   align-items: flex-start;
-  gap: 1rem;
+  gap: 1.15rem;
   flex: 1;
   min-width: 0;
 }
 
 .iconWrap {
-  width: 44px;
-  height: 44px;
-  border-radius: var(--radius-md);
+  width: 48px;
+  height: 48px;
+  border-radius: var(--radius-md, 12px);
   background: linear-gradient(135deg, var(--accent), #818cf8);
   display: flex;
   align-items: center;
   justify-content: center;
   color: #fff;
   flex-shrink: 0;
-  box-shadow: 0 4px 12px rgba(99, 102, 241, 0.35);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 35%, transparent);
 }
 
 .bannerRetake .iconWrap {
   background: linear-gradient(135deg, #8b5cf6, #a855f7);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.35);
+  box-shadow: 0 4px 14px rgba(139, 92, 246, 0.35);
 }
 
 .text { flex: 1; min-width: 0; }
 
 .title {
-  font-size: 1rem;
+  font-size: 1.1rem;
   font-weight: 800;
   color: var(--text-1);
   margin-bottom: 0.35rem;
@@ -88,11 +89,11 @@
 }
 
 .subtitle {
-  font-size: 0.845rem;
+  font-size: 0.865rem;
   color: var(--text-3);
-  line-height: 1.55;
+  line-height: 1.5;
   margin-bottom: 0.75rem;
-  max-width: 480px;
+  max-width: 520px;
 }
 
 .levelRow {
@@ -103,36 +104,42 @@
 }
 
 .levelPill {
-  padding: 0.18rem 0.55rem;
+  padding: 0.2rem 0.55rem;
   background: var(--surface);
   border: 1px solid var(--border);
   border-radius: 100px;
   font-size: 0.7rem;
   font-weight: 700;
-  color: var(--text-3);
+  color: var(--text-2);
 }
 
 .levelArrow {
-  font-size: 0.72rem;
+  font-size: 0.75rem;
   color: var(--accent);
-  font-style: italic;
+  font-weight: 600;
   margin-left: 0.25rem;
 }
 
 .previousLevel {
-  font-size: 0.8rem;
-  color: var(--text-3);
+  font-size: 0.825rem;
+  color: var(--text-2);
   font-style: italic;
 }
 
-/* ── Actions ─────────────────────────────────────────────────────────────── */
+/* ── Actions ── */
 
 .actions {
   display: flex;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.6rem;
   flex-shrink: 0;
-  min-width: 160px;
+  min-width: 170px;
+}
+
+.subActions {
+  display: flex;
+  gap: 0.5rem;
+  width: 100%;
 }
 
 .primaryBtn {
@@ -140,15 +147,17 @@
   align-items: center;
   justify-content: center;
   gap: 0.5rem;
-  padding: 0.7rem 1.25rem;
+  padding: 0.75rem 1.35rem;
   background: linear-gradient(135deg, var(--accent) 0%, #818cf8 100%);
   color: #fff;
-  border-radius: var(--radius-md);
+  border: none;
+  border-radius: var(--radius-md, 12px);
   font-size: 0.875rem;
   font-weight: 700;
-  box-shadow: 0 4px 14px rgba(99, 102, 241, 0.4);
-  transition: all var(--duration-base) var(--ease-out);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--accent) 40%, transparent);
+  transition: all 0.25s var(--ease-out, ease-out);
   white-space: nowrap;
+  cursor: pointer;
 }
 
 .bannerRetake .primaryBtn {
@@ -158,72 +167,79 @@
 
 .primaryBtn:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 8px 20px rgba(99, 102, 241, 0.45);
+  box-shadow: 0 6px 18px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 
 .primaryBtn:active:not(:disabled) { transform: translateY(0); }
 .primaryBtn:disabled { opacity: 0.6; cursor: not-allowed; }
 
 .secondaryBtn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 0.4rem;
-  padding: 0.55rem 1rem;
+  padding: 0.55rem 0.85rem;
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: var(--radius-md);
-  font-size: 0.8rem;
+  border-radius: var(--radius-md, 10px);
+  font-size: 0.78rem;
   font-weight: 600;
   color: var(--text-2);
-  transition: all var(--duration-fast) ease;
+  transition: all 0.2s ease;
   white-space: nowrap;
+  cursor: pointer;
 }
 
-.secondaryBtn:hover:not(:disabled) { border-color: var(--accent); color: var(--accent); }
+.secondaryBtn:hover:not(:disabled) { 
+  border-color: var(--accent); 
+  color: var(--accent); 
+}
+
 .secondaryBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
 .skipBtn {
+  flex: 1;
   display: flex;
   align-items: center;
   justify-content: center;
-  gap: 0.4rem;
-  padding: 0.4rem 1rem;
-  font-size: 0.75rem;
-  font-weight: 500;
+  gap: 0.35rem;
+  padding: 0.55rem 0.85rem;
+  font-size: 0.78rem;
+  font-weight: 600;
   color: var(--text-3);
-  border-radius: var(--radius-sm);
-  transition: color var(--duration-fast) ease;
+  background: transparent;
+  border: 1px solid var(--border);
+  border-radius: var(--radius-md, 10px);
+  transition: all 0.2s ease;
   white-space: nowrap;
+  cursor: pointer;
 }
 
-.skipBtn:hover:not(:disabled) { color: var(--text-1); }
+.skipBtn:hover:not(:disabled) { 
+  color: var(--text-1); 
+  border-color: var(--text-3);
+}
+
 .skipBtn:disabled { opacity: 0.5; cursor: not-allowed; }
 
+/* Fixed Spinner animation */
 .spinner {
   display: inline-block;
-  width: 13px;
-  height: 13px;
-  border: 2px solid currentColor;
-  border-top-color: transparent;
+  width: 14px;
+  height: 14px;
+  border: 2px solid color-mix(in srgb, currentColor 30%, transparent);
+  border-top-color: currentColor;
   border-radius: 50%;
-  animation: spin 0.65s linear infinite;
-  opacity: 0.7;
-  flex-shrink: 0;
+  animation: spin 0.7s linear infinite;
 }
 
-@keyframes spin { to { transform: rotate(360deg); } }
-
-/* ── Mobile ──────────────────────────────────────────────────────────────── */
-
-@media (max-width: 768px) {
-  .content { flex-direction: column; gap: 1.25rem; }
-  .actions { width: 100%; min-width: unset; }
-  .primaryBtn, .secondaryBtn, .skipBtn { width: 100%; }
+@keyframes spin {
+  to { transform: rotate(360deg); }
 }
 
-@media (max-width: 480px) {
-  .banner { padding: 1.25rem; }
-  .subtitle { display: none; }
-  .iconWrap { width: 36px; height: 36px; }
+@media (max-width: 860px) {
+  .content { flex-direction: column; align-items: stretch; gap: 1.25rem; }
+  .actions { width: 100%; min-width: 0; }
+  .primaryBtn { width: 100%; }
 }

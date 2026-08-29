@@ -6,12 +6,13 @@
 
 .main {
   flex: 1;
-  margin-left: var(--sidebar-w);
+  /* Учитываем ширину сайдбара + отступ слева + отступ справа */
+  margin-left: calc(var(--sidebar-w) + (var(--sidebar-inset) * 2));
   min-width: 0;
   display: flex;
   flex-direction: column;
   min-height: 100vh;
-  transition: margin-left var(--duration-slow) var(--ease-out);
+  transition: margin-left var(--duration-base) var(--ease-spring);
 }
 
 .content {
@@ -23,9 +24,10 @@
 .overlay {
   position: fixed;
   inset: 0;
-  background: rgba(0, 0, 0, 0.4);
+  background: rgba(0, 0, 0, 0.5); /* Чуть темнее для контраста */
   z-index: 199;
   backdrop-filter: blur(4px);
+  -webkit-backdrop-filter: blur(4px);
   animation: fadeIn var(--duration-base) ease;
 }
 
@@ -34,8 +36,10 @@
   align-items: center;
   gap: 1rem;
   padding: 1rem 1.25rem;
-  border-bottom: 1px solid var(--border);
-  background: var(--surface);
+  border-bottom: 1px solid var(--border-subtle);
+  background: var(--surface-glass);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
   position: sticky;
   top: 0;
   z-index: 50;
@@ -44,24 +48,25 @@
 .hamburger {
   width: 40px;
   height: 40px;
-  border-radius: var(--radius-sm);
+  border-radius: 12px;
   display: flex;
   align-items: center;
   justify-content: center;
-  background: var(--surface-2);
-  border: 1px solid var(--border);
+  background: var(--surface-card);
+  border: 1px solid var(--border-glass);
   color: var(--text-2);
   transition: all var(--duration-fast) ease;
   flex-shrink: 0;
 }
 
 .hamburger:hover {
-  background: var(--accent-light);
-  border-color: var(--accent);
+  background: var(--surface);
   color: var(--accent);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 }
 
 .mobileTitle {
+  font-family: 'Geologica', sans-serif;
   font-weight: 700;
   font-size: 1.125rem;
   color: var(--text-1);

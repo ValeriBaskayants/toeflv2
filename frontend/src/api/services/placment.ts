@@ -4,7 +4,7 @@ import type {
   AnswerResponse,
   SkipResponse,
   RemindLaterResponse,
-} from '@/types/Placement/Placement.types';
+} from '@/types/placement/Placement.types';
 import { api } from '../client';
 
 export const placementApi = {

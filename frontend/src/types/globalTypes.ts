@@ -37,6 +37,8 @@ export enum MistakeSource {
   WRITING = 'WRITING',
   READING = 'READING',
   LISTENING = 'LISTENING',
+  SCRAMBLE = 'SCRAMBLE',
+  SPEAKING = 'SPEAKING',
 }
 
 export enum ErrorCategory {
@@ -44,7 +46,10 @@ export enum ErrorCategory {
   VOCABULARY = 'VOCABULARY',
   SPELLING = 'SPELLING',
   LOGIC = 'LOGIC',
+  PRONUNCIATION = 'PRONUNCIATION',
 }
+
+
 
 export enum MasteryStatus {
   LEARNING = 'LEARNING',
@@ -100,4 +105,46 @@ export enum SubmissionStatus {
   PENDING = 'PENDING',
   ANALYZED = 'ANALYZED',
   ERROR = 'ERROR',
+}
+
+
+export enum ScrambleMode {
+  EASY = 'EASY',
+  MEDIUM = 'MEDIUM',
+  HARD = 'HARD',
+  EXPERT = 'EXPERT',
+}
+
+export enum GrammarRole {
+  SUBJECT = 'SUBJECT',
+  VERB = 'VERB',
+  OBJECT = 'OBJECT',
+  ADJECTIVE = 'ADJECTIVE',
+  ADVERB = 'ADVERB',
+  PREPOSITION = 'PREPOSITION',
+  CONJUNCTION = 'CONJUNCTION',
+  DETERMINER = 'DETERMINER',
+  COMPLEMENT = 'COMPLEMENT',
+  OTHER = 'OTHER',
+}
+
+export enum SpeakingDifficulty {
+  SHORT = 'SHORT',
+  MEDIUM = 'MEDIUM',
+  LONG = 'LONG',
+}
+
+export enum PlacementStatus {
+  PENDING = 'PENDING',
+  IN_PROGRESS = 'IN_PROGRESS',
+  COMPLETED = 'COMPLETED',
+  SKIPPED = 'SKIPPED',
+  REMIND_LATER = 'REMIND_LATER',
+}
+
+export enum PlacementSectionType {
+  READING = 'READING',
+  LISTENING = 'LISTENING',
+  WRITING = 'WRITING',
+  SPEAKING = 'SPEAKING',
 }

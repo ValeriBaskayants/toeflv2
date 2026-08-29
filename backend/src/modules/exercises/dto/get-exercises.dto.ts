@@ -19,6 +19,11 @@ export class GetExercisesDto {
   topic?: string;
 
   @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  topicSlug?: string;
+
+  @IsOptional()
   @Type(() => Number)
   @IsInt()
   @Min(1)

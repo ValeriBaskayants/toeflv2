@@ -63,6 +63,11 @@ export class CreateScrambleExerciseDto {
   @IsNotEmpty()
   topic!: string;
 
+  @IsOptional()
+  @IsArray()
+  @IsString({ each: true })
+  topicSlugs?: string[];
+
   @IsArray()
   @IsEnum(ScrambleMode, { each: true })
   allowedModes!: ScrambleMode[];
@@ -93,6 +98,11 @@ export class GetScrambleDto {
   @IsString()
   @IsOptional()
   topic?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  topicSlug?: string;
 
   @IsEnum(ScrambleMode)
   @IsOptional()

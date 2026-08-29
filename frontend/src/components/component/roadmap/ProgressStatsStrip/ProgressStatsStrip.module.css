@@ -1,0 +1,41 @@
+.statsStrip {
+  display: flex;
+  gap: 0.625rem;
+  margin-bottom: 1.5rem;
+  flex-wrap: wrap;
+}
+
+.statPill {
+  display: flex;
+  align-items: center;
+  gap: 0.625rem;
+  padding: 0.6rem 1rem;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 100px;
+  box-shadow: var(--shadow-sm);
+  transition: all 0.2s ease;
+  cursor: default;
+}
+
+.statPill:hover { box-shadow: var(--shadow-md); transform: translateY(-1px); }
+
+.statPillIco {
+  width: 26px; height: 26px;
+  border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.pilPurple { background: rgba(99,102,241,0.12);  color: #6366f1; }
+.pilAmber  { background: rgba(245,158,11,0.12);  color: #f59e0b; }
+.pilGreen  { background: rgba(34,197,94,0.12);   color: #22c55e; }
+.pilBlue   { background: rgba(59,130,246,0.12);  color: #3b82f6; }
+.pilRose   { background: rgba(244,63,94,0.12);   color: #f43f5e; }
+
+.statPillVal { font-size: 0.95rem; font-weight: 800; color: var(--text-1); line-height: 1; }
+.statPillLbl { font-size: 0.67rem; color: var(--text-3); font-weight: 500; }
+
+@media (max-width: 520px) {
+  .statsStrip { gap: 0.5rem; }
+}

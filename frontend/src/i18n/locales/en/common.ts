@@ -32,6 +32,7 @@ export const dashboard = {
 export const skills = {
   grammar: 'Grammar', reading: 'Reading', listening: 'Listening',
   vocabulary: 'Vocabulary', writing: 'Writing', quiz: 'Quiz', speaking: 'Speaking',
+  scramble: 'Sentence Building',
 };
 export const progress = {
   title: 'Progress', subtitle: 'Track your TOEFL journey across all skills',
@@ -51,6 +52,12 @@ export const progress = {
   complete: 'complete',
   projectedUnknown: 'Unknown',
   totalProgress: 'Overall progress',
+  moduleStatsTitle: 'Extra practice modules',
+  moduleStatsSubtitle: 'Sessions completed outside the core curriculum',
+  completedSessions: 'completed',
+  noTopicsYet: 'Curriculum coming soon',
+  noTopicsYetHint: 'We are still building the topic-by-topic curriculum for this level. Keep practicing — your progress is still being tracked.',
+  bottleneck: 'Bottleneck',
 };
 export const roadmap = {
   completed: 'Completed', current: 'In progress', locked: 'Locked',
@@ -64,7 +71,27 @@ export const roadmap = {
   lockedMsg: 'Complete your current level to unlock this one.',
   estimated: 'Estimated time',
   days: 'days',
+    topicStatus: {
+    locked: 'Locked',
+    available: 'Available',
+    in_progress: 'In Progress',
+    mastered: 'Mastered',
+    needs_review: 'Review Due',
+  }
 };
+
+export const topicDetail = {
+  loading: 'Loading topic…',
+  error: 'Could not load this topic.',
+  practiceSources: 'Practice here',
+  noSources: "We don't have exercises for this topic yet",
+  noSourcesHint: 'Try searching for "{{title}}" on other grammar resources.',
+  ourPage: 'Read the rule on our site',
+  externalResources: 'More resources',
+  missingPrereq: 'Complete these topics first:',
+  completedOf: '{{completed}} of {{total}}',
+};
+
 export const settings = { darkMode: 'Dark mode', lightMode: 'Light mode' };
 export const features = {
   spaced: 'Spaced repetition flashcards', ai: 'AI writing & grammar feedback',

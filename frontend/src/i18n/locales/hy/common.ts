@@ -68,13 +68,9 @@ export const dashboard = {
 };
 
 export const skills = {
-  grammar:    'Քերականություն',
-  reading:    'Ընթերցանություն',
-  listening:  'Ունկնդրում',
-  vocabulary: 'Բառապաշար',
-  writing:    'Գրավոր խոսք',
-  quiz:       'Թեստ',
-  speaking:   'Բանավոր խոսք',
+  grammar: 'Քերականություն', reading: 'Ընթերցանություն', listening: 'Ունկնդրում',
+  vocabulary: 'Բառապաշար', writing: 'Գրավոր խոսք', quiz: 'Թեստ', speaking: 'Բանավոր խոսք',
+  scramble: 'Նախադասությունների կառուցում',
 };
 
 export const progress = {
@@ -100,6 +96,12 @@ export const progress = {
   complete:       'ավարտված',
   projectedUnknown: 'Անհայտ',
   totalProgress:  'Ընդհանուր առաջընթաց',
+  moduleStatsTitle: 'Լրացուցիչ պրակտիկայի մոդուլներ',
+  moduleStatsSubtitle: 'Հիմնական ծրագրից դուրս ավարտված սեսիաներ',
+  completedSessions: 'ավարտված',
+  noTopicsYet: 'Ծրագիրը շուտով կլինի',
+  noTopicsYetHint: 'Մենք դեռ պատրաստում ենք այս մակարդակի քայլ առ քայլ ծրագիրը: Շարունակեք պարապել — ձեր առաջընթացն արդեն հաշվվում է:',
+  bottleneck: 'Խոչընդոտ',
 };
 
 export const roadmap = {
@@ -133,6 +135,13 @@ export const roadmap = {
     c1:      'Առաջադեմ (Advanced): Արտահայտեք ձեր մտքերը սահուն և ինքնաբուխ՝ առանց բառեր փնտրելու:',
     c2:      'Վարպետություն (Proficiency): Մայրենիի մակարդակ։ Լսածի և կարդացածի գրեթե ամբողջական ըմբռնում:',
   },
+    topicStatus: {
+    locked: 'Արգելափակված',
+    available: 'Հասանելի',
+    in_progress: 'Ընթացքի մեջ',
+    mastered: 'Յուրացված',
+    needs_review: 'Կրկնության կարիք',
+  },
 };
 
 export const settings = {
@@ -155,4 +164,16 @@ export const common = {
   comingSoon:  'Շուտով',
   save:        'Պահպանել',
   cancel:      'Չեղարկել',
+};
+
+export const topicDetail = {
+  loading: 'Բեռնվում է թեման…',
+  error: 'Չհաջողվեց բեռնել թեման:',
+  practiceSources: 'Պարապեք այստեղ',
+  noSources: 'Այս թեմայի համար դեռ վարժություններ չկան',
+  noSourcesHint: 'Փորձեք որոնել «{{title}}»-ը այլ քերականական ռեսուրսներում:',
+  ourPage: 'Կարդալ կանոնը մեր կայքում',
+  externalResources: 'Այլ նյութեր',
+  missingPrereq: 'Նախ ավարտեք այս թեմաները.',
+  completedOf: '{{completed}}-ը {{total}}-ից',
 };

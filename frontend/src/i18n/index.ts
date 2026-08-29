@@ -16,11 +16,14 @@ function getSavedLang(): SupportedLang {
   return 'en';
 }
 
+const initialLang = getSavedLang();
+document.documentElement.lang = initialLang;
+
 void i18n
   .use(initReactI18next)
   .init({
     resources: { en, ru, hy },
-    lng:         getSavedLang(),
+    lng: initialLang,
     fallbackLng: 'en',
     interpolation: { escapeValue: false },
   })
@@ -30,6 +33,7 @@ void i18n
 
 i18n.on('languageChanged', (lng: string) => {
   localStorage.setItem(STORAGE_KEY, lng);
+  document.documentElement.lang = lng;
 });
 
 export default i18n;

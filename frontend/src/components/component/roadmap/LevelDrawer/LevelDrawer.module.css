@@ -1,0 +1,308 @@
+.drawerOverlay {
+  position: fixed; inset: 0; z-index: 500;
+  background: rgba(0,0,0,0.42);
+  backdrop-filter: blur(6px);
+  display: flex; align-items: flex-end; justify-content: center;
+  animation: overlayIn 0.2s ease;
+}
+@keyframes overlayIn { from { opacity: 0; } to { opacity: 1; } }
+
+@media (min-width: 700px) {
+  .drawerOverlay { align-items: stretch; justify-content: flex-end; }
+}
+
+.drawer {
+  width: 100%; max-width: 500px;
+  max-height: 93vh;
+  background: var(--surface);
+  border-top: 1px solid var(--border);
+  border-radius: var(--radius-xl) var(--radius-xl) 0 0;
+  display: flex; flex-direction: column;
+  animation: drawerUp 0.3s cubic-bezier(0.22,1,0.36,1);
+  overflow: hidden;
+}
+
+@keyframes drawerUp {
+  from { transform: translateY(28px); opacity: 0; }
+  to   { transform: translateY(0);    opacity: 1; }
+}
+
+@media (min-width: 700px) {
+  .drawer {
+    max-width: 460px; max-height: 100vh; height: 100%;
+    border-top: none; border-left: 1px solid var(--border);
+    border-radius: 0;
+    animation: drawerRight 0.3s cubic-bezier(0.22,1,0.36,1);
+  }
+  @keyframes drawerRight {
+    from { transform: translateX(28px); opacity: 0; }
+    to   { transform: translateX(0);    opacity: 1; }
+  }
+}
+
+.drawerBand { height: 4px; flex-shrink: 0; }
+
+.drawerHead {
+  display: flex; align-items: center; gap: 1rem;
+  padding: 1.25rem 1.5rem;
+  border-bottom: 1px solid var(--border);
+  flex-shrink: 0;
+  position: relative;
+}
+
+.drawerCircleWrap {
+  width: 66px; height: 66px; flex-shrink: 0;
+  position: relative;
+}
+
+.drawerCircleAnim {
+  transition: stroke-dashoffset 1s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.drawerCircleNum {
+  position: absolute; inset: 0;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.95rem; font-weight: 800;
+  line-height: 1;
+}
+
+.drawerMeta { flex: 1; min-width: 0; }
+
+.drawerLvlName {
+  font-size: 1.5rem;
+  font-weight: 800;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  margin-bottom: 0.35rem;
+}
+
+.drawerChip {
+  display: inline-flex; align-items: center; gap: 0.35rem;
+  font-size: 0.7rem; font-weight: 600;
+  padding: 0.22rem 0.6rem;
+  border-radius: 100px;
+  background: var(--surface-2);
+  color: var(--text-3);
+  border: 1px solid var(--border);
+  margin-bottom: 0.2rem;
+}
+
+.chipOk   { background: rgba(34,197,94,0.1);  color: #16a34a; border-color: rgba(34,197,94,0.25); }
+.chipCur  { background: rgba(99,102,241,0.1); color: #6366f1; border-color: rgba(99,102,241,0.25); }
+.chipLock { background: var(--surface-2); color: var(--text-3); }
+
+.drawerTopicStat { font-size: 0.7rem; color: var(--text-3); }
+
+.drawerClose {
+  position: absolute; top: 1rem; right: 1rem;
+  width: 30px; height: 30px; border-radius: 50%;
+  background: var(--surface-2); border: 1px solid var(--border);
+  color: var(--text-2); display: flex; align-items: center; justify-content: center;
+  cursor: pointer; transition: all 0.15s ease;
+}
+.drawerClose:hover { background: var(--surface-3); color: var(--text-1); }
+
+.drawerBar { height: 3px; background: var(--surface-2); flex-shrink: 0; }
+.drawerBarFill { height: 100%; transition: width 1s cubic-bezier(0.34,1.56,0.64,1); }
+
+.drawerBody {
+  flex: 1; overflow-y: auto;
+  padding: 1.25rem 1.5rem;
+  display: flex; flex-direction: column;
+  gap: 0;
+  scrollbar-width: thin;
+}
+
+.drawerTestBtn {
+  display: flex; align-items: center; justify-content: center; gap: 0.5rem;
+  width: 100%; padding: 0.8rem;
+  background: linear-gradient(135deg, #6366f1, #818cf8);
+  color: #fff; border: none; border-radius: var(--radius-md);
+  font-size: 0.875rem; font-weight: 700;
+  cursor: pointer; margin-bottom: 1.25rem;
+  box-shadow: 0 4px 16px rgba(99,102,241,0.28);
+  transition: all 0.2s ease;
+}
+.drawerTestBtn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
+.drawerTestBtn:disabled { opacity: 0.55; cursor: not-allowed; }
+
+.drawerTopicSection {}
+
+.drawerSectionTitle {
+  font-size: 0.63rem; font-weight: 700;
+  text-transform: uppercase; letter-spacing: 0.09em;
+  color: var(--text-3);
+  display: flex; align-items: center; gap: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+.drawerSectionTitle::after {
+  content: ''; flex: 1; height: 1px; background: var(--border);
+}
+
+.topicStatusSummary {
+  display: flex; gap: 0.375rem; flex-wrap: wrap;
+  margin-bottom: 0.875rem;
+}
+
+.statusSummaryPill {
+  font-size: 0.68rem; font-weight: 700;
+  padding: 0.2rem 0.55rem;
+  border-radius: 100px;
+}
+
+.drawerTopicList {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.dTopicRow {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.625rem;
+  padding: 0.6rem 0.75rem;
+  border-radius: var(--radius-md);
+  border: 1px solid var(--border);
+  background: var(--surface-2);
+  position: relative;
+  overflow: hidden;
+  transition: all 0.18s ease;
+  animation: rowIn 0.22s ease both;
+}
+
+@keyframes rowIn {
+  from { opacity: 0; transform: translateX(6px); }
+  to   { opacity: 1; transform: translateX(0); }
+}
+
+.dTopicRow:hover { background: var(--surface); border-color: var(--tc, var(--accent)); }
+.dTopicRowLocked { opacity: 0.5; }
+.dTopicRowRec {
+  border-color: rgba(99,102,241,0.28);
+  background: rgba(99,102,241,0.04);
+}
+
+.dTopicAccent {
+  position: absolute; left: 0; top: 0; bottom: 0;
+  width: 3px; border-radius: 0 2px 2px 0;
+}
+
+.dTopicIcon {
+  width: 26px; height: 26px; border-radius: 7px;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0; margin-top: 1px;
+}
+
+.dTopicContent { flex: 1; min-width: 0; }
+
+.dTopicTitleRow {
+  display: flex; align-items: center;
+  gap: 0.35rem; margin-bottom: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.dTopicNum {
+  font-size: 0.6rem;
+  font-family: 'JetBrains Mono', monospace;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+.dTopicTitle {
+  font-size: 0.82rem; font-weight: 700;
+  color: var(--text-1); line-height: 1.2;
+}
+
+.dTopicRecBadge {
+  display: inline-flex; align-items: center; gap: 0.2rem;
+  font-size: 0.58rem; font-weight: 700;
+  padding: 0.1rem 0.38rem;
+  background: rgba(99,102,241,0.1);
+  border: 1px solid rgba(99,102,241,0.22);
+  border-radius: 100px; color: var(--accent);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.dTopicOpt {
+  font-size: 0.57rem; font-weight: 700;
+  padding: 0.08rem 0.32rem;
+  background: var(--surface-3);
+  border: 1px solid var(--border);
+  border-radius: 100px; color: var(--text-3);
+  text-transform: uppercase; letter-spacing: 0.04em;
+  flex-shrink: 0;
+}
+
+.dTopicSkills {
+  display: flex; align-items: center;
+  gap: 0.3rem; margin-bottom: 0.2rem;
+}
+
+.dTopicSkillDot {
+  width: 18px; height: 18px; border-radius: 4px;
+  display: flex; align-items: center; justify-content: center;
+  font-size: 0.55rem; font-weight: 800;
+  color: #fff;
+  cursor: default;
+  transition: transform 0.15s ease;
+}
+.dTopicSkillDot:hover { transform: scale(1.2); }
+
+.dTopicBarMini {
+  flex: 1; height: 3px;
+  background: var(--border);
+  border-radius: 100px;
+  overflow: hidden;
+  min-width: 24px;
+}
+
+.dTopicBarFill {
+  height: 100%; border-radius: 100px;
+  transition: width 0.8s cubic-bezier(0.34,1.56,0.64,1);
+}
+
+.dTopicLockMsg {
+  display: flex; align-items: center; gap: 0.3rem;
+  font-size: 0.68rem; color: var(--text-3);
+  margin-top: 0.15rem;
+}
+
+.dTopicBtn {
+  font-size: 0.7rem; font-weight: 700;
+  padding: 0.3rem 0.65rem;
+  border-radius: var(--radius-sm);
+  border: 1.5px solid var(--tc, var(--accent));
+  color: var(--tc, var(--accent));
+  background: transparent; cursor: pointer;
+  white-space: nowrap; flex-shrink: 0;
+  align-self: center;
+  transition: all 0.15s ease;
+}
+.dTopicBtn:hover {
+  background: var(--tc, var(--accent));
+  color: #fff;
+  box-shadow: 0 3px 10px color-mix(in srgb, var(--tc, var(--accent)) 28%, transparent);
+}
+
+.drawerState {
+  display: flex; flex-direction: column;
+  align-items: center; gap: 0.875rem;
+  padding: 2.5rem 1.5rem; text-align: center;
+}
+
+.drawerStateCircle {
+  width: 72px; height: 72px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center;
+  flex-shrink: 0;
+}
+
+.drawerStateTitle {
+  font-size: 1rem; font-weight: 700;
+  color: var(--text-1);
+}
+
+.drawerStateBody {
+  font-size: 0.83rem; color: var(--text-3);
+  line-height: 1.6; max-width: 280px;
+}

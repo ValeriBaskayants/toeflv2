@@ -1,5 +1,3 @@
-import type { MultipleChoice } from '../multipleChoice/MultipleChoice.types';
-
 export interface ProgressStats {
   required: number;
   completed: number;
@@ -22,11 +20,12 @@ export interface LevelProgressData {
   userId: string;
   grammar: ProgressStats;
   vocabulary: VocabularyStats;
+  speaking: ProgressStats;
+  scramble: ProgressStats;
   reading: ProgressStats;
   writing: WritingStats;
   listening: ProgressStats;
   quiz: ProgressStats;
-  multipleChoice: MultipleChoice;
   isReadyForTest: boolean;
   testUnlockedAt: string | null;
   createdAt: string;
@@ -50,12 +49,19 @@ export interface SkillBreakdown {
   accuracyMin: number;
   remainingCount: number;
   accuracyGap: number;
+  isBottleneck: boolean;
+}
+
+export interface ModuleStat {
+  completedCount: number;
+  avgScore: number;
 }
 
 export interface DashboardData {
   currentLevel: string;
   totalXp: number;
   streak: number;
+  streakMultiplier: number;
   progress: LevelProgressData;
   recentActivity: DailyActivity[];
   readinessPercent: number;
@@ -63,6 +69,10 @@ export interface DashboardData {
   weakestSkill: string;
   nextMilestone: string;
   testUnlocked: boolean;
+  moduleStats: {
+    scramble: ModuleStat;
+    speaking: ModuleStat;
+  };
 }
 
 export interface LevelUpResult {

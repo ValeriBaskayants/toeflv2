@@ -3,9 +3,10 @@ import { ScrambleService } from './scramble.service';
 import { ScrambleController } from './scramble.controller';
 import { ProgressModule } from '../progress/progress.module';
 import { MistakesModule } from '../mistakes/mistakes.module';
+import { TopicMasteryModule } from '../topic-mastery/topic-mastery.module';
 
 @Module({
-  imports: [ProgressModule, MistakesModule],
+  imports: [ProgressModule, MistakesModule, TopicMasteryModule],
   controllers: [ScrambleController],
   providers: [ScrambleService],
   exports: [ScrambleService],

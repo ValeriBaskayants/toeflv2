@@ -3,7 +3,7 @@ import type { Level } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { emaAccuracy } from '../../constants/level-requirements';
 
-export type PracticeKind = 'grammar' | 'quiz' | 'reading' | 'listening';
+export type PracticeKind = 'grammar' | 'quiz' | 'reading' | 'listening' | 'scramble';
 
 interface PracticeTargetsShape {
   grammarRequired: number;
@@ -11,6 +11,7 @@ interface PracticeTargetsShape {
   quizRequired: number;
   readingRequired: number;
   listeningRequired: number;
+  scrambleRequired: number;
 }
 
 const DEFAULT_TARGETS: PracticeTargetsShape = {
@@ -19,6 +20,7 @@ const DEFAULT_TARGETS: PracticeTargetsShape = {
   quizRequired: 2,
   readingRequired: 1,
   listeningRequired: 1,
+  scrambleRequired: 3,
 };
 
 interface RecordPracticeParams {
@@ -61,9 +63,7 @@ export class TopicMasteryService {
     accuracy: number | undefined,
   ): Promise<void> {
     if (rule === undefined) {
-      this.logger.warn(
-        `TOPIC_SLUG_NOT_FOUND: "${slug}" — content references a topic that doesn't exist in the curriculum`,
-      );
+      this.logger.warn(`TOPIC_SLUG_NOT_FOUND: "${slug}" — content references a topic that doesn't exist in the curriculum`);
       return;
     }
 
@@ -79,12 +79,14 @@ export class TopicMasteryService {
     const quizAccuracy = existing?.quizAccuracy ?? 0;
     const readingCompleted = existing?.readingCompleted ?? 0;
     const listeningCompleted = existing?.listeningCompleted ?? 0;
+    const scrambleCompleted = existing?.scrambleCompleted ?? 0;
+    const scrambleAccuracy = existing?.scrambleAccuracy ?? 0;
 
     const nextGrammarCompleted = kind === 'grammar' ? grammarCompleted + 1 : grammarCompleted;
     const nextQuizCompleted = kind === 'quiz' ? quizCompleted + 1 : quizCompleted;
     const nextReadingCompleted = kind === 'reading' ? readingCompleted + 1 : readingCompleted;
-    const nextListeningCompleted =
-      kind === 'listening' ? listeningCompleted + 1 : listeningCompleted;
+    const nextListeningCompleted = kind === 'listening' ? listeningCompleted + 1 : listeningCompleted;
+    const nextScrambleCompleted = kind === 'scramble' ? scrambleCompleted + 1 : scrambleCompleted;
 
     const nextGrammarAccuracy =
       kind === 'grammar' && accuracy !== undefined
@@ -96,6 +98,11 @@ export class TopicMasteryService {
         ? emaAccuracy(quizCompleted, quizAccuracy, accuracy)
         : quizAccuracy;
 
+    const nextScrambleAccuracy =
+      kind === 'scramble' && accuracy !== undefined
+        ? emaAccuracy(scrambleCompleted, scrambleAccuracy, accuracy)
+        : scrambleAccuracy;
+
     const targets: PracticeTargetsShape =
       (rule.practiceTargets as PracticeTargetsShape | null) ?? DEFAULT_TARGETS;
 
@@ -104,7 +111,8 @@ export class TopicMasteryService {
       nextGrammarAccuracy >= targets.grammarAccuracyMin &&
       nextQuizCompleted >= targets.quizRequired &&
       nextReadingCompleted >= targets.readingRequired &&
-      nextListeningCompleted >= targets.listeningRequired;
+      nextListeningCompleted >= targets.listeningRequired &&
+      nextScrambleCompleted >= targets.scrambleRequired;
 
     const wasMastered = existing?.status === 'MASTERED';
     const nextStatus = wasMastered ? 'MASTERED' : meetsTargets ? 'MASTERED' : 'IN_PROGRESS';
@@ -122,6 +130,8 @@ export class TopicMasteryService {
         quizAccuracy: nextQuizAccuracy,
         readingCompleted: nextReadingCompleted,
         listeningCompleted: nextListeningCompleted,
+        scrambleCompleted: nextScrambleCompleted,
+        scrambleAccuracy: nextScrambleAccuracy,
         status: nextStatus,
         masteredAt: justMastered ? now : null,
         lastPracticedAt: now,
@@ -133,6 +143,8 @@ export class TopicMasteryService {
         quizAccuracy: nextQuizAccuracy,
         readingCompleted: nextReadingCompleted,
         listeningCompleted: nextListeningCompleted,
+        scrambleCompleted: nextScrambleCompleted,
+        scrambleAccuracy: nextScrambleAccuracy,
         status: nextStatus,
         ...(justMastered ? { masteredAt: now } : {}),
         lastPracticedAt: now,
@@ -140,25 +152,19 @@ export class TopicMasteryService {
     });
   }
 
-  async getMasteryMap(
-    userId: string,
-    slugs: string[],
-  ): Promise<
-    Map<
-      string,
-      {
-        grammarCompleted: number;
-        grammarAccuracy: number;
-        quizCompleted: number;
-        quizAccuracy: number;
-        readingCompleted: number;
-        listeningCompleted: number;
-        status: string;
-        masteredAt: Date | null;
-        lastPracticedAt: Date | null;
-      }
-    >
-  > {
+  async getMasteryMap(userId: string, slugs: string[]): Promise<Map<string, {
+    grammarCompleted: number;
+    grammarAccuracy: number;
+    quizCompleted: number;
+    quizAccuracy: number;
+    readingCompleted: number;
+    listeningCompleted: number;
+    scrambleCompleted: number;
+    scrambleAccuracy: number;
+    status: string;
+    masteredAt: Date | null;
+    lastPracticedAt: Date | null;
+  }>> {
     if (slugs.length === 0) {
       return new Map();
     }

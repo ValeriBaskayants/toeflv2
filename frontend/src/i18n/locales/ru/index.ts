@@ -1,4 +1,4 @@
-import { auth, navigation, dashboard, settings, features } from './common';
+import { auth, navigation, dashboard, settings, features, skills, progress, roadmap, topicDetail } from './common';
 import { grammar }    from './grammar';
 import { reading }    from './reading';
 import { listening }  from './listening';
@@ -18,6 +18,10 @@ export const ru = {
     dashboard,
     settings,
     features,
+    skills,
+    progress,
+    roadmap,
+    topicDetail,
     scramble,
     grammar,
     reading,
@@ -28,6 +32,6 @@ export const ru = {
     quiz,
     placement,
     exercises,
-    speaking
+    speaking,
   },
 } as const;

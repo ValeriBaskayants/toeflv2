@@ -11,8 +11,8 @@ model UserTopicMastery {
   userId String @db.ObjectId
   user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  topicSlug String // GrammarRule.slug
-  level     Level // the level this topic belongs to (for history when user moves on)
+  topicSlug String
+  level     Level
 
   grammarCompleted   Int   @default(0)
   grammarAccuracy    Float @default(0)
@@ -20,6 +20,8 @@ model UserTopicMastery {
   quizAccuracy       Float @default(0)
   readingCompleted   Int   @default(0)
   listeningCompleted Int   @default(0)
+  scrambleCompleted  Int   @default(0)
+  scrambleAccuracy   Float @default(0)
 
   status          TopicStatus @default(NOT_STARTED)
   masteredAt      DateTime?

@@ -53,3 +53,27 @@ export interface RoadmapResponse {
   coreTopicsTotalCount:       number;
   curriculumReadinessPercent: number;
 }
+
+export interface TopicPracticeSource {
+  type: 'grammar' | 'quiz' | 'reading' | 'scramble';
+  label: string;
+  totalCount: number;
+  completedCount: number;
+  browseUrl: string;
+}
+
+export interface TopicDetailResponse {
+  slug: string;
+  title: string;
+  level: string;
+  order: number;
+  isCore: boolean;
+  summary: string;
+  status: TopicNodeStatus;
+  prerequisiteSlugs: string[];
+  missingPrerequisites: string[];
+  practiceSources: TopicPracticeSource[];
+  hasAnyContent: boolean;
+  resources: TopicResource[];
+  internalPageUrl: string | null;
+}

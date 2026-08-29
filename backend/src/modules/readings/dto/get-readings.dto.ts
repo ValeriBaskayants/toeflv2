@@ -12,4 +12,9 @@ export class GetReadingsDto {
   @IsString()
   @MaxLength(100)
   topic?: string;
+
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  topicSlug?: string;
 }

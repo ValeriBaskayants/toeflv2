@@ -1,4 +1,4 @@
-import { Controller, Get } from '@nestjs/common';
+import { Controller, Get, Param } from '@nestjs/common';
 import { RoadmapService } from './roadmap.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
@@ -10,5 +10,10 @@ export class RoadmapController {
   @Get()
   getRoadmap(@CurrentUser() user: JwtUserPayload) {
     return this.service.getRoadmap(user.id);
+  }
+
+  @Get('topics/:slug')
+  getTopicDetail(@CurrentUser() user: JwtUserPayload, @Param('slug') slug: string) {
+    return this.service.getTopicDetail(user.id, slug);
   }
 }

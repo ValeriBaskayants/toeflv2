@@ -68,13 +68,9 @@ export const dashboard = {
 };
 
 export const skills = {
-  grammar:    'Грамматика',
-  reading:    'Чтение',
-  listening:  'Аудирование',
-  vocabulary: 'Словарный запас',
-  writing:    'Письмо',
-  quiz:       'Тесты',
-  speaking:   'Говорение',
+  grammar: 'Грамматика', reading: 'Чтение', listening: 'Аудирование',
+  vocabulary: 'Словарный запас', writing: 'Письмо', quiz: 'Тесты', speaking: 'Говорение',
+  scramble: 'Построение предложений',
 };
 
 export const progress = {
@@ -100,6 +96,12 @@ export const progress = {
   complete:       'завершено',
   projectedUnknown: 'Неизвестно',
   totalProgress:  'Общий прогресс',
+  moduleStatsTitle: 'Дополнительные модули практики',
+  moduleStatsSubtitle: 'Сессии вне основной программы',
+  completedSessions: 'завершено',
+  noTopicsYet: 'Программа скоро появится',
+  noTopicsYetHint: 'Мы ещё готовим темы по шагам для этого уровня. Продолжайте практиковаться — прогресс уже считается.',
+  bottleneck: 'Узкое место',
 };
 
 export const roadmap = {
@@ -133,6 +135,25 @@ export const roadmap = {
     c1:      'Продвинутый уровень (Advanced). Выражайте мысли свободно и спонтанно, не задумываясь о подборе слов.',
     c2:      'Уровень носителя (Proficiency). Понимание практически всего прочитанного и услышанного на английском языке.',
   },
+  topicStatus: {
+    locked: 'Заблокировано',
+    available: 'Доступно',
+    in_progress: 'В процессе',
+    mastered: 'Освоено',
+    needs_review: 'Нужно повторить',
+  },
+};
+
+export const topicDetail = {
+  loading: 'Загружаем тему…',
+  error: 'Не удалось загрузить тему.',
+  practiceSources: 'Практика здесь',
+  noSources: 'По этой теме пока нет заданий',
+  noSourcesHint: 'Попробуйте поискать «{{title}}» на других грамматических ресурсах.',
+  ourPage: 'Читать правило на нашем сайте',
+  externalResources: 'Другие материалы',
+  missingPrereq: 'Сначала завершите эти темы:',
+  completedOf: '{{completed}} из {{total}}',
 };
 
 export const settings = {

@@ -3,6 +3,7 @@ import { Level, ScrambleMode, Prisma, GrammarRole } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
 import { MistakesService } from '../mistakes/mistakes.service';
+import { TopicMasteryService } from '../topic-mastery/topic-mastery.service';
 import { calcTimeLimit, computeScrambleScore, MODE_DISTRACTOR_COUNT, EXAM_BLOCK_SIZE, EXAM_MODE } from '../../constants/scramble-constants';
 import { computeXP } from '../../constants/level-requirements';
 import type {
@@ -52,6 +53,7 @@ export class ScrambleService {
     private readonly prisma: PrismaService,
     private readonly progress: ProgressService,
     private readonly mistakes: MistakesService,
+    private readonly topicMastery: TopicMasteryService,
   ) {}
 
   async findAll(query: GetScrambleDto, userId: string) {
@@ -60,6 +62,7 @@ export class ScrambleService {
     if (query.level !== undefined) where.level = query.level;
     if (query.topic !== undefined) where.topic = { contains: query.topic, mode: 'insensitive' };
     if (query.mode !== undefined) where.allowedModes = { has: query.mode };
+    if (query.topicSlug !== undefined) where.topicSlugs = { has: query.topicSlug };
 
     const exercises = await this.prisma.scrambleExercise.findMany({
       where,
@@ -144,7 +147,7 @@ export class ScrambleService {
 
     const exercise = await this.prisma.scrambleExercise.findUnique({
       where: { id: session.exerciseId },
-      select: { words: true, sentence: true, wordCount: true, level: true, topic: true },
+      select: { words: true, sentence: true, wordCount: true, level: true, topic: true, topicSlugs: true },
     });
     if (exercise === null) throw new NotFoundException('Exercise not found');
 
@@ -211,6 +214,15 @@ export class ScrambleService {
       correctAnswer: correctOrder.join(' '),
       tags: this.diagnoseScrambleMistake(dto.wordOrder, words),
     });
+
+    if (exercise.topicSlugs.length > 0) {
+      await this.topicMastery.recordPractice({
+        userId,
+        topicSlugs: exercise.topicSlugs,
+        kind: 'scramble',
+        accuracy: isCorrect ? 100 : 0,
+      });
+    }
 
     await this.progress.recordSkillCompletion({
       userId,
@@ -306,6 +318,15 @@ export class ScrambleService {
       correctAnswer: correctOrder.join(' '),
       tags: this.diagnoseScrambleMistake(dto.wordOrder, words),
     });
+
+    if (exercise.topicSlugs.length > 0) {
+      await this.topicMastery.recordPractice({
+        userId,
+        topicSlugs: exercise.topicSlugs,
+        kind: 'scramble',
+        accuracy: isCorrect ? 100 : 0,
+      });
+    }
 
     const newResult: ScrambleBlockResultEntity = {
       exerciseId,
@@ -443,6 +464,7 @@ export class ScrambleService {
           words: item.words,
           level: item.level,
           topic: item.topic,
+          topicSlugs: item.topicSlugs ?? [],
           allowedModes: item.allowedModes,
           translation: item.translation,
           explanation: item.explanation,

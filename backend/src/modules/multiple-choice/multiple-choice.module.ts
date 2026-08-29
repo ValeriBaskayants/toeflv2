@@ -4,9 +4,10 @@ import { MultipleChoiceController } from './multiple-choice.controller';
 import { ProgressModule as PMod } from '../progress/progress.module';
 import PrismaModule from '../prisma/prisma.module';
 import { TopicMasteryModule } from '../topic-mastery/topic-mastery.module';
+import { MistakesModule } from '../mistakes/mistakes.module';
 
 @MCModule({
-  imports: [PMod,PrismaModule,TopicMasteryModule],
+  imports: [PMod,PrismaModule,TopicMasteryModule,MistakesModule],
   controllers: [MultipleChoiceController],
   providers: [MultipleChoiceService],
   exports: [MultipleChoiceService],

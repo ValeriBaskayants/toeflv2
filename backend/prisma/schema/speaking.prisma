@@ -38,6 +38,8 @@ model SpeakingRepeatSet {
   level    Level
   voiceId  String @default("en-US-AndrewNeural")
 
+  imageUrl String?
+
   items    SpeakingRepeatItem[]
   sessions SpeakingRepeatSession[]
 
@@ -55,7 +57,6 @@ model SpeakingRepeatItem {
   text       String
   difficulty SpeakingDifficulty
   orderIndex Int
-  imageUrl   String?
 
   recordingWindowSec Int @default(8)
 

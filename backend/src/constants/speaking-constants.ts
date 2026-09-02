@@ -33,14 +33,42 @@ export function computeTaskScore(itemScores: number[]): number {
   return Math.round(avg * 10) / 10;
 }
 
+function normalizeWords(text: string): string[] {
+  return text
+    .toLowerCase()
+    .replace(/[.,!?;:"()]/g, '')
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
+}
+
 export function computeRepetitionAccuracy(reference: string, recognized: string): number {
-  const refWords = reference.toLowerCase().trim().split(/\s+/).filter(Boolean);
-  const gotWords = recognized.toLowerCase().trim().split(/\s+/).filter(Boolean);
+  const ref = normalizeWords(reference);
+  const got = normalizeWords(recognized);
 
-  if (refWords.length === 0) return 0;
+  if (ref.length === 0) return 0;
+  if (got.length === 0) return 0; // тишина/не распознано — 0%, как и должно быть
 
-  const matched = refWords.filter((w, i) => gotWords[i] === w).length;
-  return Math.round((matched / refWords.length) * 100);
+  const dp: number[][] = Array.from({ length: ref.length + 1 }, () =>
+    new Array<number>(got.length + 1).fill(0),
+  );
+
+  for (let i = 0; i <= ref.length; i++) dp[i]![0] = i;
+  for (let j = 0; j <= got.length; j++) dp[0]![j] = j;
+
+  for (let i = 1; i <= ref.length; i++) {
+    for (let j = 1; j <= got.length; j++) {
+      if (ref[i - 1] === got[j - 1]) {
+        dp[i]![j] = dp[i - 1]![j - 1]!;
+      } else {
+        dp[i]![j] = 1 + Math.min(dp[i - 1]![j]!, dp[i]![j - 1]!, dp[i - 1]![j - 1]!);
+      }
+    }
+  }
+
+  const editDistance = dp[ref.length]![got.length]!;
+  const wordErrorRate = Math.min(1, editDistance / ref.length);
+  return Math.round((1 - wordErrorRate) * 100);
 }
 
 export const MIN_ITEMS_PER_SET = 3;

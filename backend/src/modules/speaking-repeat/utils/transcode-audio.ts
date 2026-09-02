@@ -25,6 +25,10 @@ export function transcodeToWav16kMono(inputBuffer: Buffer): Promise<Buffer> {
       errorChunks.push(chunk);
     });
 
+    ffmpeg.stdin.on('error', (err) => {
+      logger.warn('FFMPEG_STDIN_WRITE_FAILED', { error: err.message });
+    });
+
     ffmpeg.on('error', (err) => {
       logger.error('FFMPEG_SPAWN_FAILED', { error: err.message });
       reject(new Error('ffmpeg is not available on this system'));

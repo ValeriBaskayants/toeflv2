@@ -44,6 +44,7 @@ export const MODE_DISTRACTOR_COUNT: Record<ScrambleMode, number> = {
 export const MIN_ITEMS_PER_EXERCISE = 2;
 export const MAX_ITEMS_PER_EXERCISE = 30;
 
+export const EXAM_TOTAL_TIME_BUDGET_SEC = 410;
 export const EXAM_BLOCK_SIZE = 10;
 export const EXAM_MODE: ScrambleMode = 'EXPERT';
 export const EXAM_MAX_DISTRACTORS = 1;

@@ -68,11 +68,23 @@ export const listening = {
 
     voiceGoogle: 'Google Neural2',
     voiceBrowser: 'Браузерный голос',
-    voiceLoading: 'Загружаем аудио…',
-    voiceNone: 'Голос недоступен',
 
     voiceWarnBasic: 'Для лучшего качества звука откройте страницу в Chrome или Edge.',
     ttsNotSupported: 'Синтез речи не поддерживается. Используйте Chrome или Safari.',
+      voiceAzure: 'Azure Neural',
+      voiceLoading: 'Загружаем аудио…',
+      voiceNone: 'Голос недоступен',
+      noContent: 'Для этого материала нет аудио-контента.',
+      playbackFailed: 'Не удалось воспроизвести. Нажмите play ещё раз.',
+      audioPlaybackError: 'Ошибка воспроизведения. Попробуйте перезагрузить страницу.',
+      ttsFallbackReasons: {
+        api_key_not_configured: 'Аудио-сервис не настроен. Обратитесь в поддержку.',
+        rate_limited: 'Аудио-сервис временно перегружен. Попробуйте чуть позже.',
+        unauthorized: 'Ошибка конфигурации аудио-сервиса. Обратитесь в поддержку.',
+        timeout: 'Превышено время ожидания аудио. Попробуйте снова.',
+        network_error: 'Ошибка сети при загрузке аудио. Проверьте соединение.',
+        default: 'Аудио временно недоступно. Попробуйте позже.',
+    },
   },
 
   questions: {

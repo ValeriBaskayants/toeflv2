@@ -4,7 +4,9 @@ import {
   IsInt,
   IsOptional,
   IsString,
+  IsUrl,
   Min,
+  Max,
   MaxLength,
   ValidateNested,
   ArrayMinSize,
@@ -26,12 +28,9 @@ export class CreateSpeakingRepeatItemDto {
   orderIndex!: number;
 
   @IsOptional()
-  @IsString()
-  imageUrl?: string;
-
-  @IsOptional()
   @IsInt()
   @Min(3)
+  @Max(20)
   recordingWindowSec?: number;
 }
 
@@ -46,6 +45,12 @@ export class CreateSpeakingRepeatSetDto {
   @IsOptional()
   @IsString()
   voiceId?: string;
+
+  // Один URL на весь сет — см. комментарий в schema/speaking.prisma.
+  // Опционально: без картинки задача работает точно так же.
+  @IsOptional()
+  @IsUrl()
+  imageUrl?: string;
 
   @IsArray()
   @ValidateNested({ each: true })

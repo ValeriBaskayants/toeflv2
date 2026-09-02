@@ -15,7 +15,8 @@ import { mistakesSlice } from './Slices/MistakesSlice';
 import { roadmapSlice } from './Slices/RoadmapSlice';
 import { exercisesSlice } from './Slices/ExercisesSlice';
 import { scrambleSlice } from './Slices/ScrambleSlice';
-import { speakingRepeatReducer } from './Slices/SpeakingRepeatSlice';
+import { scrambleExamSlice } from './Slices/ScrambleExamSlice';
+import { speakingRepeatSlice } from './Slices/SpeakingRepeatSlice';
 
 export const store = configureStore({
   reducer: {
@@ -31,10 +32,11 @@ export const store = configureStore({
     writing: writingSlice.reducer,
     vocabulary: vocabularySlice.reducer,
     mistakes: mistakesSlice.reducer,
-    roadmap:roadmapSlice.reducer,
-    exercises:exercisesSlice.reducer,
+    roadmap: roadmapSlice.reducer,
+    exercises: exercisesSlice.reducer,
     scramble: scrambleSlice.reducer,
-    speakingRepeat: speakingRepeatReducer
+    scrambleExam: scrambleExamSlice.reducer,
+    speakingRepeat: speakingRepeatSlice.reducer,
   },
 });
 

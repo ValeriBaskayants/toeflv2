@@ -61,6 +61,6 @@ export const listeningApi = {
       params: materialId ? { materialId } : undefined,
     }),
 
-  tts: (materialId: string, text: string, rate?: number) =>
-    api.post<TtsResponse>('/listening/tts', { materialId, text, rate }),
+  tts: (materialId: string, text: string, rate?: number, lang?: string) =>
+    api.post<TtsResponse>('/listening/tts', { materialId, text, rate, lang }),
 };

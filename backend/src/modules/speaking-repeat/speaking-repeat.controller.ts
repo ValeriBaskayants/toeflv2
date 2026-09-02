@@ -1,4 +1,5 @@
 import {
+  BadRequestException,
   Body,
   Controller,
   Get,
@@ -47,14 +48,13 @@ export class SpeakingRepeatController {
     return this.service.startSession(user.id, setId);
   }
 
-  @Get('sessions/:sessionId/sets/:setId/items/:itemId/audio')
+  @Get('sessions/:sessionId/items/:itemId/audio')
   getItemAudio(
     @CurrentUser() user: JwtUserPayload,
     @Param('sessionId') sessionId: string,
-    @Param('setId') setId: string,
     @Param('itemId') itemId: string,
   ) {
-    return this.service.getItemAudio(user.id, sessionId, setId, itemId);
+    return this.service.getItemAudio(user.id, sessionId, itemId);
   }
 
   @Post('sessions/:sessionId/items/:itemId/answer')
@@ -63,8 +63,13 @@ export class SpeakingRepeatController {
     @CurrentUser() user: JwtUserPayload,
     @Param('sessionId') sessionId: string,
     @Param('itemId') itemId: string,
-    @UploadedFile() file: Express.Multer.File,
+    @UploadedFile() file?: Express.Multer.File,
   ) {
+    // Раньше при отсутствующем/пустом файле (плохое имя поля, оборвавшийся
+    // аплоад) file.buffer в сервисе падал с TypeError вместо внятного 400.
+    if (!file || file.buffer.length === 0) {
+      throw new BadRequestException('Audio recording is required.');
+    }
     return this.service.submitAttempt(user.id, sessionId, itemId, file.buffer, file.mimetype);
   }
 

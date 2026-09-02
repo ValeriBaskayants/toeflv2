@@ -1,5 +1,3 @@
-/* components/roadmap/TopicDetailModal/TopicDetailModal.module.css */
-
 .overlay {
   position: fixed;
   inset: 0;
@@ -204,7 +202,6 @@
 }
 .internalLinkBtn:hover { background: var(--accent-hover); transform: translateY(-1px); }
 
-.resourcesSection {}
 
 .resourcesList {
   display: flex;

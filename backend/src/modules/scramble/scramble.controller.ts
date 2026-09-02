@@ -16,7 +16,7 @@ import {
 
 @Controller('scramble')
 export class ScrambleController {
-  constructor(private readonly service: ScrambleService) {}
+  constructor(private readonly service: ScrambleService) { }
 
   @Get()
   findAll(@CurrentUser() user: JwtUserPayload, @Query() query: GetScrambleDto) {
@@ -80,5 +80,10 @@ export class ScrambleController {
   @Roles('ADMIN')
   bulkCreate(@Body() dto: BulkCreateScrambleDto) {
     return this.service.bulkCreate(dto.items);
+  }
+
+  @Post('blocks/:id/expire')
+  expireBlock(@CurrentUser() user: JwtUserPayload, @Param('id') blockId: string) {
+    return this.service.expireBlock(user.id, blockId);
   }
 }

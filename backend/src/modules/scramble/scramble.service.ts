@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
 import { MistakesService } from '../mistakes/mistakes.service';
 import { TopicMasteryService } from '../topic-mastery/topic-mastery.service';
-import { calcTimeLimit, computeScrambleScore, MODE_DISTRACTOR_COUNT, EXAM_BLOCK_SIZE, EXAM_MODE } from '../../constants/scramble-constants';
+import { calcTimeLimit, computeScrambleScore, MODE_DISTRACTOR_COUNT, EXAM_BLOCK_SIZE, EXAM_MODE, EXAM_TOTAL_TIME_BUDGET_SEC } from '../../constants/scramble-constants';
 import { computeXP } from '../../constants/level-requirements';
 import type {
   CreateScrambleExerciseDto,
@@ -54,7 +54,7 @@ export class ScrambleService {
     private readonly progress: ProgressService,
     private readonly mistakes: MistakesService,
     private readonly topicMastery: TopicMasteryService,
-  ) {}
+  ) { }
 
   async findAll(query: GetScrambleDto, userId: string) {
     const where: Prisma.ScrambleExerciseWhereInput = {};
@@ -259,12 +259,17 @@ export class ScrambleService {
 
     const block = await this.prisma.scrambleBlock.create({
       data: { userId, level, exerciseIds, results: [] },
-      select: { id: true },
+      select: { id: true, startedAt: true },
     });
 
     const firstExercise = await this.prisma.scrambleExercise.findUniqueOrThrow({ where: { id: exerciseIds[0]! } });
 
-    return { blockId: block.id, item: this.buildBlockItemPayload(firstExercise, 0, exerciseIds.length) };
+    return {
+      blockId: block.id,
+      startedAt: block.startedAt,
+      totalTimeBudgetSec: EXAM_TOTAL_TIME_BUDGET_SEC,
+      item: this.buildBlockItemPayload(firstExercise, 0, exerciseIds.length),
+    };
   }
 
   async getCurrentBlockItem(userId: string, blockId: string) {
@@ -279,8 +284,62 @@ export class ScrambleService {
       where: { id: block.exerciseIds[results.length]! },
     });
 
-    return this.buildBlockItemPayload(exercise, results.length, block.exerciseIds.length);
+    return {
+      ...this.buildBlockItemPayload(exercise, results.length, block.exerciseIds.length),
+      startedAt: block.startedAt,
+      totalTimeBudgetSec: EXAM_TOTAL_TIME_BUDGET_SEC,
+    };
   }
+
+  async expireBlock(userId: string, blockId: string) {
+  const block = await this.getOwnedInProgressBlock(userId, blockId);
+  const results = (block.results as unknown as ScrambleBlockResultEntity[]) ?? [];
+
+  if (results.length >= block.exerciseIds.length) {
+    return this.getBlockReview(userId, blockId);
+  }
+
+  const now = new Date();
+  const remainingIds = block.exerciseIds.slice(results.length);
+  const fillerResults: ScrambleBlockResultEntity[] = remainingIds.map((exerciseId) => ({
+    exerciseId,
+    isCorrect: false,
+    submittedOrder: [],
+    timeSpentSec: 0,
+    usedHint: false,
+    answeredAt: now.toISOString(),
+  }));
+
+  const allResults = [...results, ...fillerResults];
+  const correctCount = allResults.filter((r) => r.isCorrect).length;
+  const finalScorePercent = Math.round((correctCount / allResults.length) * 100);
+
+  const user = await this.prisma.user.findUnique({ where: { id: userId }, select: { streak: true } });
+  const xpEarned = computeXP({ base: 15 * correctCount, streak: user?.streak ?? 0, accuracy: finalScorePercent });
+
+  await this.prisma.scrambleBlock.update({
+    where: { id: block.id },
+    data: {
+      status: 'COMPLETED',
+      completedAt: now,
+      results: allResults,
+      correctCount,
+      finalScorePercent,
+      xpEarned,
+    },
+  });
+
+  await this.progress.recordSkillCompletion({ userId, skill: 'scramble', accuracy: finalScorePercent, xpEarned });
+
+  return {
+    blockCompleted: true,
+    timedOut: true,
+    correctCount,
+    finalScorePercent,
+    xpEarned,
+    totalItems: allResults.length,
+  };
+}
 
   async submitBlockItem(userId: string, blockId: string, dto: SubmitScrambleBlockItemDto) {
     const block = await this.getOwnedInProgressBlock(userId, blockId);

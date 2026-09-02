@@ -1,7 +1,5 @@
-
-
-
 import { useState, useEffect, useCallback, useRef } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { ListeningSegment } from '@/types/listening/Listening.types';
 import { listeningApi } from '@/api/services/listening';
 
@@ -21,7 +19,7 @@ export interface TTSControls {
   hasEnded: boolean;
   isLoading: boolean;
   error: string | null;
-  ttsMode: 'google' | 'loading' | 'error';
+  ttsMode: 'azure' | 'loading' | 'error';
   voiceLabel: string;
   isSupported: true;
   play: () => void;
@@ -32,8 +30,17 @@ export interface TTSControls {
   currentRate: number;
 }
 
+const KNOWN_FALLBACK_REASONS = [
+  'api_key_not_configured',
+  'rate_limited',
+  'unauthorized',
+  'timeout',
+  'network_error',
+] as const;
+
 export function useTTS(config: TTSConfig): TTSControls {
   const { segments, fullText, materialId } = config;
+  const { t } = useTranslation();
 
   const [isPlaying, setIsPlaying]               = useState(false);
   const [isPaused, setIsPaused]                 = useState(false);
@@ -41,28 +48,39 @@ export function useTTS(config: TTSConfig): TTSControls {
   const [hasEnded, setHasEnded]                 = useState(false);
   const [isLoading, setIsLoading]               = useState(false);
   const [error, setError]                       = useState<string | null>(null);
-  const [ttsMode, setTtsMode]                   = useState<'google' | 'loading' | 'error'>('loading');
+  const [ttsMode, setTtsMode]                   = useState<'azure' | 'loading' | 'error'>('loading');
   const [currentRate, setCurrentRate]           = useState(config.rate);
 
-  
-  const audioRef   = useRef<HTMLAudioElement | null>(null);
-  const rateRef    = useRef(config.rate);
-  const segRef     = useRef(segments); 
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+  const rateRef  = useRef(config.rate);
+  const langRef  = useRef(config.lang);
+  const segRef   = useRef(segments);
 
-  
   useEffect(() => { rateRef.current = config.rate; }, [config.rate]);
-  useEffect(() => { segRef.current = segments; },    [segments]);
+  useEffect(() => { langRef.current = config.lang; }, [config.lang]);
+  useEffect(() => { segRef.current  = segments;    }, [segments]);
 
-  
+  const translateFallbackReason = useCallback(
+    (reason?: string): string => {
+      const key = KNOWN_FALLBACK_REASONS.includes(reason as (typeof KNOWN_FALLBACK_REASONS)[number])
+        ? reason
+        : 'default';
+      return t(`listening.player.ttsFallbackReasons.${key}`);
+    },
+    [t],
+  );
+
+  // Загрузка аудио заново только при смене материала — язык/скорость на это
+  // намеренно не влияют (см. langRef/rateRef ниже), чтобы не перезапрашивать
+  // TTS впустую при каждом ререндере.
   useEffect(() => {
     if (!materialId || !fullText) {
       setTtsMode('error');
-      setError('No audio content available');
+      setError(t('listening.player.noContent'));
       setIsLoading(false);
       return;
     }
 
-    
     if (audioRef.current) {
       audioRef.current.pause();
       audioRef.current.src = '';
@@ -79,13 +97,16 @@ export function useTTS(config: TTSConfig): TTSControls {
 
     void (async () => {
       try {
-        const { data } = await listeningApi.tts(materialId, fullText, rateRef.current);
+        const { data } = await listeningApi.tts(
+          materialId,
+          fullText,
+          rateRef.current,
+          langRef.current,
+        );
 
         if (data.fallback) {
           setTtsMode('error');
-          setError(
-            'Google TTS is not configured. Please add GOOGLE_TTS_API_KEY to backend .env',
-          );
+          setError(translateFallbackReason(data.reason));
           return;
         }
 
@@ -93,13 +114,12 @@ export function useTTS(config: TTSConfig): TTSControls {
         audio.preload = 'auto';
         audio.playbackRate = rateRef.current;
 
-        
         audio.ontimeupdate = () => {
-          const t = audio.currentTime;
+          const time = audio.currentTime;
           const segs = segRef.current;
           for (let i = segs.length - 1; i >= 0; i--) {
             const seg = segs[i];
-            if (seg !== undefined && t >= seg.startSec) {
+            if (seg !== undefined && time >= seg.startSec) {
               setActiveSegmentIdx((prev) => (prev !== i ? i : prev));
               break;
             }
@@ -113,8 +133,6 @@ export function useTTS(config: TTSConfig): TTSControls {
         };
 
         audio.onpause = () => {
-          
-          
           if (!audio.ended) {
             setIsPlaying(false);
             setIsPaused(true);
@@ -130,18 +148,17 @@ export function useTTS(config: TTSConfig): TTSControls {
 
         audio.onerror = () => {
           setTtsMode('error');
-          setError('Audio playback error. Try reloading the page.');
+          setError(t('listening.player.audioPlaybackError'));
           setIsPlaying(false);
           setIsPaused(false);
         };
 
         audioRef.current = audio;
-        setTtsMode('google');
+        setTtsMode('azure');
         setError(null);
       } catch (err) {
-        const msg = err instanceof Error ? err.message : 'TTS request failed';
         setTtsMode('error');
-        setError(msg);
+        setError(err instanceof Error ? err.message : t('listening.player.ttsFallbackReasons.default'));
       } finally {
         setIsLoading(false);
       }
@@ -157,11 +174,9 @@ export function useTTS(config: TTSConfig): TTSControls {
       setIsPaused(false);
       setActiveSegmentIdx(-1);
     };
-  
-  
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [materialId]);
 
-  
   useEffect(() => {
     setCurrentRate(config.rate);
     rateRef.current = config.rate;
@@ -170,30 +185,19 @@ export function useTTS(config: TTSConfig): TTSControls {
     }
   }, [config.rate]);
 
-  
-
   const play = useCallback(() => {
     const audio = audioRef.current;
     if (!audio) return;
-
-    
-    
-    
     audio.playbackRate = rateRef.current;
-
-    void audio.play().catch((err: unknown) => {
-      console.error('[useTTS] play() failed:', err);
-      setError('Playback failed. Click play again.');
+    void audio.play().catch(() => {
+      setError(t('listening.player.playbackFailed'));
     });
-    
-    
-  }, []);
+  }, [t]);
 
   const pause = useCallback(() => {
     const audio = audioRef.current;
-    if (!audio || audio.paused) return; 
+    if (!audio || audio.paused) return;
     audio.pause();
-    
   }, []);
 
   const stop = useCallback(() => {
@@ -212,10 +216,10 @@ export function useTTS(config: TTSConfig): TTSControls {
     if (!audio) return;
     audio.currentTime = 0;
     audio.playbackRate = rateRef.current;
-    void audio.play().catch((err: unknown) => {
-      console.error('[useTTS] restart play() failed:', err);
+    void audio.play().catch(() => {
+      setError(t('listening.player.playbackFailed'));
     });
-  }, []);
+  }, [t]);
 
   const setRate = useCallback((r: number) => {
     setCurrentRate(r);
@@ -233,7 +237,7 @@ export function useTTS(config: TTSConfig): TTSControls {
     isLoading,
     error,
     ttsMode,
-    voiceLabel: 'Google Neural2',
+    voiceLabel: t('listening.player.voiceAzure'),
     isSupported: true,
     play,
     pause,

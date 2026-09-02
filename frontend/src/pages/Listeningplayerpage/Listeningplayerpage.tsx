@@ -152,8 +152,26 @@ function PlayerControls({
 }: PlayerControlsProps) {
   const { t } = useTranslation();
 
-  return (
+    const voiceBadgeClass = ttsError !== null
+    ? styles['voiceQ_error']
+    : isLoadingAudio
+      ? styles['voiceQ_loading']
+      : styles['voiceQ_azure'];
+
+  const voiceBadgeLabel = ttsError !== null
+    ? t('listening.player.voiceNone')
+    : isLoadingAudio
+      ? t('listening.player.voiceLoading')
+      : t('listening.player.voiceAzure');
+
+return (
     <div className={styles['playerControls']}>
+      {ttsError !== null && (
+        <div className={styles['ttsError']}>
+          <AlertCircle size={14} />
+          <span>{ttsError}</span>
+        </div>
+      )}
 
       {/* TTS error — показываем если Google TTS не настроен */}
       {ttsError !== null && (
@@ -206,23 +224,18 @@ function PlayerControls({
       </div>
 
       {/* Meta row */}
-      <div className={styles['playMeta']}>
-        {/* Play counter */}
+       <div className={styles['playMeta']}>
         <span className={styles['playCountBadge']} data-mode={mode}>
           {maxAllowedPlays >= 99
             ? t('listening.player.playsUnlimited', { count: playCount })
             : t('listening.player.playsCount', { used: playCount, max: maxAllowedPlays })}
         </span>
 
-        {/* Voice badge */}
-        <span className={`${styles['voiceQuality']} ${styles['voiceQ_google']}`}>
+        <span className={`${styles['voiceQuality']} ${voiceBadgeClass}`}>
           <Volume2 size={11} />
-          {isLoadingAudio
-            ? t('listening.player.voiceLoading')
-            : t('listening.player.voiceGoogle')}
+          {voiceBadgeLabel}
         </span>
 
-        {/* Plays exhausted */}
         {!canPlay && maxAllowedPlays < 99 && (
           <span className={styles['playsExhausted']}>
             <AlertCircle size={12} />
@@ -230,11 +243,8 @@ function PlayerControls({
           </span>
         )}
 
-        {/* Paused indicator */}
         {isPaused && !isPlaying && (
-          <span className={styles['pausedBadge']}>
-            {t('listening.player.paused')}
-          </span>
+          <span className={styles['pausedBadge']}>{t('listening.player.paused')}</span>
         )}
       </div>
     </div>

@@ -67,13 +67,25 @@ export const listening = {
 
     voiceGoogle: 'Google Neural2',
     voiceBrowser: 'Browser voice',
-    voiceLoading: 'Loading audio…',
-    voiceNone: 'Voice unavailable',
 
     paused: 'Paused',
     ttsError: 'Audio unavailable',
     voiceWarnBasic: 'For the best audio quality, open this page in Chrome or Edge.',
     ttsNotSupported: 'Text-to-speech is not supported in this browser. Please use Chrome or Safari.',
+    voiceAzure: 'Azure Neural',
+    voiceLoading: 'Loading audio…',
+    voiceNone: 'Voice unavailable',
+    noContent: 'No audio content available for this material.',
+    playbackFailed: 'Playback failed. Click play again.',
+    audioPlaybackError: 'Audio playback error. Try reloading the page.',
+    ttsFallbackReasons: {
+      api_key_not_configured: 'Audio service is not configured. Please contact support.',
+      rate_limited: 'Audio service is temporarily busy. Please try again shortly.',
+      unauthorized: 'Audio service configuration error. Please contact support.',
+      timeout: 'Audio request timed out. Please try again.',
+      network_error: 'Network error while loading audio. Check your connection.',
+      default: 'Audio is temporarily unavailable. Please try again later.',
+    },
   },
 
   questions: {

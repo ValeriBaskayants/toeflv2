@@ -1,13 +1,15 @@
 import { Injectable, Logger, NotFoundException } from '@nestjs/common';
-import { ConfigService } from '@nestjs/config';
-import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
+import { AzureSpeechService, AzureTtsRequestError } from '../azure-speech/azure-speech.service';
 
-const ELEVENLABS_VOICE_ID = '21m00Tcm4TlvDq8ikWAM';
-const ELEVENLABS_MODEL_ID = 'eleven_multilingual_v2';
-const ELEVENLABS_BASE_URL = 'https://api.elevenlabs.io/v1';
-const MAX_CHARS = 2_500;
-const TIMEOUT_MS = 15_000;
+const VOICE_BY_LANG: Readonly<Record<string, string>> = {
+  'en-US': 'en-US-AriaNeural',
+  'en-GB': 'en-GB-SoniaNeural',
+  'en-AU': 'en-AU-NatashaNeural',
+};
+const DEFAULT_VOICE = 'en-US-AriaNeural';
+
+const SYNTHESIS_RATE = 1.0;
 
 export interface TtsResult {
   audioBase64: string;
@@ -26,14 +28,18 @@ export class TtsService {
 
   constructor(
     private readonly prisma: PrismaService,
-    private readonly config: ConfigService,
+    private readonly azureSpeech: AzureSpeechService,
   ) {}
+
+  private resolveVoice(lang: string): string {
+    return VOICE_BY_LANG[lang] ?? DEFAULT_VOICE;
+  }
 
   async synthesize(
     materialId: string,
     text: string,
-    rate?: number,
-    lang?: string,
+    _rate: number | undefined,
+    lang: string | undefined,
   ): Promise<TtsResult | TtsFallbackResult> {
     const material = await this.prisma.listeningMaterial.findUnique({
       where: { id: materialId },
@@ -44,123 +50,45 @@ export class TtsService {
       throw new NotFoundException(`Listening material ${materialId} not found`);
     }
 
-    const apiKey = this.config.get<string>('elevenlabs.apiKey');
-    if (!apiKey) {
-      this.logger.warn('ELEVENLABS_API_KEY not configured');
-      return { fallback: true, reason: 'api_key_not_configured' };
-    }
-
-    const truncatedText = text.slice(0, MAX_CHARS);
-
-    const contentHash = createHash('sha256')
-      .update(`${truncatedText}::${ELEVENLABS_VOICE_ID}::${ELEVENLABS_MODEL_ID}`)
-      .digest('hex');
-
-    const cached = await this.prisma.ttsCache.findUnique({
-      where: { contentHash },
-      select: { audioBase64: true },
-    });
-
-    if (cached !== null) {
-      void this.prisma.ttsCache
-        .update({
-          where: { contentHash },
-          data: { hitCount: { increment: 1 } },
-        })
-        .catch((err: unknown) => {
-          this.logger.warn('TTS_CACHE_HIT_COUNT_UPDATE_FAILED', { error: String(err) });
-        });
-
-      this.logger.log('TTS_CACHE_HIT', {
-        contentHash: contentHash.slice(0, 12),
-        materialId,
-      });
-
-      return {
-        audioBase64: cached.audioBase64,
-        fallback: false,
-        cached: true,
-      };
-    }
-
-    this.logger.log('TTS_ELEVENLABS_REQUEST', {
-      materialId,
-      textLength: truncatedText.length,
-      voiceId: ELEVENLABS_VOICE_ID,
-    });
+    const resolvedLang = lang ?? material.speakerLang;
+    const voiceId = this.resolveVoice(resolvedLang);
 
     try {
-      const response = await fetch(`${ELEVENLABS_BASE_URL}/text-to-speech/${ELEVENLABS_VOICE_ID}`, {
-        method: 'POST',
-        headers: {
-          Accept: 'audio/mpeg',
-          'Content-Type': 'application/json',
-          'xi-api-key': apiKey,
-        },
-        body: JSON.stringify({
-          text: truncatedText,
-          model_id: ELEVENLABS_MODEL_ID,
-          voice_settings: {
-            stability: 0.5,
-            similarity_boost: 0.75,
-            style: 0.0,
-            use_speaker_boost: true,
-          },
-        }),
-        signal: AbortSignal.timeout(TIMEOUT_MS),
-      });
+      const result = await this.azureSpeech.synthesize(text, voiceId, SYNTHESIS_RATE);
 
-      if (!response.ok) {
-        const status = response.status;
-
-        if (status === 429) {
-          this.logger.warn('ELEVENLABS_RATE_LIMITED', { materialId });
-          return { fallback: true, reason: 'rate_limited' };
-        }
-        if (status === 401) {
-          this.logger.error('ELEVENLABS_UNAUTHORIZED — проверь ELEVENLABS_API_KEY в .env');
-          return { fallback: true, reason: 'unauthorized' };
-        }
-
-        this.logger.error('ELEVENLABS_API_ERROR', { status, materialId });
-        return { fallback: true, reason: `http_${status}` };
-      }
-
-      const arrayBuffer = await response.arrayBuffer();
-      const audioBase64 = Buffer.from(arrayBuffer).toString('base64');
-
-      this.logger.log('TTS_ELEVENLABS_SUCCESS', {
+      this.logger.log(result.cached ? 'TTS_CACHE_HIT' : 'TTS_AZURE_SUCCESS', {
         materialId,
-        audioSizeKb: Math.round(arrayBuffer.byteLength / 1024),
+        voiceId,
       });
 
-      void this.prisma.ttsCache
-        .create({
-          data: {
-            contentHash,
-            textLength: truncatedText.length,
-            voiceId: ELEVENLABS_VOICE_ID,
-            modelId: ELEVENLABS_MODEL_ID,
-            audioBase64,
-          },
-        })
-        .catch((err: unknown) => {
-          this.logger.warn('TTS_CACHE_WRITE_FAILED', { error: String(err) });
-        });
-
-      return {
-        audioBase64,
-        fallback: false,
-        cached: false,
-      };
+      return { audioBase64: result.audioBase64, fallback: false, cached: result.cached };
     } catch (err: unknown) {
-      const isTimeout = err instanceof Error && err.name === 'AbortError';
-      this.logger.error('TTS_ELEVENLABS_REQUEST_FAILED', {
-        materialId,
-        isTimeout,
-        error: err instanceof Error ? err.message : String(err),
-      });
-      return { fallback: true, reason: isTimeout ? 'timeout' : 'network_error' };
+      return this.mapFailureToFallback(err, materialId);
     }
+  }
+
+  private mapFailureToFallback(err: unknown, materialId: string): TtsFallbackResult {
+    if (err instanceof AzureTtsRequestError) {
+      if (err.status === 429) {
+        this.logger.warn('AZURE_TTS_RATE_LIMITED', { materialId });
+        return { fallback: true, reason: 'rate_limited' };
+      }
+      if (err.status === 401 || err.status === 403) {
+        this.logger.error(
+          'AZURE_TTS_UNAUTHORIZED — проверь AZURE_SPEECH_KEY / AZURE_SPEECH_REGION в .env',
+        );
+        return { fallback: true, reason: 'unauthorized' };
+      }
+      this.logger.error('AZURE_TTS_API_ERROR', { status: err.status, materialId });
+      return { fallback: true, reason: `http_${err.status}` };
+    }
+
+    const isTimeout = err instanceof Error && err.name === 'AbortError';
+    this.logger.error('AZURE_TTS_REQUEST_FAILED', {
+      materialId,
+      isTimeout,
+      error: err instanceof Error ? err.message : String(err),
+    });
+    return { fallback: true, reason: isTimeout ? 'timeout' : 'network_error' };
   }
 }

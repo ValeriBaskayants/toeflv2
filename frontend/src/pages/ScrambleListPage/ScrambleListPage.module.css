@@ -156,3 +156,30 @@
   background: rgba(239, 68, 68, 0.12);
   border-color: rgba(239, 68, 68, 0.4);
 }
+.examCard {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  width: 100%;
+  padding: 1.125rem 1.375rem;
+  background: linear-gradient(135deg, rgba(99, 102, 241, 0.08) 0%, rgba(129, 140, 248, 0.04) 100%);
+  border: 1px solid rgba(99, 102, 241, 0.2);
+  border-radius: var(--radius-lg);
+  text-align: left;
+  margin-bottom: 1.5rem;
+  transition: all var(--duration-base) var(--ease-out);
+}
+.examCard:hover { border-color: var(--accent); transform: translateY(-1px); box-shadow: var(--shadow-md); }
+
+.examCardIco {
+  width: 44px; height: 44px; border-radius: var(--radius-md);
+  background: rgba(99, 102, 241, 0.15); color: var(--accent);
+  display: flex; align-items: center; justify-content: center; flex-shrink: 0;
+}
+
+.examCardBody { flex: 1; min-width: 0; display: flex; flex-direction: column; gap: 0.15rem; }
+.examCardTitle { font-size: 0.95rem; font-weight: 700; color: var(--text-1); }
+.examCardDesc { font-size: 0.78rem; color: var(--text-3); }
+.examCardArrow { color: var(--text-3); flex-shrink: 0; }
+
+[data-theme='dark'] .examCard { border-color: rgba(99, 102, 241, 0.3); }

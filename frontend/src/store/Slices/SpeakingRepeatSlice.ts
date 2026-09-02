@@ -1,29 +1,36 @@
-import { createAsyncThunk, createSlice } from '@reduxjs/toolkit';
-import axios from 'axios';
+import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { speakingRepeatApi } from '@/api/services/speaking-repeat';
 import type {
-  SpeakingRepeatSetSummary,
-  SpeakingRepeatItem,
+  SpeakingSetListItem,
+  SpeakingSetDetail,
+  StartSpeakingSessionResponse,
   SpeakingSessionReview,
+  GetSpeakingSetsParams,
 } from '@/types/speaking/Speaking.types';
-import type { Level } from '@/types/globalTypes';
 
 interface SpeakingRepeatState {
-  sets: SpeakingRepeatSetSummary[];
+  sessionId: any;
+  scenario: any;
+  sets: SpeakingSetListItem[];
   setsLoading: boolean;
   setsError: string | null;
 
-  sessionId: string | null;
-  scenario: string | null;
-  voiceId: string | null;
-  items: SpeakingRepeatItem[];
-  currentIndex: number;
+  currentSet: SpeakingSetDetail | null;
+  setLoading: boolean;
+  setError: string | null;
 
-  submitting: boolean;
-  submitError: string | null;
+  activeSession: StartSpeakingSessionResponse | null;
+  sessionLoading: boolean;
+  sessionError: string | null;
 
-  finishing: boolean;
-  review: SpeakingSessionReview | null;
+  completing: boolean;
+  completeError: string | null;
+
+  reviewSession: SpeakingSessionReview | null;
+  reviewLoading: boolean;
+  reviewError: string | null;
+
+  filters: { level: string | null; scenario: string };
 }
 
 const initialState: SpeakingRepeatState = {
@@ -31,99 +38,85 @@ const initialState: SpeakingRepeatState = {
   setsLoading: false,
   setsError: null,
 
-  sessionId: null,
-  scenario: null,
-  voiceId: null,
-  items: [],
-  currentIndex: 0,
+  currentSet: null,
+  setLoading: false,
+  setError: null,
 
-  submitting: false,
-  submitError: null,
+  activeSession: null,
+  sessionLoading: false,
+  sessionError: null,
 
-  finishing: false,
-  review: null,
+  completing: false,
+  completeError: null,
+
+  reviewSession: null,
+  reviewLoading: false,
+  reviewError: null,
+
+  filters: { level: null, scenario: '' },
 };
 
-interface SpeakingRepeatRootState {
-  speakingRepeat: SpeakingRepeatState;
-}
+export const fetchSpeakingSets = createAsyncThunk<
+  SpeakingSetListItem[],
+  GetSpeakingSetsParams | undefined,
+  { rejectValue: string }
+>('speakingRepeat/fetchSets', async (params, { rejectWithValue }) => {
+  try {
+    const { data } = await speakingRepeatApi.getAll(params);
+    return data;
+  } catch (e: unknown) {
+    return rejectWithValue(e instanceof Error ? e.message : 'Failed to load');
+  }
+});
 
-export const fetchSpeakingSets = createAsyncThunk<SpeakingRepeatSetSummary[], Level, { rejectValue: string }>(
-  'speakingRepeat/fetchSets',
-  async (level, { rejectWithValue }) => {
+export const fetchSpeakingSetById = createAsyncThunk<SpeakingSetDetail, string, { rejectValue: string }>(
+  'speakingRepeat/fetchSetById',
+  async (id, { rejectWithValue }) => {
     try {
-      return await speakingRepeatApi.getSets(level);
-    } catch (error: unknown) {
-      return rejectWithValue(error instanceof Error ? error.message : 'Failed to load speaking sets');
+      const { data } = await speakingRepeatApi.getSetById(id);
+      return data;
+    } catch (e: unknown) {
+      return rejectWithValue(e instanceof Error ? e.message : 'Failed to load');
     }
   },
 );
 
-interface StartSessionResult {
-  sessionId: string;
-  items: SpeakingRepeatItem[];
-  voiceId: string;
-  scenario: string;
-}
-
-// ИСПРАВЛЕНО: добавлена скобка < после createAsyncThunk
 export const startSpeakingSession = createAsyncThunk<
-  StartSessionResult,
-  { setId: string; scenario: string },
+  StartSpeakingSessionResponse,
+  string,
   { rejectValue: string }
->('speakingRepeat/startSession', async ({ setId, scenario }, { rejectWithValue }) => {
+>('speakingRepeat/startSession', async (setId, { rejectWithValue }) => {
   try {
-    const data = await speakingRepeatApi.startSession(setId);
-    return { sessionId: data.session.id, items: data.items, voiceId: data.voiceId, scenario };
-  } catch (error: unknown) {
-    return rejectWithValue(error instanceof Error ? error.message : 'Failed to start session');
+    const { data } = await speakingRepeatApi.startSession(setId);
+    return data;
+  } catch (e: unknown) {
+    return rejectWithValue(e instanceof Error ? e.message : 'Failed to start session');
   }
 });
 
-interface SubmitRejectValue {
-  status: number;
-  message: string;
-}
-
-// ИСПРАВЛЕНО: добавлена скобка < после createAsyncThunk
-export const submitSpeakingAttempt = createAsyncThunk<
-  void,
-  { itemId: string; audioBlob: Blob },
-  { state: SpeakingRepeatRootState; rejectValue: SubmitRejectValue }
->('speakingRepeat/submitAttempt', async ({ itemId, audioBlob }, { getState, rejectWithValue }) => {
-  const sessionId = getState().speakingRepeat.sessionId;
-
-  if (sessionId === null) {
-    return rejectWithValue({ status: 0, message: 'No active session' });
-  }
-
-  try {
-    await speakingRepeatApi.submitAttempt(sessionId, itemId, audioBlob);
-    return undefined;
-  } catch (error: unknown) {
-    const status = axios.isAxiosError(error) ? error.response?.status ?? 0 : 0;
-    const message = error instanceof Error ? error.message : 'Failed to submit attempt';
-    return rejectWithValue({ status, message });
-  }
-});
-
-// ИСПРАВЛЕНО: добавлена скобка < после createAsyncThunk
-export const finishSpeakingSession = createAsyncThunk<
+export const completeSpeakingSession = createAsyncThunk<
   SpeakingSessionReview,
-  void,
-  { state: SpeakingRepeatRootState; rejectValue: string }
->('speakingRepeat/finish', async (_, { getState, rejectWithValue }) => {
-  const sessionId = getState().speakingRepeat.sessionId;
-
-  if (sessionId === null) {
-    return rejectWithValue('No active session');
-  }
-
+  string,
+  { rejectValue: string }
+>('speakingRepeat/completeSession', async (sessionId, { rejectWithValue }) => {
   try {
-    await speakingRepeatApi.completeSession(sessionId);
-    return await speakingRepeatApi.getSessionReview(sessionId);
-  } catch (error: unknown) {
-    return rejectWithValue(error instanceof Error ? error.message : 'Failed to finish session');
+    const { data } = await speakingRepeatApi.completeSession(sessionId);
+    return data;
+  } catch (e: unknown) {
+    return rejectWithValue(e instanceof Error ? e.message : 'Failed to complete session');
+  }
+});
+
+export const fetchSpeakingReview = createAsyncThunk<
+  SpeakingSessionReview,
+  string,
+  { rejectValue: string }
+>('speakingRepeat/fetchReview', async (sessionId, { rejectWithValue }) => {
+  try {
+    const { data } = await speakingRepeatApi.getReview(sessionId);
+    return data;
+  } catch (e: unknown) {
+    return rejectWithValue(e instanceof Error ? e.message : 'Failed to load review');
   }
 });
 
@@ -131,10 +124,24 @@ export const speakingRepeatSlice = createSlice({
   name: 'speakingRepeat',
   initialState,
   reducers: {
-    advanceSpeakingItem: (state) => {
-      state.currentIndex += 1;
+    setSpeakingFilter: (
+      state,
+      action: PayloadAction<{ key: 'level' | 'scenario'; value: string | null }>,
+    ) => {
+      if (action.payload.key === 'scenario') {
+        state.filters.scenario = action.payload.value ?? '';
+      } else {
+        state.filters.level = action.payload.value;
+      }
     },
-    resetSpeakingSession: () => initialState,
+    clearSpeakingPlayerState: (state) => {
+      state.currentSet = null;
+      state.activeSession = null;
+      state.reviewSession = null;
+      state.sessionError = null;
+      state.completeError = null;
+      state.reviewError = null;
+    },
   },
   extraReducers: (builder) => {
     builder
@@ -152,46 +159,63 @@ export const speakingRepeatSlice = createSlice({
       });
 
     builder
+      .addCase(fetchSpeakingSetById.pending, (state) => {
+        state.setLoading = true;
+        state.setError = null;
+        state.currentSet = null;
+      })
+      .addCase(fetchSpeakingSetById.fulfilled, (state, action) => {
+        state.setLoading = false;
+        state.currentSet = action.payload;
+      })
+      .addCase(fetchSpeakingSetById.rejected, (state, action) => {
+        state.setLoading = false;
+        state.setError = action.payload ?? 'Unknown error';
+      });
+
+    builder
+      .addCase(startSpeakingSession.pending, (state) => {
+        state.sessionLoading = true;
+        state.sessionError = null;
+        state.reviewSession = null;
+      })
       .addCase(startSpeakingSession.fulfilled, (state, action) => {
-        state.sessionId = action.payload.sessionId;
-        state.items = action.payload.items;
-        state.voiceId = action.payload.voiceId;
-        state.scenario = action.payload.scenario;
-        state.currentIndex = 0;
-        state.review = null;
+        state.sessionLoading = false;
+        state.activeSession = action.payload;
+      })
+      .addCase(startSpeakingSession.rejected, (state, action) => {
+        state.sessionLoading = false;
+        state.sessionError = action.payload ?? 'Unknown error';
       });
 
     builder
-      .addCase(submitSpeakingAttempt.pending, (state) => {
-        state.submitting = true;
-        state.submitError = null;
+      .addCase(completeSpeakingSession.pending, (state) => {
+        state.completing = true;
+        state.completeError = null;
       })
-      .addCase(submitSpeakingAttempt.fulfilled, (state) => {
-        state.submitting = false;
+      .addCase(completeSpeakingSession.fulfilled, (state, action) => {
+        state.completing = false;
+        state.reviewSession = action.payload;
       })
-      .addCase(submitSpeakingAttempt.rejected, (state, action) => {
-        state.submitting = false;
-        state.submitError = action.payload?.message ?? 'Submit failed';
+      .addCase(completeSpeakingSession.rejected, (state, action) => {
+        state.completing = false;
+        state.completeError = action.payload ?? 'Unknown error';
       });
 
     builder
-      .addCase(finishSpeakingSession.pending, (state) => {
-        state.finishing = true;
+      .addCase(fetchSpeakingReview.pending, (state) => {
+        state.reviewLoading = true;
+        state.reviewError = null;
       })
-      .addCase(finishSpeakingSession.fulfilled, (state, action) => {
-        state.finishing = false;
-        state.review = action.payload;
+      .addCase(fetchSpeakingReview.fulfilled, (state, action) => {
+        state.reviewLoading = false;
+        state.reviewSession = action.payload;
       })
-      .addCase(finishSpeakingSession.rejected, (state) => {
-        state.finishing = false;
+      .addCase(fetchSpeakingReview.rejected, (state, action) => {
+        state.reviewLoading = false;
+        state.reviewError = action.payload ?? 'Unknown error';
       });
   },
 });
 
-export const { advanceSpeakingItem, resetSpeakingSession } = speakingRepeatSlice.actions;
-
-export const speakingRepeatReducer = speakingRepeatSlice.reducer;
-
-export const selectSpeakingSets = (s: SpeakingRepeatRootState) => s.speakingRepeat.sets;
-export const selectSpeakingSetsLoading = (s: SpeakingRepeatRootState) => s.speakingRepeat.setsLoading;
-export const selectSpeakingSetsError = (s: SpeakingRepeatRootState) => s.speakingRepeat.setsError;
+export const { setSpeakingFilter, clearSpeakingPlayerState } = speakingRepeatSlice.actions;

@@ -126,7 +126,6 @@
 .drawerTestBtn:hover:not(:disabled) { opacity: 0.9; transform: translateY(-1px); }
 .drawerTestBtn:disabled { opacity: 0.55; cursor: not-allowed; }
 
-.drawerTopicSection {}
 
 .drawerSectionTitle {
   font-size: 0.63rem; font-weight: 700;

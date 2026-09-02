@@ -1,4 +1,3 @@
-// frontend/src/store/Slices/ScrambleSlice.ts
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
 import { scrambleApi, type GetScrambleParams } from '@/api/services/scramble';
 import type {

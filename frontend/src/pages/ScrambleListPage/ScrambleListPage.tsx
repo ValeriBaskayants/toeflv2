@@ -1,11 +1,13 @@
 import { useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Shuffle, Play, CheckCircle2, Clock, AlertCircle, RefreshCw } from 'lucide-react';
+import { Shuffle, Play, CheckCircle2, Clock, AlertCircle, RefreshCw, FileText, ChevronRight } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
-import { fetchScrambleCatalog, setFilter, startQueue } from '@/./store/Slices/ScrambleSlice';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './ScrambleListPage.module.css';
+import { setFilter } from '@/store/Slices/ListeningSlice';
+import { fetchScrambleCatalog, startQueue } from '@/store/Slices/ScrambleSlice';
+
 
 const LEVELS = ['A1', 'A1_PLUS', 'A2', 'A2_PLUS', 'B1', 'B1_PLUS', 'B2', 'B2_PLUS', 'C1', 'C2'];
 const LEVEL_DISPLAY: Record<string, string> = {
@@ -32,11 +34,10 @@ export default function ScrambleListPage() {
   }, [dispatch]);
 
   const handleStartSession = (startId?: string) => {
+    const notCompletedPool = catalog.filter((c) => c.userStatus !== 'completed');
     const pool = startId !== undefined
       ? catalog.filter((c) => c.id === startId)
-      : catalog.filter((c) => c.userStatus !== 'completed').length > 0
-        ? catalog.filter((c) => c.userStatus !== 'completed')
-        : catalog;
+      : notCompletedPool.length > 0 ? notCompletedPool : catalog;
 
     const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, SESSION_SIZE);
     if (shuffled.length === 0) return;
@@ -68,6 +69,17 @@ export default function ScrambleListPage() {
           </button>
         )}
       </header>
+
+      <button type="button" className={styles['examCard']} onClick={() => navigate('/writing/scramble/exam')}>
+        <div className={styles['examCardIco']}>
+          <FileText size={22} />
+        </div>
+        <div className={styles['examCardBody']}>
+          <span className={styles['examCardTitle']}>{t('scramble.exam.cardTitle')}</span>
+          <span className={styles['examCardDesc']}>{t('scramble.exam.cardDesc')}</span>
+        </div>
+        <ChevronRight size={18} className={styles['examCardArrow']} />
+      </button>
 
       <div className={styles['filterBar']}>
         <span className={styles['filterLabel']}>{t('scramble.filters.level')}</span>

@@ -65,11 +65,23 @@ export const listening = {
 
     voiceGoogle: 'Google Neural2',
     voiceBrowser: 'Բրաուզերի ձայն',
-    voiceLoading: 'Բեռնվում է ձայնը…',
-    voiceNone: 'Ձայնը անհասանելի է',
 
     voiceWarnBasic: 'Լավ ձայնի համար բացեք էջը Chrome կամ Edge բրաուզերում։',
     ttsNotSupported: 'Ձայնային սինթեզը չի աջակցվում։ Օգտագործեք Chrome կամ Safari։',
+    voiceAzure: 'Azure Neural',
+    voiceLoading: 'Բեռնվում է ձայնը…',
+    voiceNone: 'Ձայնը անհասանելի է',
+    noContent: 'Այս նյութի համար աudio-ն հասանելի չէ։',
+    playbackFailed: 'Չհաջողվեց նվագարկել։ Սեղմեք play կրկին։',
+    audioPlaybackError: 'Նվագարկման սխալ։ Փորձեք թարմացնել էջը։',
+    ttsFallbackReasons: {
+      api_key_not_configured: 'Ձայնային ծառայությունը կարգավորված չէ։',
+      rate_limited: 'Ձայնային ծառայությունը ժամանակավորապես ծանրաբեռնված է։',
+      unauthorized: 'Ձայնային ծառայության կարգավորման սխալ։',
+      timeout: 'Ձայնի հարցումը ժամանակավրեպ է եղել։ Փորձեք կրկին։',
+      network_error: 'Ցանցի սխալ ձայնը բեռնելիս։',
+      default: 'Ձայնը ժամանակավորապես անհասանելի է։',
+    },
   },
 
   questions: {

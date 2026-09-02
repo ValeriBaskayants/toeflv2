@@ -1,49 +1,51 @@
-import { api } from '@/api';
-import type { Level } from '@/types/globalTypes';
+import { api } from '../client';
+import type { ImportResult } from '@/types/admin/Admin.types';
 import type {
-  SpeakingRepeatSetSummary,
-  SpeakingStartSessionResponse,
-  SpeakingItemAudioResponse,
-  SpeakingSubmitAttemptResponse,
+  SpeakingSetListItem,
+  SpeakingSetDetail,
+  StartSpeakingSessionResponse,
+  ItemAudioResponse,
+  SubmitAttemptResponse,
   SpeakingSessionReview,
+  GetSpeakingSetsParams,
 } from '@/types/speaking/Speaking.types';
 
+function guessExtension(mimeType: string): string {
+  if (mimeType.includes('mp4')) return 'm4a';
+  if (mimeType.includes('ogg')) return 'ogg';
+  return 'webm';
+}
+
 export const speakingRepeatApi = {
-  getSets: async (level: Level) => {
-    const { data } = await api.get<SpeakingRepeatSetSummary[]>(`/speaking-repeat/sets/${level}`);
-    return data;
-  },
+  bulkCreate: (sets: unknown[]) => api.post<ImportResult>('/speaking-repeat/bulk', { sets }),
 
-  startSession: async (setId: string) => {
-    const { data } = await api.post<SpeakingStartSessionResponse>(`/speaking-repeat/sessions/${setId}/start`);
-    return data;
-  },
+  getAll: (params?: GetSpeakingSetsParams) =>
+    api.get<SpeakingSetListItem[]>('/speaking-repeat', { params }),
 
-  getItemAudio: async (setId: string, itemId: string) => {
-    const { data } = await api.get<SpeakingItemAudioResponse>(
-      `/speaking-repeat/sets/${setId}/items/${itemId}/audio`,
-    );
-    return data;
-  },
+  getScenarios: (level?: string) =>
+    api.get<string[]>('/speaking-repeat/scenarios', { params: level ? { level } : undefined }),
 
-  submitAttempt: async (sessionId: string, itemId: string, audioBlob: Blob) => {
+  getSetById: (id: string) => api.get<SpeakingSetDetail>(`/speaking-repeat/sets/${id}`),
+
+  startSession: (setId: string) =>
+    api.post<StartSpeakingSessionResponse>(`/speaking-repeat/sets/${setId}/start`),
+
+  getItemAudio: (sessionId: string, itemId: string) =>
+    api.get<ItemAudioResponse>(`/speaking-repeat/sessions/${sessionId}/items/${itemId}/audio`),
+
+  submitAttempt: (sessionId: string, itemId: string, audioBlob: Blob, mimeType: string) => {
     const formData = new FormData();
-    formData.append('audio', audioBlob, 'recording.webm');
-    const { data } = await api.post<SpeakingSubmitAttemptResponse>(
+    formData.append('audio', audioBlob, `attempt.${guessExtension(mimeType)}`);
+    return api.post<SubmitAttemptResponse>(
       `/speaking-repeat/sessions/${sessionId}/items/${itemId}/answer`,
       formData,
       { headers: { 'Content-Type': 'multipart/form-data' } },
     );
-    return data;
   },
 
-  completeSession: async (sessionId: string) => {
-    const { data } = await api.post(`/speaking-repeat/sessions/${sessionId}/complete`);
-    return data;
-  },
+  completeSession: (sessionId: string) =>
+    api.post<SpeakingSessionReview>(`/speaking-repeat/sessions/${sessionId}/complete`),
 
-  getSessionReview: async (sessionId: string) => {
-    const { data } = await api.get<SpeakingSessionReview>(`/speaking-repeat/sessions/${sessionId}/review`);
-    return data;
-  },
+  getReview: (sessionId: string) =>
+    api.get<SpeakingSessionReview>(`/speaking-repeat/sessions/${sessionId}/review`),
 };

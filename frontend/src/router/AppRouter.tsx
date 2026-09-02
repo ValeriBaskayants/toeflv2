@@ -20,13 +20,15 @@ import WritingPage from '@/pages/WritingPage/WritingPage';
 import WritingArticlesPage from '@/pages/WritingArticlesPage/WritingArticlesPage';
 import ScrambleListPage from '@/pages/ScrambleListPage/ScrambleListPage';
 import ScrambleSessionPage from '@/pages/ScramblePage/ScrambleSessionPage';
-import SpeakingPage from '@/pages/SpeakingPage/SpeakingPage';
-import SpeakingListenRepeatListPage from '@/pages/SpeakingListenRepeatListPage/SpeakingListenRepeatListPage';
-import SpeakingListenRepeatSessionPage from '@/pages/SpeakingListenRepeatSessionPage/SpeakingListenRepeatSessionPage';
 import MistakesPage from '@/pages/MistakePage/MistakesPage';
 import { VocabularyPage } from '@/pages/VocabularyPage/VocabularyPage';
 import { ExercisesPage } from '@/pages/ExercisesPage/ExercisesPage';
 import { ExerciseList } from '@/pages/ExerciseList/ExerciseList';
+import ScrambleExamIntroPage from '@/pages/ScrambleExamPage/ScrambleExamIntroPage/ScrambleExamIntroPage';
+import ScrambleExamSessionPage from '@/pages/ScrambleExamPage/ScrambleExamSessionPage/ScrambleExamSessionPage';
+import ScrambleExamResultPage from '@/pages/ScrambleExamPage/ScrambleExamResultPage';
+import SpeakingRepeatPlayerPage from '@/pages/SpeakingRepeatPlayerPage/SpeakingRepeatPlayerPage';
+import SpeakingListPage from '@/pages/SpeakingListPage/SpeakingListPage';
 
 export function AppRouter() {
   return (
@@ -60,9 +62,6 @@ export function AppRouter() {
 
         <Route path="/vocabulary" element={<VocabularyPage />} />
 
-        <Route path="/speaking" element={<SpeakingPage />} />
-        <Route path="/speaking/listen-and-repeat" element={<SpeakingListenRepeatListPage />} />
-        <Route path="/speaking/listen-and-repeat/session" element={<SpeakingListenRepeatSessionPage />} />
 
         <Route path="/exercises" element={<ExercisesPage />} />
         <Route path="/exercises/:topic" element={<ExerciseList />} />
@@ -73,6 +72,12 @@ export function AppRouter() {
         <Route path="/placement" element={<PlacementPage />} />
         <Route path="/mistakes" element={<MistakesPage />} />
         <Route path="/admin" element={<AdminPage />} />
+
+        <Route path="/writing/scramble/exam" element={<ScrambleExamIntroPage />} />
+        <Route path="/writing/scramble/exam/session/:blockId" element={<ScrambleExamSessionPage />} />
+        <Route path="/writing/scramble/exam/result/:blockId" element={<ScrambleExamResultPage />} />
+        <Route path="/speaking" element={<SpeakingListPage />} />
+        <Route path="/speaking/:id" element={<SpeakingRepeatPlayerPage />} />
       </Route>
 
       <Route path="/" element={<Navigate to="/dashboard" replace />} />

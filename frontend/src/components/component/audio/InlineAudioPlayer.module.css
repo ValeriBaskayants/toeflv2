@@ -1,0 +1,51 @@
+.player {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  width: 100%;
+}
+
+.playBtn {
+  width: 28px;
+  height: 28px;
+  border-radius: 50%;
+  background: var(--accent);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  transition: transform var(--duration-fast) ease;
+}
+
+.playBtn:hover { transform: scale(1.08); }
+.playBtn:active { transform: scale(0.94); }
+
+.track {
+  flex: 1;
+  height: 4px;
+  background: var(--surface-2);
+  border-radius: 100px;
+  overflow: hidden;
+}
+
+.trackFill {
+  height: 100%;
+  background: var(--accent);
+  border-radius: 100px;
+  transition: width 100ms linear;
+}
+
+.duration {
+  font-size: 0.68rem;
+  color: var(--text-3);
+  font-family: 'JetBrains Mono', monospace;
+  flex-shrink: 0;
+  min-width: 28px;
+  text-align: right;
+}
+
+.errorLabel {
+  font-size: 0.75rem;
+  color: var(--text-3);
+}

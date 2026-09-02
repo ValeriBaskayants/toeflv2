@@ -1,14 +1,13 @@
-// backend/src/modules/azure-speech/azure-speech.service.ts
 import { Injectable, Logger } from '@nestjs/common';
 import { ConfigService } from '@nestjs/config';
 import { createHash } from 'crypto';
 import { PrismaService } from '../prisma/prisma.service';
-import { RedisService } from '../redis/redis.service'; 
+import { RedisService } from '../redis/redis.service';
 
 const TTS_MAX_CHARS = 3000;
 const STT_TIMEOUT_MS = 20_000;
 const TTS_TIMEOUT_MS = 15_000;
-const REDIS_TTS_TTL_SEC = 60 * 60 * 24 * 30; 
+const REDIS_TTS_TTL_SEC = 60 * 60 * 24 * 30;
 
 export interface TtsResult {
   audioBase64: string;
@@ -30,7 +29,7 @@ export interface AzureQuotaStatus {
   remainingSeconds: number;
 }
 
-const MONTHLY_STT_LIMIT_SECONDS = 5 * 60 * 60; 
+const MONTHLY_STT_LIMIT_SECONDS = 5 * 60 * 60;
 
 @Injectable()
 export class AzureSpeechService {
@@ -88,7 +87,7 @@ export class AzureSpeechService {
 
     if (!response.ok) {
       this.logger.error('AZURE_TTS_ERROR', { status: response.status });
-      throw new Error(`Azure TTS failed with status ${response.status}`);
+      throw new AzureTtsRequestError(response.status);
     }
 
     const arrayBuffer = await response.arrayBuffer();
@@ -124,7 +123,6 @@ export class AzureSpeechService {
     </speak>`;
   }
 
-  // ── Pronunciation Assessment (для Listen and Repeat) ───────────────────────
 
   async assessPronunciation(wavBuffer: Buffer, referenceText: string): Promise<PronunciationScoreResult> {
     await this.enforceMonthlyQuota(wavBuffer.length);
@@ -154,7 +152,7 @@ export class AzureSpeechService {
 
     if (!response.ok) {
       this.logger.error('AZURE_PRONUNCIATION_ERROR', { status: response.status });
-      throw new Error(`Azure Pronunciation Assessment failed with status ${response.status}`);
+      throw new AzureSttRequestError(response.status);
     }
 
     const data = await response.json() as AzurePronunciationResponse;
@@ -237,6 +235,18 @@ export class AzureQuotaExceededError extends Error {
     public readonly limitSeconds: number,
   ) {
     super('Azure Speech monthly quota exceeded');
+  }
+}
+
+export class AzureTtsRequestError extends Error {
+  constructor(public readonly status: number) {
+    super(`Azure TTS request failed with status ${status}`);
+  }
+}
+
+export class AzureSttRequestError extends Error {
+  constructor(public readonly status: number) {
+    super(`Azure Pronunciation Assessment request failed with status ${status}`);
   }
 }
 

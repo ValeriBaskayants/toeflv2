@@ -55,4 +55,66 @@ export const speaking = {
       backToList: 'Back to sets',
     },
   },
+  repeat: {
+  title: 'Speaking — Listen and Repeat',
+  subtitle: 'Repeat sentences exactly as you hear them, just like on the TOEFL test',
+  loading: 'Loading…',
+  error: 'Something went wrong',
+  retry: 'Try again',
+  backToList: 'Back to library',
+  itemCount: '{{count}} sentence',
+  itemCount_other: '{{count}} sentences',
+  itemOf: 'Sentence {{current}} of {{total}}',
+  bestScore: 'Best: {{score}}%',
+
+  filters: { allScenarios: 'All scenarios', allLevels: 'All levels' },
+  empty: { title: 'No speaking sets found', hint: 'Try a different level or scenario' },
+
+  status: { completed: 'Completed', inProgress: 'In progress', notStarted: 'Not started yet' },
+
+  intro: {
+    title: 'Before you start',
+    rule1: 'You will hear {{count}} sentences, one at a time.',
+    rule2: 'Each sentence plays only once — there is no replay.',
+    rule3: 'After a short pause and a beep, repeat it exactly as you heard it.',
+    rule4: 'Recording starts automatically and stops after a fixed time — just like the real test.',
+    start: 'Start',
+    starting: 'Starting…',
+  },
+
+  mic: {
+    requesting: 'Requesting microphone access…',
+    deniedTitle: 'Microphone access needed',
+    reasons: {
+      permission_denied: 'Please allow microphone access in your browser settings and reload the page.',
+      no_microphone: 'No microphone was found on this device.',
+      device_busy: 'Your microphone is being used by another application.',
+      unknown: 'Could not access your microphone. Please check your device settings and try again.',
+    },
+  },
+
+  unsupported: 'Your browser does not support audio recording. Please use a recent version of Chrome, Edge, Firefox, or Safari.',
+  audioError: 'Could not load the audio for this sentence.',
+  listen: 'Listen carefully…',
+  getReady: 'Get ready…',
+  speakNow: 'Speak now',
+  recording: 'Recording',
+  submitting: 'Saving your answer…',
+  finishing: 'Calculating your results…',
+
+  submitFailed: {
+    title: 'Something went wrong',
+    hint: "We couldn't save one of your answers after a few attempts. Let's start this task again.",
+    restart: 'Start again',
+  },
+
+  results: {
+    taskScore: 'Task score: {{score}} / 5',
+    xpEarned: 'XP earned',
+    itemsCompleted: 'Sentences completed',
+    youSaid: 'You said',
+    playYourAnswer: 'Play your answer',
+    practiceAgain: 'Practice again',
+  },
+},
 };

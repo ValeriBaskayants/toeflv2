@@ -1,9 +1,21 @@
-import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import {
+  BadRequestException,
+  ForbiddenException,
+  HttpException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { Level, Prisma, SpeakingDifficulty } from '@prisma/client';
 import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
 import { MistakesService } from '../mistakes/mistakes.service';
-import { AzureSpeechService, AzureQuotaExceededError } from '../azure-speech/azure-speech.service';
+import {
+  AzureSpeechService,
+  AzureQuotaExceededError,
+  AzureSttRequestError,
+  AzureTtsRequestError,
+} from '../azure-speech/azure-speech.service';
 import { transcodeToWav16kMono } from './utils/transcode-audio';
 import {
   computeItemScore,
@@ -41,6 +53,13 @@ interface SpeakingItemResultEntity {
   attemptedAt: string;
 }
 
+export interface PublicSpeakingItem {
+  id: string;
+  difficulty: SpeakingDifficulty;
+  orderIndex: number;
+  recordingWindowSec: number;
+}
+
 @Injectable()
 export class SpeakingRepeatService {
   constructor(
@@ -64,6 +83,7 @@ export class SpeakingRepeatService {
         scenario: true,
         level: true,
         voiceId: true,
+        imageUrl: true,
         createdAt: true,
         _count: { select: { items: true } },
       },
@@ -95,6 +115,7 @@ export class SpeakingRepeatService {
       id: s.id,
       scenario: s.scenario,
       level: s.level,
+      imageUrl: s.imageUrl,
       itemCount: s._count.items,
       createdAt: s.createdAt,
       userStatus: inProgressIds.has(s.id)
@@ -117,16 +138,20 @@ export class SpeakingRepeatService {
   }
 
   async findSetById(id: string) {
-    const set = await this.prisma.speakingRepeatSet.findUnique({
-      where: { id },
-      include: { items: { orderBy: { orderIndex: 'asc' } } },
-    });
-    if (set === null) throw new NotFoundException('Speaking set not found');
-    return set;
+    const set = await this.findSetWithItemsOrThrow(id);
+    return {
+      id: set.id,
+      scenario: set.scenario,
+      level: set.level,
+      imageUrl: set.imageUrl,
+      createdAt: set.createdAt,
+      updatedAt: set.updatedAt,
+      items: set.items.map((item) => this.toPublicItem(item)),
+    };
   }
 
   async startSession(userId: string, setId: string) {
-    const set = await this.findSetById(setId);
+    const set = await this.findSetWithItemsOrThrow(setId);
 
     if (set.items.length < MIN_ITEMS_PER_SET || set.items.length > MAX_ITEMS_PER_SET) {
       throw new BadRequestException(
@@ -144,26 +169,41 @@ export class SpeakingRepeatService {
       select: { id: true, startedAt: true },
     });
 
-    return { session, items: set.items, voiceId: set.voiceId };
+    return {
+      session,
+      scenario: set.scenario,
+      voiceId: set.voiceId,
+      imageUrl: set.imageUrl,
+      items: set.items.map((item) => this.toPublicItem(item)),
+    };
   }
 
-  async getItemAudio(userId: string, sessionId: string, setId: string, itemId: string) {
+  async getItemAudio(userId: string, sessionId: string, itemId: string) {
     const session = await this.getOwnedInProgressSession(userId, sessionId);
 
     if (session.playedItemIds.includes(itemId)) {
       throw new ForbiddenException('This item can only be played once, as on the real TOEFL test.');
     }
 
-    const set = await this.prisma.speakingRepeatSet.findUnique({
-      where: { id: setId },
-      select: { voiceId: true },
-    });
-    const item = await this.prisma.speakingRepeatItem.findUnique({ where: { id: itemId } });
+    const [set, item] = await Promise.all([
+      this.prisma.speakingRepeatSet.findUnique({
+        where: { id: session.setId },
+        select: { voiceId: true },
+      }),
+      this.prisma.speakingRepeatItem.findUnique({ where: { id: itemId } }),
+    ]);
 
     if (set === null || item === null) throw new NotFoundException('Item not found');
-    if (item.setId !== setId) throw new BadRequestException('Item does not belong to this set');
+    if (item.setId !== session.setId) {
+      throw new BadRequestException("Item does not belong to this session's set");
+    }
 
-    const synthesized = await this.azureSpeech.synthesize(item.text, set.voiceId);
+    let synthesized;
+    try {
+      synthesized = await this.azureSpeech.synthesize(item.text, set.voiceId);
+    } catch (err: unknown) {
+      throw this.mapAzureError(err);
+    }
 
     await this.prisma.speakingRepeatSession.update({
       where: { id: sessionId },
@@ -172,7 +212,6 @@ export class SpeakingRepeatService {
 
     return {
       audioBase64: synthesized.audioBase64,
-      referenceText: item.text,
       difficulty: item.difficulty,
       recordingWindowSec: item.recordingWindowSec,
     };
@@ -202,12 +241,7 @@ export class SpeakingRepeatService {
     try {
       scores = await this.azureSpeech.assessPronunciation(wavBuffer, item.text);
     } catch (err: unknown) {
-      if (err instanceof AzureQuotaExceededError) {
-        throw new ForbiddenException(
-          'Monthly speech assessment quota reached. It resets on the 1st of next month.',
-        );
-      }
-      throw err;
+      throw this.mapAzureError(err);
     }
 
     const repetitionAccuracy = computeRepetitionAccuracy(item.text, scores.recognizedText);
@@ -269,7 +303,19 @@ export class SpeakingRepeatService {
   async completeSession(userId: string, sessionId: string) {
     const session = await this.getOwnedInProgressSession(userId, sessionId);
 
+    const itemCount = await this.prisma.speakingRepeatItem.count({
+      where: { setId: session.setId },
+    });
+
     const results = session.results as unknown as SpeakingItemResultEntity[];
+
+    if (results.length < itemCount) {
+      throw new BadRequestException(
+        `All ${itemCount} items must be answered before completing this session ` +
+        `(${results.length}/${itemCount} answered).`,
+      );
+    }
+
     const taskScore = computeTaskScore(results.map((r) => r.itemScore));
     const finalScore = Math.round((taskScore / 5) * 100);
 
@@ -281,8 +327,22 @@ export class SpeakingRepeatService {
       data: { status: 'COMPLETED', completedAt: new Date(), taskScore, finalScore, xpEarned },
     });
 
+    // ФИКС: раньше при isSessionCountable(finalScore) === false ничего не
+    // происходило вообще — ни XP, ни DailyActivity, хотя session.xpEarned
+    // уже записан в БД и показывается юзеру на экране результатов. То есть
+    // UI показывал "+40 XP", а totalXp юзера на самом деле не менялся.
+    // Паттерн переиспользован из ListeningService.completeSession: XP
+    // начисляется всегда (урезанный, если попытка не "защитана"), а
+    // прогресс по уровню (LevelProgress.speaking.completed) растёт только
+    // за качественные попытки.
     if (isSessionCountable(finalScore)) {
       await this.progress.recordSkillCompletion({ userId, skill: 'speaking', accuracy: finalScore, xpEarned });
+    } else {
+      await this.progress.recordActivity({
+        userId,
+        xpEarned: Math.max(1, Math.round(xpEarned * 0.3)),
+        minutesSpent: 3,
+      });
     }
 
     return completed;
@@ -314,12 +374,12 @@ export class SpeakingRepeatService {
           scenario: set.scenario,
           level: set.level,
           voiceId: set.voiceId,
+          imageUrl: set.imageUrl,
           items: {
             create: set.items.map((item) => ({
               text: item.text,
               difficulty: item.difficulty,
               orderIndex: item.orderIndex,
-              imageUrl: item.imageUrl,
               recordingWindowSec:
                 item.recordingWindowSec ?? RECORDING_WINDOW_BY_DIFFICULTY[item.difficulty as SpeakingDifficulty],
             })),
@@ -329,6 +389,31 @@ export class SpeakingRepeatService {
     }
 
     return { totalProcessed: sets.length, inserted: toInsert.length, skipped: sets.length - toInsert.length };
+  }
+
+  // ── Private helpers ────────────────────────────────────────────────────────
+
+  private async findSetWithItemsOrThrow(id: string) {
+    const set = await this.prisma.speakingRepeatSet.findUnique({
+      where: { id },
+      include: { items: { orderBy: { orderIndex: 'asc' } } },
+    });
+    if (set === null) throw new NotFoundException('Speaking set not found');
+    return set;
+  }
+
+  private toPublicItem(item: {
+    id: string;
+    difficulty: SpeakingDifficulty;
+    orderIndex: number;
+    recordingWindowSec: number;
+  }): PublicSpeakingItem {
+    return {
+      id: item.id,
+      difficulty: item.difficulty,
+      orderIndex: item.orderIndex,
+      recordingWindowSec: item.recordingWindowSec,
+    };
   }
 
   private async getOwnedInProgressSession(userId: string, sessionId: string) {
@@ -341,5 +426,37 @@ export class SpeakingRepeatService {
     }
 
     return session;
+  }
+
+  private mapAzureError(err: unknown): HttpException {
+    if (err instanceof AzureQuotaExceededError) {
+      return new ForbiddenException(
+        'Monthly speech assessment quota reached. It resets on the 1st of next month.',
+      );
+    }
+
+    if (err instanceof AzureTtsRequestError || err instanceof AzureSttRequestError) {
+      if (err.status === 429) {
+        return new HttpException(
+          'Azure Speech service is rate-limited. Please try again shortly.',
+          HttpStatus.TOO_MANY_REQUESTS,
+        );
+      }
+      if (err.status === 401 || err.status === 403) {
+        return new HttpException(
+          'Speech service is misconfigured. Please contact support.',
+          HttpStatus.SERVICE_UNAVAILABLE,
+        );
+      }
+      return new HttpException(
+        'Speech service temporarily unavailable. Please try again.',
+        HttpStatus.SERVICE_UNAVAILABLE,
+      );
+    }
+
+    return new HttpException(
+      'Speech service temporarily unavailable. Please try again.',
+      HttpStatus.SERVICE_UNAVAILABLE,
+    );
   }
 }

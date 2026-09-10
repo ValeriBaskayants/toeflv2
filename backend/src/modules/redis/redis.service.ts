@@ -68,4 +68,21 @@ export class RedisService implements OnModuleInit, OnModuleDestroy {
       this.logger.warn('REDIS_EXPIRE_FAILED', { key, error: err instanceof Error ? err.message : String(err) });
     }
   }
+  async setnx(key: string, value: string, ttlSeconds: number): Promise<boolean> {
+  try {
+    const result = await this.client.set(key, value, 'EX', ttlSeconds, 'NX');
+    return result === 'OK';
+  } catch (err: unknown) {
+    this.logger.warn('REDIS_SETNX_FAILED', { key, error: err instanceof Error ? err.message : String(err) });
+    return true; 
+  }
+}
+
+async del(key: string): Promise<void> {
+  try {
+    await this.client.del(key);
+  } catch (err: unknown) {
+    this.logger.warn('REDIS_DEL_FAILED', { key, error: err instanceof Error ? err.message : String(err) });
+  }
+}
 }

@@ -1,0 +1,61 @@
+model SpeakingInterviewSet {
+  id      String @id @default(auto()) @map("_id") @db.ObjectId
+  topic   String
+  level   Level
+  voiceId String @default("en-US-AndrewNeural")
+
+  questions SpeakingInterviewQuestion[]
+  sessions  SpeakingInterviewSession[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([level])
+  @@index([level, topic])
+}
+
+model SpeakingInterviewQuestion {
+  id         String               @id @default(auto()) @map("_id") @db.ObjectId
+  setId      String               @db.ObjectId
+  set        SpeakingInterviewSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+  text       String
+  orderIndex Int
+
+  @@index([setId, orderIndex])
+}
+
+type InterviewItemResult {
+  questionId          String
+  questionText        String
+  recognizedText      String
+  wordCount           Int
+  wordsPerMinute      Float
+  fillerWordCount     Int
+  vocabularyDiversity Float
+  estimatedScore      Float  
+  userAudioBase64     String
+  userAudioMimeType   String @default("audio/webm")
+  attemptedAt         String
+}
+
+model SpeakingInterviewSession {
+  id     String               @id @default(auto()) @map("_id") @db.ObjectId
+  userId String               @db.ObjectId
+  user   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  setId  String               @db.ObjectId
+  set    SpeakingInterviewSet @relation(fields: [setId], references: [id], onDelete: Cascade)
+
+  status        SpeakingSessionStatus @default(IN_PROGRESS)
+  results       InterviewItemResult[]
+  playedItemIds String[]              @default([])
+
+  taskScore  Float?
+  finalScore Int?
+  xpEarned   Int?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId, status])
+  @@index([userId, setId])
+}

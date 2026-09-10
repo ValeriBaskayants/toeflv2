@@ -24,6 +24,9 @@ import {
   MIN_ITEMS_PER_SET,
   MAX_ITEMS_PER_SET,
   RECORDING_WINDOW_BY_DIFFICULTY,
+  EXAM_MODE_ITEM_COUNT,
+  EXAM_MODE_MAX_POINTS,
+  getExamModeRecordingWindow,
 } from '../../constants/speaking-constants';
 import { computeXP, isSessionCountable } from '../../constants/level-requirements';
 import type {
@@ -150,33 +153,40 @@ export class SpeakingRepeatService {
     };
   }
 
-  async startSession(userId: string, setId: string) {
-    const set = await this.findSetWithItemsOrThrow(setId);
+async startSession(userId: string, setId: string) {
+  const set = await this.findSetWithItemsOrThrow(setId);
 
-    if (set.items.length < MIN_ITEMS_PER_SET || set.items.length > MAX_ITEMS_PER_SET) {
-      throw new BadRequestException(
-        `Speaking set must contain between ${MIN_ITEMS_PER_SET} and ${MAX_ITEMS_PER_SET} items`,
-      );
-    }
+  const minItems = set.isExamSet ? EXAM_MODE_ITEM_COUNT : MIN_ITEMS_PER_SET;
+  const maxItems = set.isExamSet ? EXAM_MODE_ITEM_COUNT : MAX_ITEMS_PER_SET;
 
-    await this.prisma.speakingRepeatSession.updateMany({
-      where: { userId, setId, status: 'IN_PROGRESS' },
-      data: { status: 'ABANDONED' },
-    });
-
-    const session = await this.prisma.speakingRepeatSession.create({
-      data: { userId, setId, results: [], playedItemIds: [] },
-      select: { id: true, startedAt: true },
-    });
-
-    return {
-      session,
-      scenario: set.scenario,
-      voiceId: set.voiceId,
-      imageUrl: set.imageUrl,
-      items: set.items.map((item) => this.toPublicItem(item)),
-    };
+  if (set.items.length < minItems || set.items.length > maxItems) {
+    throw new BadRequestException(
+      set.isExamSet
+        ? `Exam set is misconfigured: expected exactly ${EXAM_MODE_ITEM_COUNT} items, found ${set.items.length}`
+        : `Speaking set must contain between ${MIN_ITEMS_PER_SET} and ${MAX_ITEMS_PER_SET} items`,
+    );
   }
+
+  await this.prisma.speakingRepeatSession.updateMany({
+    where: { userId, setId, status: 'IN_PROGRESS' },
+    data: { status: 'ABANDONED' },
+  });
+
+  const session = await this.prisma.speakingRepeatSession.create({
+    data: { userId, setId, results: [], playedItemIds: [] },
+    select: { id: true, startedAt: true },
+  });
+
+  return {
+    session,
+    scenario: set.scenario,
+    voiceId: set.voiceId,
+    imageUrl: set.imageUrl,
+    isExamSet: set.isExamSet,
+    maxPoints: set.isExamSet ? EXAM_MODE_MAX_POINTS : null,
+    items: set.items.map((item) => this.toPublicItem(item)),
+  };
+}
 
   async getItemAudio(userId: string, sessionId: string, itemId: string) {
     const session = await this.getOwnedInProgressSession(userId, sessionId);
@@ -327,14 +337,6 @@ export class SpeakingRepeatService {
       data: { status: 'COMPLETED', completedAt: new Date(), taskScore, finalScore, xpEarned },
     });
 
-    // ФИКС: раньше при isSessionCountable(finalScore) === false ничего не
-    // происходило вообще — ни XP, ни DailyActivity, хотя session.xpEarned
-    // уже записан в БД и показывается юзеру на экране результатов. То есть
-    // UI показывал "+40 XP", а totalXp юзера на самом деле не менялся.
-    // Паттерн переиспользован из ListeningService.completeSession: XP
-    // начисляется всегда (урезанный, если попытка не "защитана"), а
-    // прогресс по уровню (LevelProgress.speaking.completed) растёт только
-    // за качественные попытки.
     if (isSessionCountable(finalScore)) {
       await this.progress.recordSkillCompletion({ userId, skill: 'speaking', accuracy: finalScore, xpEarned });
     } else {
@@ -357,39 +359,64 @@ export class SpeakingRepeatService {
     return session;
   }
 
-  async bulkCreate(sets: CreateSpeakingRepeatSetDto[]) {
-    if (sets.length === 0) return { totalProcessed: 0, inserted: 0, skipped: 0 };
+async bulkCreate(sets: CreateSpeakingRepeatSetDto[]) {
+  if (sets.length === 0) return { totalProcessed: 0, inserted: 0, skipped: 0, errors: [] };
 
-    const existing = await this.prisma.speakingRepeatSet.findMany({
-      where: { OR: sets.map((s) => ({ level: s.level, scenario: s.scenario })) },
-      select: { scenario: true, level: true },
-    });
+  const errors: Array<{ scenario: string; reason: string }> = [];
 
-    const existingKeys = new Set(existing.map((e) => `${e.level}:${e.scenario}`));
-    const toInsert = sets.filter((s) => !existingKeys.has(`${s.level}:${s.scenario}`));
+  // Exam-сеты обязаны строго соответствовать структуре реального теста —
+  // 7 items, тайминги по позиции. Всё остальное — свободная практика без ограничений.
+  const structurallyValid = sets.filter((set) => {
+    if (!set.isExamSet) return true;
 
-    for (const set of toInsert) {
-      await this.prisma.speakingRepeatSet.create({
-        data: {
-          scenario: set.scenario,
-          level: set.level,
-          voiceId: set.voiceId,
-          imageUrl: set.imageUrl,
-          items: {
-            create: set.items.map((item) => ({
-              text: item.text,
-              difficulty: item.difficulty,
-              orderIndex: item.orderIndex,
-              recordingWindowSec:
-                item.recordingWindowSec ?? RECORDING_WINDOW_BY_DIFFICULTY[item.difficulty as SpeakingDifficulty],
-            })),
-          },
-        },
+    if (set.items.length !== EXAM_MODE_ITEM_COUNT) {
+      errors.push({
+        scenario: set.scenario,
+        reason: `Exam set must contain exactly ${EXAM_MODE_ITEM_COUNT} items, got ${set.items.length}`,
       });
+      return false;
     }
+    return true;
+  });
 
-    return { totalProcessed: sets.length, inserted: toInsert.length, skipped: sets.length - toInsert.length };
+  const existing = await this.prisma.speakingRepeatSet.findMany({
+    where: { OR: structurallyValid.map((s) => ({ level: s.level, scenario: s.scenario })) },
+    select: { scenario: true, level: true },
+  });
+
+  const existingKeys = new Set(existing.map((e) => `${e.level}:${e.scenario}`));
+  const toInsert = structurallyValid.filter((s) => !existingKeys.has(`${s.level}:${s.scenario}`));
+
+  for (const set of toInsert) {
+    await this.prisma.speakingRepeatSet.create({
+      data: {
+        scenario: set.scenario,
+        level: set.level,
+        voiceId: set.voiceId,
+        imageUrl: set.imageUrl,
+        isExamSet: set.isExamSet ?? false,
+        items: {
+          create: set.items.map((item, idx) => ({
+            text: item.text,
+            difficulty: item.difficulty,
+            orderIndex: item.orderIndex,
+            // Exam-сет: тайминг жёстко по позиции, а не по difficulty-метке автора
+            recordingWindowSec: set.isExamSet
+              ? getExamModeRecordingWindow(idx)
+              : item.recordingWindowSec ?? RECORDING_WINDOW_BY_DIFFICULTY[item.difficulty as SpeakingDifficulty],
+          })),
+        },
+      },
+    });
   }
+
+  return {
+    totalProcessed: sets.length,
+    inserted: toInsert.length,
+    skipped: sets.length - toInsert.length,
+    errors,
+  };
+}
 
   // ── Private helpers ────────────────────────────────────────────────────────
 

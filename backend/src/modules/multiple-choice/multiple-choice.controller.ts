@@ -1,42 +1,54 @@
-import { Body, Controller, Get, Post, Query, UseGuards } from '@nestjs/common';
-import { MultipleChoiceService } from './multiple-choice.service';
-import { GetMultipleChoiceDto } from './dto/get-multiple-choice.dto';
-import { BulkCreateMultipleChoiceDto } from './dto/bulk-create-multiple-choice.dto';
-import { SubmitMCSessionDto } from './dto/submit-session.dto';
-import { CurrentUser } from '../auth/decorators/current-user.decorator';
-import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
-import { Roles } from '../auth/decorators/roles.decorator';
-import { RolesGuard } from '../auth/guards/roles.guard';
-import { IsOptional, IsString } from 'class-validator';
+import {
+  IsArray, IsBoolean, IsEnum, IsIn, IsInt, IsNumber,
+  IsOptional, IsString, MaxLength, Min, Max,
+  ValidateIf, ValidateNested, ArrayMinSize, ArrayMaxSize,
+} from 'class-validator';
+import { Type } from 'class-transformer';
+import { Difficulty, Level } from '@prisma/client';
 
-class TimezoneDto {
-  @IsOptional()
-  @IsString()
-  timezone?: string;
+export class CreateMultipleChoiceDto {
+  @IsString() @MaxLength(500)
+  question!: string;
+
+  @IsArray() @ArrayMinSize(2) @ArrayMaxSize(6)
+  @IsString({ each: true }) @MaxLength(300, { each: true })
+  options!: string[];
+
+  @IsInt() @Min(0)
+  correctIndex!: number;
+
+  @IsOptional() @IsString() @MaxLength(1000)
+  explanation?: string;
+
+  @IsOptional() @IsString() @MaxLength(100)
+  topic?: string;
+
+  @IsEnum(Level)
+  level!: Level;
+
+  @IsOptional() @IsEnum(Difficulty)
+  difficulty?: Difficulty;
+
+  @IsOptional() @IsArray() @IsString({ each: true })
+  topicSlugs?: string[];
+
+  @IsOptional() @IsBoolean()
+  isAvailableForPlacement?: boolean;
+
+  @ValidateIf((dto: CreateMultipleChoiceDto) => dto.isAvailableForPlacement === true)
+  @IsIn(['VOCABULARY', 'READING'], {
+    message: 'category must be exactly "VOCABULARY" or "READING" when isAvailableForPlacement is true',
+  })
+  category?: string;
+
+  @IsOptional() @IsNumber()
+  difficultyRating?: number;
+
+  @IsOptional() @IsNumber()
+  discriminationRating?: number;
 }
 
-@Controller('multiple-choice')
-export class MultipleChoiceController {
-  constructor(private readonly service: MultipleChoiceService) {}
-
-  @Get()
-  findAll(@Query() query: GetMultipleChoiceDto) {
-    return this.service.findAll(query);
-  }
-
-  @Post('submit')
-  submitSession(
-    @CurrentUser() user: JwtUserPayload,
-    @Body() dto: SubmitMCSessionDto,
-    @Query() query: TimezoneDto,
-  ) {
-    return this.service.submitSession(user.id, dto, query.timezone);
-  }
-
-  @Post('bulk')
-  @UseGuards(RolesGuard)
-  @Roles('ADMIN')
-  bulkCreate(@Body() dto: BulkCreateMultipleChoiceDto) {
-    return this.service.bulkCreate(dto.items);
-  }
+export class BulkCreateMultipleChoiceDto {
+  @IsArray() @ValidateNested({ each: true }) @Type(() => CreateMultipleChoiceDto)
+  items!: CreateMultipleChoiceDto[];
 }

@@ -1,12 +1,13 @@
 enum ListeningType {
-  LECTURE
+  LISTEN_CHOOSE_RESPONSE
   CONVERSATION
+  ANNOUNCEMENT
+  ACADEMIC_TALK
 }
 
 enum ListeningMode {
-  EASY
-  MEDIUM
-  HARD
+  STUDY
+  PRACTICE
 }
 
 enum ListeningSessionStatus {
@@ -38,7 +39,7 @@ type ListeningNote {
 }
 
 model ListeningMaterial {
-  id        String            @id @default(auto()) @map("_id") @db.ObjectId
+  id        String             @id @default(auto()) @map("_id") @db.ObjectId
   title     String
   topic     String
   level     Level

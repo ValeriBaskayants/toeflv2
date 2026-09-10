@@ -13,16 +13,14 @@ import {
   ValidateNested,
 } from 'class-validator';
 import { Type } from 'class-transformer';
-import { ListeningMode } from '@prisma/client';
 
 export class StartSessionDto {
   @IsMongoId()
   materialId!: string;
 
-  @IsEnum(ListeningMode)
-  mode!: ListeningMode;
+  @IsEnum(['STUDY', 'PRACTICE'] as const)
+  mode!: 'STUDY' | 'PRACTICE';
 }
-
 export class ListeningNoteDto {
   @IsString()
   @IsNotEmpty()
@@ -64,3 +62,4 @@ export class SubmitAnswerDto {
   @Min(0)
   currentAudioSec?: number;
 }
+

@@ -10,6 +10,25 @@ import {
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Level, WritingType } from '@prisma/client';
+import {
+  Validate,
+  type ValidationArguments,
+  type ValidatorConstraintInterface,
+  ValidatorConstraint,
+} from 'class-validator';
+
+@ValidatorConstraint({ name: 'maxWordsAfterMinWords', async: false })
+class MaxWordsAfterMinWordsConstraint implements ValidatorConstraintInterface {
+  validate(maxWords: number | undefined, args?: ValidationArguments): boolean {
+    const { minWords } = (args?.object ?? {}) as CreateWritingPromptDto;
+    if (maxWords === undefined || minWords === undefined) return true;
+    return maxWords > minWords;
+  }
+
+  defaultMessage(): string {
+    return 'maxWords must be greater than minWords';
+  }
+}
 
 export class CreateWritingPromptDto {
   @IsString()
@@ -31,6 +50,7 @@ export class CreateWritingPromptDto {
   @IsOptional()
   @IsInt()
   @Min(10)
+  @Validate(MaxWordsAfterMinWordsConstraint)
   maxWords?: number;
 
   @IsOptional()

@@ -40,6 +40,8 @@ model SpeakingRepeatSet {
 
   imageUrl String?
 
+  isExamSet Boolean @default(false)
+  
   items    SpeakingRepeatItem[]
   sessions SpeakingRepeatSession[]
 
@@ -48,6 +50,7 @@ model SpeakingRepeatSet {
 
   @@index([level])
   @@index([level, scenario])
+  @@index([isExamSet, level])
 }
 
 model SpeakingRepeatItem {

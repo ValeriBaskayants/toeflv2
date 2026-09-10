@@ -1,10 +1,11 @@
 import { Module } from '@nestjs/common';
-import { AzureSpeechService } from '../azure-speech/azure-speech.service';
-import { RedisModule } from '../redis/redis.module';
+import { TtsController } from './tts.controller';
+import { TtsService } from './tts.service';
+import PrismaModule from '../prisma/prisma.module';
 
 @Module({
-  imports: [RedisModule],
-  providers: [AzureSpeechService],
-  exports: [AzureSpeechService],
+  imports: [PrismaModule],
+  controllers: [TtsController],
+  providers: [TtsService],
 })
-export class AzureSpeechModule {}
+export class TtsModule {}

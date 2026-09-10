@@ -26,6 +26,7 @@ import { ScrambleModule } from './modules/scramble/scramble.module';
 import { AzureSpeechModule } from "./modules/azure-speech/azure-speech.module"
 import { RedisModule } from './modules/redis/redis.module';
 import { SpeakingRepeatModule } from './modules/speaking-repeat/speaking-repeat.module';
+import { SpeakingInterviewModule } from './modules/speaking-interview/speaking-interview.module';
 
 @Module({
   imports: [
@@ -73,7 +74,7 @@ import { SpeakingRepeatModule } from './modules/speaking-repeat/speaking-repeat.
     AzureSpeechModule,
     SpeakingRepeatModule,
     RedisModule,
-
+    SpeakingInterviewModule
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

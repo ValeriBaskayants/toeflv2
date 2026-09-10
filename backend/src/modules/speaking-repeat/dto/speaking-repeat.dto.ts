@@ -11,6 +11,7 @@ import {
   ValidateNested,
   ArrayMinSize,
   ArrayMaxSize,
+  IsBoolean,
 } from 'class-validator';
 import { Type } from 'class-transformer';
 import { Level, SpeakingDifficulty } from '@prisma/client';
@@ -46,11 +47,14 @@ export class CreateSpeakingRepeatSetDto {
   @IsString()
   voiceId?: string;
 
-  // Один URL на весь сет — см. комментарий в schema/speaking.prisma.
-  // Опционально: без картинки задача работает точно так же.
   @IsOptional()
   @IsUrl()
   imageUrl?: string;
+
+  // NEW
+  @IsOptional()
+  @IsBoolean()
+  isExamSet?: boolean;
 
   @IsArray()
   @ValidateNested({ each: true })

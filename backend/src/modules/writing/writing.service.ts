@@ -11,7 +11,6 @@ import { InjectQueue } from '@nestjs/bullmq';
 import type { Queue } from 'bullmq';
 import nlp from 'compromise';
 import { ProgressService } from '../progress/progress.service';
-import { computeXP, XP_BASE, isSessionCountable } from '../../constants/level-requirements';
 import type { CreateWritingPromptDto } from './dto/bulk-create-prompts.dto';
 
 const MIN_RESUBMIT_INTERVAL_MS = 5 * 60 * 1000;

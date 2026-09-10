@@ -1,35 +1,32 @@
-import { ListeningMode, Level, Prisma } from '@prisma/client';
+import { ListeningType, Prisma } from '@prisma/client';
 
-export const MODE_MAX_PLAYS: Readonly<Record<ListeningMode, number>> = {
-  EASY: 99,
-  MEDIUM: 3,
-  HARD: 1,
+export const STUDY_MODE_MAX_PLAYS = 10; // щедро, но не бесконечно — держим честный предел
+export const STUDY_MODE_BASE_XP = 20;
+export const PRACTICE_MODE_BASE_XP = 40;
+
+// Небольшой, но осмысленный бонус за то, что задание пройдено на уровне,
+// где помощь уже не действует — стимулирует расти, а не залипать в Guided-зоне.
+export const STRICT_ZONE_XP_BONUS_MULTIPLIER = 1.25;
+
+// Сколько вопросов ОБЯЗАНО быть у материала каждого типа — 1 в 1 с реальным тестом.
+// Валидируется при bulkCreate.
+export const REQUIRED_QUESTION_COUNT: Readonly<Record<ListeningType, number>> = {
+  LISTEN_CHOOSE_RESPONSE: 1,
+  CONVERSATION: 2,
+  ANNOUNCEMENT: 2,
+  ACADEMIC_TALK: 4,
 } as const;
 
-export const MODE_SCORE_MULTIPLIER: Readonly<Record<ListeningMode, number>> = {
-  EASY: 0.7,
-  MEDIUM: 1.0,
-  HARD: 1.3,
-} as const;
+export const VOICE_BY_LANG: Readonly<Record<string, string>> = {
+  'en-US': 'en-US-AriaNeural',
+  'en-GB': 'en-GB-SoniaNeural',
+  'en-AU': 'en-AU-NatashaNeural',
+};
+export const DEFAULT_VOICE = 'en-US-AriaNeural';
 
-export const MODE_BASE_XP: Readonly<Record<ListeningMode, number>> = {
-  EASY: 20,
-  MEDIUM: 35,
-  HARD: 55,
-} as const;
-
-export const LEVEL_SPEECH_RATE: Readonly<Record<Level, number>> = {
-  A1: 0.65,
-  A1_PLUS: 0.72,
-  A2: 0.8,
-  A2_PLUS: 0.88,
-  B1: 0.95,
-  B1_PLUS: 1.0,
-  B2: 1.05,
-  B2_PLUS: 1.1,
-  C1: 1.18,
-  C2: 1.25,
-} as const;
+export function resolveVoiceForLang(lang: string): string {
+  return VOICE_BY_LANG[lang] ?? DEFAULT_VOICE;
+}
 
 export const LIST_SELECT = {
   id: true,

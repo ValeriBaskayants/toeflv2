@@ -85,3 +85,38 @@ export const DIFFICULTY_ORDER = ['SHORT', 'SHORT', 'MEDIUM', 'MEDIUM', 'MEDIUM',
 export const RESPONSE_WINDOW_SEC = 10;
 export const PAUSE_BEFORE_BEEP_MS = 600;
 export const BEEP_DURATION_MS = 300;
+
+export const EXAM_MODE_ITEM_COUNT = 7;
+export const EXAM_MODE_RECORDING_WINDOWS_SEC = [8, 8, 10, 10, 10, 12, 12] as const;
+export const EXAM_MODE_MAX_POINTS = 35; // 7 items × 5 max each
+
+export function getExamModeRecordingWindow(positionIndex: number): number {
+  return EXAM_MODE_RECORDING_WINDOWS_SEC[
+    Math.min(positionIndex, EXAM_MODE_RECORDING_WINDOWS_SEC.length - 1)
+  ]!;
+}
+
+
+
+export interface TaskAudioTiming {
+  pauseBeforeBeepMs: number;  
+  beepDurationMs: number;      
+  recordingWindowSec: number;
+}
+
+export const LISTEN_REPEAT_PAUSE_BEFORE_BEEP_MS = 2500;
+export const LISTEN_REPEAT_BEEP_DURATION_MS = 400;
+
+export function getListenRepeatTiming(positionIndex: number): TaskAudioTiming {
+  return {
+    pauseBeforeBeepMs: LISTEN_REPEAT_PAUSE_BEFORE_BEEP_MS,
+    beepDurationMs: LISTEN_REPEAT_BEEP_DURATION_MS,
+    recordingWindowSec: getExamModeRecordingWindow(positionIndex),
+  };
+}
+
+export const INTERVIEW_TIMING: TaskAudioTiming = {
+  pauseBeforeBeepMs: 0,
+  beepDurationMs: 0,
+  recordingWindowSec: 45,
+};

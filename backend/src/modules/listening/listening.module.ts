@@ -5,9 +5,11 @@ import { TtsService } from '../tts/tts.service';
 import { TtsController } from '../tts/tts.controller';
 import { ProgressModule } from '../progress/progress.module';
 import { TopicMasteryModule } from '../topic-mastery/topic-mastery.module';
+import { MistakesModule } from '../mistakes/mistakes.module';
+import { AzureSpeechModule } from '../azure-speech/azure-speech.module';
 
 @Module({
-  imports: [ProgressModule,TopicMasteryModule],
+  imports: [ProgressModule, TopicMasteryModule, MistakesModule, AzureSpeechModule],
   controllers: [ListeningController, TtsController],
   providers: [ListeningService, TtsService],
   exports: [ListeningService],

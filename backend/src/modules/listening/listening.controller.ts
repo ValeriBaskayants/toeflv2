@@ -27,11 +27,6 @@ export class ListeningController {
     return this.service.startSession(user.id, dto);
   }
 
-  @Post('sessions/:id/play')
-  recordPlay(@CurrentUser() user: JwtUserPayload, @Param('id') sessionId: string) {
-    return this.service.recordPlay(user.id, sessionId);
-  }
-
   @Patch('sessions/:id/notes')
   saveNotes(
     @CurrentUser() user: JwtUserPayload,
@@ -66,4 +61,9 @@ export class ListeningController {
   bulkCreate(@Body() dto: BulkCreateListeningDto) {
     return this.service.bulkCreate(dto.items);
   }
+
+  @Get('sessions/:id/audio')
+    getSessionAudio(@CurrentUser() user: JwtUserPayload, @Param('id') sessionId: string) {
+  return this.service.getSessionAudio(user.id, sessionId);
+}
 }

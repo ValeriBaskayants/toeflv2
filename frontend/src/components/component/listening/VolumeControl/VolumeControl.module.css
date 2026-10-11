@@ -1,0 +1,6 @@
+.root { position: relative; }
+.btn { width: 34px; height: 34px; border-radius: var(--radius-sm); display: grid; place-items: center; color: var(--text-2); transition: all var(--duration-fast) ease; }
+.btn:hover { background: var(--surface-2); color: var(--text-1); }
+.popover { position: absolute; top: calc(100% + 8px); right: 0; padding: 0.75rem 1rem; background: var(--surface); border: 1px solid var(--border); border-radius: var(--radius-md); box-shadow: var(--shadow-lg); z-index: 70; }
+.slider { width: 140px; accent-color: var(--accent); }
+@media (max-width: 720px) { .root { display: none; } }

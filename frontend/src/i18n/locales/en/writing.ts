@@ -1,88 +1,60 @@
 export const writing = {
-  title:           'Writing',
-  subtitle:        'Practise written English and get instant AI feedback',
-  loading:         'Loading prompts…',
-  error:           'Could not load writing prompts',
-  retry:           'Try again',
-  promptsCount:    'prompts',
-  words:           'words',
-  hasInstructions: 'Includes instructions',
-  backToPrompts:   'Back to prompts',
-  submissionError: 'Analysis failed',
-  prompt:          'Prompt',
-  instructions:    'Instructions',
-  target:          'Word target',
-  yourResponse:    'Your response',
-  placeholder:     'Start writing here… Take your time and write clearly.',
-  submit:          'Submit for feedback',
-  submitting:      'Submitting…',
-  analyzing:       'Analysing your writing…',
-  analyzingHint:   'Usually takes 10–30 seconds. We check grammar, vocabulary, coherence and task completion.',
-  analysisError:   'Analysis failed',
-  analysisErrorHint: 'The analysis service is temporarily unavailable. Please try again in a moment.',
-  analyzed:        'Feedback ready',
-  writeAgain:      'Try again',
-  tryAgain:        'Try again',
-
-  wordCount: {
-    tooShort: 'Too short — aim for at least {{min}} words',
-    belowMin: '{{count}} / {{min}} words needed',
-    inRange:  '{{count}} words ✓',
-    tooLong:  'Over the {{max}}-word limit',
-  },
-
-  attempt: {
-    counted:   'Attempt {{n}}',
-    bonusOnly: 'Attempt {{n}} · Bonus XP only (limit reached)',
-  },
-
-  status: {
-    completed:  'Done',
-    inProgress: 'In progress',
-  },
-
-  filters: {
-    level:     'Level',
-    type:      'Type',
-    allLevels: 'All levels',
-    allTypes:  'All types',
-  },
-
-  stats: {
-    total:   'submissions',
-    avgScore: 'avg score',
-    bestScore: 'best',
-    trend: {
-      improving: 'Improving',
-      declining:  'Declining',
-      stable:     'Stable',
+  hub: {
+    title: 'Writing',
+    subtitle: 'Every TOEFL Writing task, plus extra practice for grammar and vocabulary',
+    types: {
+      scramble: { name: 'Build a Sentence', desc: 'Assemble grammatically correct sentences under a timer' },
+      email: { name: 'Write an Email', desc: 'Respond to a real-life situation in 80–120 words' },
+      discussion: { name: 'Academic Discussion', desc: 'Join a class discussion and respond to two classmates' },
+      vocabulary: { name: 'Vocabulary', desc: 'Build your word bank with spaced repetition' },
+      quiz: { name: 'Quiz', desc: 'Quick multiple-choice practice' },
     },
   },
 
-  history: {
-    title: 'Recent submissions',
+  loading: 'Loading…',
+  error: 'Could not load prompts',
+  retry: 'Try again',
+  words: 'words',
+  backToPrompts: 'Back to Writing',
+  prompt: 'Prompt',
+  submit: 'Submit',
+  submitting: 'Submitting…',
+  wordCountLive: '{{count}} / {{min}} words',
+
+  status: { completed: 'Done', inProgress: 'In progress' },
+  empty: { title: 'No prompts available', hint: 'Try a different level' },
+
+  analyzing: 'Analysing your writing…',
+  analyzingHint: 'Usually takes 10–30 seconds.',
+  analysisError: 'Analysis failed',
+  analysisErrorHint: 'The analysis service is temporarily unavailable. Please try again in a moment.',
+
+  email: {
+    title: 'Write an Email',
+    subtitle: 'Respond to everyday situations — invitations, requests, workplace messages',
+    toeflCardTitle: 'TOEFL Email Task',
+    toeflCardDesc: '~7 minutes, 80–120 words — one click picks a task and starts the timer, exactly like the real test.',
+    sectionLabel: 'Write an Email',
+    placeholder: 'Dear…',
+  },
+  discussion: {
+    title: 'Academic Discussion',
+    subtitle: "Respond to a professor's question and engage with two classmates' posts",
+    toeflCardTitle: 'TOEFL Academic Discussion Task',
+    toeflCardDesc: '10 minutes, at least 100 words — one click picks a topic and starts the timer, exactly like the real test.',
+    sectionLabel: 'Academic Discussion',
+    peerLabel: 'Classmates already posted',
+    placeholder: 'I agree/disagree because…',
   },
 
   analysis: {
-    overallScore: 'Overall score',
-    grammar:      'Grammar',
-    task:         'Task completion',
-    vocabulary:   'Vocabulary',
-    coherence:    'Coherence',
-    errors:       'errors',
-    noErrors:     'No critical errors — great work!',
-    feedback:     'AI Feedback',
-    suggestions:  'Suggestions',
-    hoverErrors:  'Hover over highlighted words to see correction suggestions.',
-    tab: {
-      scores: 'Score breakdown',
-      errors: 'Errors',
-      text:   'Annotated text',
-    },
-  },
-
-  empty: {
-    title: 'No prompts available',
-    hint:  'Try a different level or check back later',
+    grammar: 'Grammar',
+    task: 'Task completion',
+    vocabulary: 'Vocabulary',
+    coherence: 'Coherence',
+    engagement: 'Discussion engagement',
+    conventions: 'Email conventions',
+    errors: 'errors',
+    feedback: 'Feedback',
   },
 };

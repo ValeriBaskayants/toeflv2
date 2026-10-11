@@ -1,0 +1,38 @@
+.orb { position: relative; width: 176px; height: 176px; display: grid; place-items: center; }
+
+.ring {
+  position: absolute; inset: 14px; border-radius: 50%;
+  border: 1.5px solid color-mix(in srgb, var(--orb-color) 40%, transparent);
+  opacity: 0; transform: scale(0.7);
+}
+.active .ring { animation: ripple 2.6s var(--ease-out) infinite; }
+.ringLate { animation-delay: 1.3s !important; }
+
+.core {
+  position: relative; width: 104px; height: 104px; border-radius: 50%;
+  display: flex; align-items: center; justify-content: center; gap: 5px;
+  background: radial-gradient(circle at 30% 25%, color-mix(in srgb, var(--orb-color) 70%, #fff), var(--orb-color) 70%);
+  box-shadow: 0 14px 34px -10px color-mix(in srgb, var(--orb-color) 60%, transparent),
+              inset 0 -6px 14px rgba(0, 0, 0, 0.12);
+  transition: transform var(--duration-slow) var(--ease-spring);
+}
+.active .core { transform: scale(1.05); }
+
+.bar {
+  width: 5px; height: 22px; border-radius: 6px; background: rgba(255, 255, 255, 0.95);
+  transform: scaleY(0.35); transform-origin: center; animation: eq 1s ease-in-out infinite; animation-play-state: paused;
+}
+.active .bar { animation-play-state: running; }
+.bar:nth-child(1) { animation-delay: -0.2s; }
+.bar:nth-child(2) { animation-delay: -0.6s; height: 34px; }
+.bar:nth-child(3) { animation-delay: -0.1s; height: 44px; }
+.bar:nth-child(4) { animation-delay: -0.5s; height: 34px; }
+.bar:nth-child(5) { animation-delay: -0.3s; }
+
+@keyframes eq { 0%, 100% { transform: scaleY(0.35); } 50% { transform: scaleY(1); } }
+@keyframes ripple { 0% { opacity: 0.8; transform: scale(0.7); } 100% { opacity: 0; transform: scale(1.35); } }
+
+@media (prefers-reduced-motion: reduce) {
+  .active .ring, .active .bar { animation: none; }
+  .bar { transform: scaleY(0.7); }
+}

@@ -1,88 +1,16 @@
-import {
-  type ID,
-  Level,
-  ListeningType,
-  ListeningMode,
-  ListeningSessionStatus,
-  type ISODateString,
-} from '../globalTypes';
+import type { ID, ISODateString, Level, ListeningMode, ListeningType } from '../globalTypes';
 
 export interface ListeningSegment {
   index: number;
   text: string;
   startSec: number;
   endSec: number;
-  speaker?: string;
+  speaker?: string | null;
 }
 
-export interface ListeningAnswerRecord {
-  questionId: ID;
-  selectedIndex: number;
-  isCorrect: boolean;
-  answeredAtSec?: number;
-}
+export type ListeningUserStatus = 'not_started' | 'in_progress' | 'completed';
 
-export interface ListeningNote {
-  id: ID;
-  text: string;
-  anchorSec?: number | undefined;
-  createdAt: ISODateString;
-}
-
-export interface ListeningQuestion {
-  id: ID;
-  question: string;
-  options: string[];
-  correctIndex: number;
-  explanation?: string;
-  referenceStartSec?: number;
-  referenceEndSec?: number;
-  orderIndex: number;
-}
-
-export interface ListeningMaterial {
-  id: ID;
-  title: string;
-  topic: string;
-  level: Level;
-  type: ListeningType;
-  fullText: string;
-  segments: ListeningSegment[];
-  speakerRate: number;
-  speakerLang: string;
-  speakerPitch: number;
-  allowedModes: ListeningMode[];
-  questions: ListeningQuestion[];
-  createdAt: ISODateString;
-  updatedAt: ISODateString;
-}
-
-export interface ListeningSession {
-  id: ID;
-  userId: ID;
-  materialId: ID;
-  mode: ListeningMode;
-  status: ListeningSessionStatus;
-  playCount: number;
-  maxAllowedPlays: number;
-  notes: ListeningNote[];
-  answers: ListeningAnswerRecord[];
-  correctCount?: number;
-  totalCount?: number;
-  rawAccuracy?: number;
-  finalScore?: number;
-  xpEarned?: number;
-  startedAt: ISODateString;
-  completedAt?: ISODateString;
-}
-
-export interface GetListeningParams {
-  level?: Level;
-  type?: ListeningType;
-  search?: string;
-}
-
-export interface ListeningMaterialListItem {
+export interface ListeningMaterialSummary {
   id: ID;
   title: string;
   topic: string;
@@ -94,77 +22,94 @@ export interface ListeningMaterialListItem {
   allowedModes: ListeningMode[];
   createdAt: ISODateString;
   _count: { questions: number };
+  userStatus: ListeningUserStatus;
+  bestScore: number | null;
 }
 
-export interface ListeningMaterialDetail extends ListeningMaterial {
-  openSession: {
-    id: ID;
-    mode: ListeningMode;
-    playCount: number;
-    maxAllowedPlays: number;
-  } | null;
-  recommendedRate: number;
+export interface ListeningQuestionPublic {
+  id: ID;
+  question: string;
+  options: string[];
+  orderIndex: number;
 }
 
-export interface StartSessionPayload {
-  materialId: ID;
-  mode: ListeningMode;
+export interface ListeningTranscript {
+  fullText: string;
+  segments: ListeningSegment[];
 }
 
-export interface StartSessionResponse {
+export interface ListeningSessionMaterial {
+  id: ID;
+  title: string;
+  topic: string;
+  level: Level;
+  type: ListeningType;
+  questions: ListeningQuestionPublic[];
+  transcript: ListeningTranscript | null;
+}
+
+export interface ListeningSessionStart {
   id: ID;
   mode: ListeningMode;
   maxAllowedPlays: number;
   playCount: number;
   startedAt: ISODateString;
+  answerWindowSec: number | null;
+  material: ListeningSessionMaterial;
 }
 
-export interface PlayResponse {
+export interface ListeningAudioResponse {
+  audioBase64: string;
+  cached: boolean;
   playCount: number;
   maxAllowedPlays: number;
 }
 
-export interface SubmitAnswerPayload {
-  questionId: ID;
-  selectedIndex: number;
-  currentAudioSec?: number;
+export interface ListeningAudioMeta {
+  playCount: number;
+  maxAllowedPlays: number;
+  cached: boolean;
 }
 
-export interface SubmitAnswerResponse {
+export interface PracticeAnswerResponse {
+  recorded: true;
+}
+
+export interface StudyFeedback {
   isCorrect: boolean;
   correctIndex: number;
+  explanation: string | null;
 }
 
-export interface SaveNotesPayload {
-  notes: ListeningNote[];
+export type ListeningAnswerResponse = PracticeAnswerResponse | StudyFeedback;
+
+export interface ListeningReviewItem {
+  questionId: ID;
+  question: string;
+  options: string[];
+  correctIndex: number;
+  explanation: string | null;
+  selectedIndex: number | null;
+  timedOut: boolean;
+  isCorrect: boolean;
 }
 
-export interface CompleteSessionResponse {
+export interface ListeningCompleteResult {
   id: ID;
   mode: ListeningMode;
-  status: ListeningSessionStatus;
   correctCount: number;
   totalCount: number;
   rawAccuracy: number;
   finalScore: number;
   xpEarned: number;
   completedAt: ISODateString;
-  transcript?: string;
+  transcript: string;
+  countedAsCompleted: boolean;
+  detailedReview: ListeningReviewItem[];
 }
 
-export interface SessionHistoryItem {
-  id: ID;
-  mode: ListeningMode;
-  status: ListeningSessionStatus;
-  playCount: number;
-  finalScore: number | null;
-  xpEarned: number | null;
-  startedAt: ISODateString;
-  completedAt: ISODateString | null;
-  material: {
-    id: ID;
-    title: string;
-    level: Level;
-    type: ListeningType;
-  };
+export interface ListeningNote {
+  id: string;
+  text: string;
+  createdAt: ISODateString;
 }

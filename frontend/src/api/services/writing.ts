@@ -2,50 +2,33 @@ import type { ImportResult } from '@/types/admin/Admin.types';
 import { api } from '../client';
 import type {
   WritingPromptWithStatus,
-  WritingPrompt,
   WritingSubmission,
-  SubmitWritingResponse,
-  WritingUserStats,
+  StartSessionResponse,
+  SubmitSessionResponse,
 } from '@/types/writing/Writing.types';
 
 export interface GetPromptsParams {
   level?: string;
 }
 
-export interface SubmitWritingPayload {
-  promptId: string;
-  text: string;
-}
-
-export interface SubmissionWithPrompt extends WritingSubmission {
-  prompt: WritingPrompt;
-}
-
 export const writingApi = {
-  
   getPrompts: (params?: GetPromptsParams) =>
     api.get<WritingPromptWithStatus[]>('/writing/prompts', { params }),
 
-  getPromptById: (id: string) => api.get<WritingPrompt>(`/writing/prompts/${id}`),
+  startSession: (promptId: string) =>
+    api.post<StartSessionResponse>('/writing/sessions', { promptId }),
 
-  
-  
-  submit: (payload: SubmitWritingPayload) => {
+  startToeflEmail: () => api.post<StartSessionResponse>('/writing/toefl-mode/email/start'),
+  startToeflDiscussion: () => api.post<StartSessionResponse>('/writing/toefl-mode/discussion/start'),
+
+  submitSession: (sessionId: string, text: string) => {
     const timezone = Intl.DateTimeFormat().resolvedOptions().timeZone;
-    return api.post<SubmitWritingResponse>('/writing/submit', payload, {
-      params: { timezone },
-    });
+    return api.post<SubmitSessionResponse>('/writing/sessions/submit', { sessionId, text }, { params: { timezone } });
   },
 
   getSubmission: (id: string) => api.get<WritingSubmission>(`/writing/submissions/${id}`),
 
-  getSubmissions: (promptId?: string) =>
-    api.get<SubmissionWithPrompt[]>('/writing/submissions', {
-      params: promptId ? { promptId } : undefined,
-    }),
-
-  
-  getUserStats: () => api.get<WritingUserStats>('/writing/stats'),
+  getSubmissions: () => api.get<WritingSubmission[]>('/writing/submissions'),
 
   bulkCreatePrompts: (writingPrompts: unknown[]) =>
     api.post<ImportResult>('/writing/prompts/bulk', { prompts: writingPrompts }),

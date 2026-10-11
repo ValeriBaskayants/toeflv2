@@ -49,8 +49,6 @@ export enum ErrorCategory {
   PRONUNCIATION = 'PRONUNCIATION',
 }
 
-
-
 export enum MasteryStatus {
   LEARNING = 'LEARNING',
   REVIEWING = 'REVIEWING',
@@ -58,14 +56,15 @@ export enum MasteryStatus {
 }
 
 export enum ListeningType {
-  LECTURE = 'LECTURE',
+  LISTEN_CHOOSE_RESPONSE = 'LISTEN_CHOOSE_RESPONSE',
   CONVERSATION = 'CONVERSATION',
+  ANNOUNCEMENT = 'ANNOUNCEMENT',
+  ACADEMIC_TALK = 'ACADEMIC_TALK',
 }
 
 export enum ListeningMode {
-  EASY = 'EASY',
-  MEDIUM = 'MEDIUM',
-  HARD = 'HARD',
+  STUDY = 'STUDY',
+  PRACTICE = 'PRACTICE',
 }
 
 export enum ListeningSessionStatus {
@@ -96,9 +95,9 @@ export enum WordLearningStatus {
 }
 
 export enum WritingType {
-  SENTENCE = 'SENTENCE',
-  PARAGRAPH = 'PARAGRAPH',
-  ESSAY = 'ESSAY',
+  BUILD_A_SENTENCE = 'BUILD_A_SENTENCE',
+  EMAIL = 'EMAIL',
+  ACADEMIC_DISCUSSION = 'ACADEMIC_DISCUSSION',
 }
 
 export enum SubmissionStatus {
@@ -106,7 +105,6 @@ export enum SubmissionStatus {
   ANALYZED = 'ANALYZED',
   ERROR = 'ERROR',
 }
-
 
 export enum ScrambleMode {
   EASY = 'EASY',

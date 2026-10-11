@@ -35,7 +35,7 @@ import {
 import { fetchBookmarks } from '@/store/Slices/BookMarksSlice';
 
 import { BookmarkButton } from '@/components/layout/BookmarkButton/BookmarkButton';
-import { getLevelConfig } from '@/constants/reading-meta'; // Обновленный импорт
+import { getLevelConfig } from '@/constants/reading-meta'; 
 import type { VocabularyEmbedded, Question } from '@/types/reading/Reading.types';
 import { FullPageSpinner } from '@/components/ui/Spinner';
 import styles from './ReadingReaderPage.module.css';

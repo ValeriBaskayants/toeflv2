@@ -1,397 +1,355 @@
 import { createAsyncThunk, createSlice, type PayloadAction } from '@reduxjs/toolkit';
-import {
-  type GetListeningParams,
-  type ListeningMaterialListItem,
-  type ListeningMaterialDetail,
-  type StartSessionPayload,
-  type StartSessionResponse,
-  type PlayResponse,
-  type SubmitAnswerResponse,
-  type CompleteSessionResponse,
-  type SessionHistoryItem,
-} from './../../types/listening/Listening.types';
-import type { ListeningNote } from '@/types/listening/Listening.types';
-import { listeningApi } from '@/api';
+import { listeningApi } from '@/api/services/listening';
+import { LIST_CACHE_TTL_MS, getTaskByType } from '@/constants/listening';
+import { registerAudio, releaseAllAudio } from '@/utils/listeningAudio';
+import type { ListeningMode, ListeningType } from '@/types/globalTypes';
+import type {
+  ListeningAudioMeta,
+  ListeningCompleteResult,
+  ListeningMaterialSummary,
+  ListeningNote,
+  ListeningSessionStart,
+  StudyFeedback,
+} from '@/types/listening/Listening.types';
 
-export interface AnswerRecord {
-  questionId: string;
+interface TypeList {
+  items: ListeningMaterialSummary[];
+  fetchedAt: number;
+}
+
+type AudioStatus = 'idle' | 'loading' | 'ready' | 'error';
+
+interface AudioState {
+  sessionId: string | null;
+  status: AudioStatus;
+  error: string | null;
+  meta: ListeningAudioMeta | null;
+}
+
+export interface AnswerEntry {
   selectedIndex: number;
-  isCorrect?: boolean;
-  correctIndex?: number;
-  submitting: boolean;
-  submitted: boolean;
+  feedback: StudyFeedback | null; 
 }
 
 interface ListeningState {
-  materials: ListeningMaterialListItem[];
-  materialsLoading: boolean;
-  materialsError: string | null;
+  lists: Partial<Record<ListeningType, TypeList>>;
+  listLoading: Partial<Record<ListeningType, boolean>>;
+  listError: Partial<Record<ListeningType, string | null>>;
 
-  currentMaterial: ListeningMaterialDetail | null;
-  materialLoading: boolean;
-  materialError: string | null;
+  session: ListeningSessionStart | null;
+  starting: boolean;
+  startError: string | null;
 
-  activeSession: StartSessionResponse | null;
-  sessionLoading: boolean;
-  sessionError: string | null;
+  audio: AudioState;
+  answers: Record<string, AnswerEntry>;
+  submitting: boolean;
+  submitError: string | null;
 
-  playCount: number;
-  maxAllowedPlays: number;
-  recordingPlay: boolean;
-
-  answers: Record<string, AnswerRecord>;
-
-  notes: ListeningNote[];
-  notesSaving: boolean;
-
-  sessionResult: CompleteSessionResponse | null;
-  completing: boolean;
-  completeError: string | null;
-
-  history: SessionHistoryItem[];
-  historyLoading: boolean;
-
-  filters: {
-    level: string | null;
-    type: string | null;
-    search: string;
-  };
+  finishing: boolean;
+  finishError: string | null;
+  result: ListeningCompleteResult | null;
 }
 
+const emptyAudio: AudioState = { sessionId: null, status: 'idle', error: null, meta: null };
+
 const initialState: ListeningState = {
-  materials: [],
-  materialsLoading: false,
-  materialsError: null,
-
-  currentMaterial: null,
-  materialLoading: false,
-  materialError: null,
-
-  activeSession: null,
-  sessionLoading: false,
-  sessionError: null,
-
-  playCount: 0,
-  maxAllowedPlays: 99,
-  recordingPlay: false,
-
+  lists: {},
+  listLoading: {},
+  listError: {},
+  session: null,
+  starting: false,
+  startError: null,
+  audio: emptyAudio,
   answers: {},
-  notes: [],
-  notesSaving: false,
-
-  sessionResult: null,
-  completing: false,
-  completeError: null,
-
-  history: [],
-  historyLoading: false,
-
-  filters: { level: null, type: null, search: '' },
+  submitting: false,
+  submitError: null,
+  finishing: false,
+  finishError: null,
+  result: null,
 };
 
-export const fetchMaterials = createAsyncThunk<
-  ListeningMaterialListItem[],
-  GetListeningParams | undefined,
-  { rejectValue: string }
->('listening/fetchMaterials', async (params, { rejectWithValue }) => {
-  try {
-    const { data } = await listeningApi.getAll(params);
-    return data;
-  } catch (e: unknown) {
-    return rejectWithValue(e instanceof Error ? e.message : 'Failed to load');
-  }
-});
+interface Cfg {
+  state: { listening: ListeningState };
+  rejectValue: string;
+}
+interface Rej {
+  rejectValue: string;
+}
 
-export const fetchMaterialById = createAsyncThunk<
-  ListeningMaterialDetail,
-  string,
-  { rejectValue: string }
->('listening/fetchMaterialById', async (id, { rejectWithValue }) => {
-  try {
-    const { data } = await listeningApi.getById(id);
-    return data;
-  } catch (e: unknown) {
-    return rejectWithValue(e instanceof Error ? e.message : 'Failed to load');
-  }
-});
+function errMsg(e: unknown, fallback: string): string {
+  return e instanceof Error ? e.message : fallback;
+}
 
-export const startSession = createAsyncThunk<
-  StartSessionResponse,
-  StartSessionPayload,
-  { rejectValue: string }
->('listening/startSession', async (payload, { rejectWithValue }) => {
-  try {
-    const { data } = await listeningApi.startSession(payload);
-    return data;
-  } catch (e: unknown) {
-    return rejectWithValue(e instanceof Error ? e.message : 'Failed to start session');
-  }
-});
-
-export const recordPlay = createAsyncThunk<PlayResponse, string, { rejectValue: string }>(
-  'listening/recordPlay',
-  async (sessionId, { rejectWithValue }) => {
+export const fetchTypeList = createAsyncThunk<
+  { type: ListeningType; items: ListeningMaterialSummary[] },
+  { type: ListeningType; force?: boolean },
+  Cfg
+>(
+  'listening/fetchTypeList',
+  async ({ type }, { rejectWithValue }) => {
     try {
-      const { data } = await listeningApi.recordPlay(sessionId);
+      const { data } = await listeningApi.list(type);
+      return { type, items: data };
+    } catch (e: unknown) {
+      return rejectWithValue(errMsg(e, 'Failed to load materials'));
+    }
+  },
+  {
+    
+    condition: ({ type, force }, { getState }) => {
+      const s = getState().listening;
+      if (s.listLoading[type] === true) return false;
+      const cached = s.lists[type];
+      return force === true || cached === undefined || Date.now() - cached.fetchedAt >= LIST_CACHE_TTL_MS;
+    },
+  },
+);
+
+export const startListeningSession = createAsyncThunk<
+  ListeningSessionStart,
+  { materialId: string; mode: ListeningMode },
+  Rej
+>('listening/startSession', async ({ materialId, mode }, { rejectWithValue }) => {
+  try {
+    releaseAllAudio();
+    const { data } = await listeningApi.startSession(materialId, mode);
+    return data;
+  } catch (e: unknown) {
+    return rejectWithValue(errMsg(e, 'Failed to start the task'));
+  }
+});
+
+export const startToeflListening = createAsyncThunk<ListeningSessionStart, ListeningType, Rej>(
+  'listening/startToefl',
+  async (type, { rejectWithValue }) => {
+    try {
+      releaseAllAudio();
+      const { data } = await listeningApi.startToefl(getTaskByType(type).toeflEndpoint);
       return data;
     } catch (e: unknown) {
-      return rejectWithValue(e instanceof Error ? e.message : 'Failed to record play');
+      return rejectWithValue(errMsg(e, 'Failed to start the TOEFL task'));
     }
   },
 );
 
-export const submitAnswer = createAsyncThunk<
-  { questionId: string; response: SubmitAnswerResponse },
-  { sessionId: string; questionId: string; selectedIndex: number; currentAudioSec?: number },
-  { rejectValue: { questionId: string; message: string } }
->(
-  'listening/submitAnswer',
-  async ({ sessionId, questionId, selectedIndex, currentAudioSec }, { rejectWithValue }) => {
+export const fetchSessionAudio = createAsyncThunk<ListeningAudioMeta, string, Cfg>(
+  'listening/fetchAudio',
+  async (sessionId, { rejectWithValue }) => {
     try {
-      const payload: any = {
-        questionId,
-        selectedIndex,
-      };
-      if (currentAudioSec !== undefined) {
-        payload.currentAudioSec = currentAudioSec;
-      }
-      const { data } = await listeningApi.submitAnswer(sessionId, payload);
-      return { questionId, response: data };
+      const { data } = await listeningApi.getAudio(sessionId);
+      await registerAudio(sessionId, data.audioBase64);
+      return { playCount: data.playCount, maxAllowedPlays: data.maxAllowedPlays, cached: data.cached };
     } catch (e: unknown) {
-      return rejectWithValue({
-        questionId,
-        message: e instanceof Error ? e.message : 'Failed to submit',
-      });
+      return rejectWithValue(errMsg(e, 'Failed to load the audio'));
+    }
+  },
+  {
+    
+    condition: (sessionId, { getState }) => {
+      const a = getState().listening.audio;
+      return a.sessionId === sessionId && a.status === 'idle';
+    },
+  },
+);
+
+export const submitListeningAnswer = createAsyncThunk<
+  { questionId: string; selectedIndex: number; feedback: StudyFeedback | null },
+  { questionId: string; selectedIndex: number },
+  Cfg
+>('listening/submitAnswer', async ({ questionId, selectedIndex }, { getState, rejectWithValue }) => {
+  const sessionId = getState().listening.session?.id;
+  if (sessionId === undefined) return rejectWithValue('No active session');
+  try {
+    const { data } = await listeningApi.submitAnswer(sessionId, { questionId, selectedIndex });
+    const feedback: StudyFeedback | null = 'isCorrect' in data
+      ? { isCorrect: data.isCorrect, correctIndex: data.correctIndex, explanation: data.explanation }
+      : null;
+    return { questionId, selectedIndex, feedback };
+  } catch (e: unknown) {
+    return rejectWithValue(errMsg(e, 'Failed to submit the answer'));
+  }
+});
+
+export const completeListening = createAsyncThunk<ListeningCompleteResult, void, Cfg>(
+  'listening/complete',
+  async (_, { getState, rejectWithValue }) => {
+    const sessionId = getState().listening.session?.id;
+    if (sessionId === undefined) return rejectWithValue('No active session');
+    try {
+      const { data } = await listeningApi.complete(sessionId);
+      return data;
+    } catch (e: unknown) {
+      return rejectWithValue(errMsg(e, 'Failed to finish the task'));
     }
   },
 );
 
-export const saveNotes = createAsyncThunk<
-  void,
-  { sessionId: string; notes: ListeningNote[] },
-  { rejectValue: string }
->('listening/saveNotes', async ({ sessionId, notes }, { rejectWithValue }) => {
-  try {
-    await listeningApi.saveNotes(sessionId, { notes });
-    return;
-  } catch (e: unknown) {
-    return rejectWithValue(e instanceof Error ? e.message : 'Failed to save notes');
-  }
+export const expireListening = createAsyncThunk<ListeningCompleteResult, void, Cfg>(
+  'listening/expire',
+  async (_, { getState, rejectWithValue }) => {
+    const sessionId = getState().listening.session?.id;
+    if (sessionId === undefined) return rejectWithValue('No active session');
+    try {
+      const { data } = await listeningApi.expire(sessionId);
+      return data;
+    } catch (e: unknown) {
+      return rejectWithValue(errMsg(e, 'Failed to finish the task'));
+    }
+  },
+);
+
+
+export const saveListeningNotes = createAsyncThunk<void, ListeningNote[], Cfg>(
+  'listening/saveNotes',
+  async (notes, { getState, rejectWithValue }) => {
+    const sessionId = getState().listening.session?.id;
+    if (sessionId === undefined) return rejectWithValue('No active session');
+    try {
+      await listeningApi.saveNotes(sessionId, notes);
+    } catch (e: unknown) {
+      return rejectWithValue(errMsg(e, 'Failed to save notes'));
+    }
+  },
+);
+
+export const leaveListeningSession = createAsyncThunk<void, void>('listening/leave', async () => {
+  releaseAllAudio();
 });
 
-export const completeSession = createAsyncThunk<
-  CompleteSessionResponse,
-  string,
-  { rejectValue: string }
->('listening/completeSession', async (sessionId, { rejectWithValue }) => {
-  try {
-    const { data } = await listeningApi.completeSession(sessionId);
-    return data;
-  } catch (e: unknown) {
-    return rejectWithValue(e instanceof Error ? e.message : 'Failed to complete session');
-  }
-});
+function applyStart(state: ListeningState, session: ListeningSessionStart): void {
+  state.starting = false;
+  state.startError = null;
+  state.session = session;
+  state.audio = { sessionId: session.id, status: 'idle', error: null, meta: null };
+  state.answers = {};
+  state.submitting = false;
+  state.submitError = null;
+  state.finishing = false;
+  state.finishError = null;
+  state.result = null;
+}
 
-export const fetchHistory = createAsyncThunk<
-  SessionHistoryItem[],
-  string | undefined,
-  { rejectValue: string }
->('listening/fetchHistory', async (materialId, { rejectWithValue }) => {
-  try {
-    const { data } = await listeningApi.getUserSessions(materialId);
-    return data;
-  } catch (e: unknown) {
-    return rejectWithValue(e instanceof Error ? e.message : 'Failed to load history');
+function applyResult(state: ListeningState, result: ListeningCompleteResult): void {
+  state.finishing = false;
+  state.result = result;
+  
+  for (const list of Object.values(state.lists)) {
+    if (list !== undefined) list.fetchedAt = 0;
   }
-});
+}
 
 export const listeningSlice = createSlice({
   name: 'listening',
   initialState,
   reducers: {
-    setFilter: (
-      state,
-      action: PayloadAction<{ key: 'level' | 'type' | 'search'; value: string | null }>,
-    ) => {
-      if (action.payload.key === 'search') {
-        state.filters.search = action.payload.value ?? '';
-      } else {
-        state.filters[action.payload.key] = action.payload.value;
-      }
+    retryAudio: (state) => {
+      if (state.audio.sessionId !== null) state.audio = { ...emptyAudio, sessionId: state.audio.sessionId };
     },
-
-    selectAnswer: (state, action: PayloadAction<{ questionId: string; selectedIndex: number }>) => {
-      const { questionId, selectedIndex } = action.payload;
-      const existing = state.answers[questionId];
-      if (existing?.submitted) return;
-      state.answers[questionId] = {
-        questionId,
-        selectedIndex,
-        submitting: false,
-        submitted: false,
-      };
-    },
-
-    addNote: (state, action: PayloadAction<ListeningNote>) => {
-      state.notes = [action.payload, ...state.notes];
-    },
-
-    removeNote: (state, action: PayloadAction<string>) => {
-      state.notes = state.notes.filter((n) => n.id !== action.payload);
-    },
-
-    clearPlayerState: (state) => {
-      state.currentMaterial = null;
-      state.activeSession = null;
-      state.sessionResult = null;
-      state.answers = {};
-      state.notes = [];
-      state.playCount = 0;
-      state.sessionError = null;
-      state.completeError = null;
+    clearStartError: (state: ListeningState, _action: PayloadAction<void>) => {
+      state.startError = null;
     },
   },
-
   extraReducers: (builder) => {
     builder
-      .addCase(fetchMaterials.pending, (state) => {
-        state.materialsLoading = true;
-        state.materialsError = null;
+      .addCase(fetchTypeList.pending, (state, action) => {
+        const { type } = action.meta.arg;
+        state.listLoading[type] = true;
+        state.listError[type] = null;
       })
-      .addCase(fetchMaterials.fulfilled, (state, action) => {
-        state.materialsLoading = false;
-        state.materials = action.payload;
+      .addCase(fetchTypeList.fulfilled, (state, action) => {
+        const { type, items } = action.payload;
+        state.listLoading[type] = false;
+        state.lists[type] = { items, fetchedAt: Date.now() };
       })
-      .addCase(fetchMaterials.rejected, (state, action) => {
-        state.materialsLoading = false;
-        state.materialsError = action.payload ?? 'Unknown error';
+      .addCase(fetchTypeList.rejected, (state, action) => {
+        const { type } = action.meta.arg;
+        state.listLoading[type] = false;
+        state.listError[type] = action.payload ?? 'Unknown error';
       });
 
     builder
-      .addCase(fetchMaterialById.pending, (state) => {
-        state.materialLoading = true;
-        state.materialError = null;
-        state.currentMaterial = null;
+      .addCase(startListeningSession.pending, (state) => {
+        state.starting = true;
+        state.startError = null;
       })
-      .addCase(fetchMaterialById.fulfilled, (state, action) => {
-        state.materialLoading = false;
-        state.currentMaterial = action.payload;
+      .addCase(startListeningSession.fulfilled, (state, action) => applyStart(state, action.payload))
+      .addCase(startListeningSession.rejected, (state, action) => {
+        state.starting = false;
+        state.startError = action.payload ?? 'Unknown error';
+      });
 
-        if (action.payload.openSession) {
-          const s = action.payload.openSession;
-          state.activeSession = {
-            id: s.id,
-            mode: s.mode,
-            maxAllowedPlays: s.maxAllowedPlays,
-            playCount: s.playCount,
-            startedAt: '',
-          };
-          state.playCount = s.playCount;
-          state.maxAllowedPlays = s.maxAllowedPlays;
+    builder
+      .addCase(startToeflListening.pending, (state) => {
+        state.starting = true;
+        state.startError = null;
+      })
+      .addCase(startToeflListening.fulfilled, (state, action) => applyStart(state, action.payload))
+      .addCase(startToeflListening.rejected, (state, action) => {
+        state.starting = false;
+        state.startError = action.payload ?? 'Unknown error';
+      });
+
+    builder
+      .addCase(fetchSessionAudio.pending, (state, action) => {
+        if (state.audio.sessionId === action.meta.arg) {
+          state.audio.status = 'loading';
+          state.audio.error = null;
         }
       })
-      .addCase(fetchMaterialById.rejected, (state, action) => {
-        state.materialLoading = false;
-        state.materialError = action.payload ?? 'Unknown error';
-      });
-
-    builder
-      .addCase(startSession.pending, (state) => {
-        state.sessionLoading = true;
-        state.sessionError = null;
-        state.answers = {};
-        state.notes = [];
-        state.sessionResult = null;
-        state.playCount = 0;
-      })
-      .addCase(startSession.fulfilled, (state, action) => {
-        state.sessionLoading = false;
-        state.activeSession = action.payload;
-        state.maxAllowedPlays = action.payload.maxAllowedPlays;
-        state.playCount = action.payload.playCount;
-      })
-      .addCase(startSession.rejected, (state, action) => {
-        state.sessionLoading = false;
-        state.sessionError = action.payload ?? 'Unknown error';
-      });
-
-    builder
-      .addCase(recordPlay.pending, (state) => {
-        state.recordingPlay = true;
-      })
-      .addCase(recordPlay.fulfilled, (state, action) => {
-        state.recordingPlay = false;
-        state.playCount = action.payload.playCount;
-        state.maxAllowedPlays = action.payload.maxAllowedPlays;
-      })
-      .addCase(recordPlay.rejected, (state) => {
-        state.recordingPlay = false;
-      });
-
-    builder
-      .addCase(submitAnswer.pending, (state, action) => {
-        const { questionId } = action.meta.arg;
-        if (state.answers[questionId]) {
-          state.answers[questionId]!.submitting = true;
+      .addCase(fetchSessionAudio.fulfilled, (state, action) => {
+        if (state.audio.sessionId === action.meta.arg) {
+          state.audio.status = 'ready';
+          state.audio.meta = action.payload;
         }
       })
-      .addCase(submitAnswer.fulfilled, (state, action) => {
-        const { questionId, response } = action.payload;
-        state.answers[questionId] = {
-          questionId,
-          selectedIndex: state.answers[questionId]?.selectedIndex ?? 0,
-          isCorrect: response.isCorrect,
-          correctIndex: response.correctIndex,
-          submitting: false,
-          submitted: true,
-        };
-      })
-      .addCase(submitAnswer.rejected, (state, action) => {
-        const qId = action.payload?.questionId;
-        if (qId && state.answers[qId]) {
-          state.answers[qId]!.submitting = false;
+      .addCase(fetchSessionAudio.rejected, (state, action) => {
+        if (state.audio.sessionId === action.meta.arg) {
+          state.audio.status = 'error';
+          state.audio.error = action.payload ?? 'Unknown error';
         }
       });
 
     builder
-      .addCase(saveNotes.pending, (state) => {
-        state.notesSaving = true;
+      .addCase(submitListeningAnswer.pending, (state) => {
+        state.submitting = true;
+        state.submitError = null;
       })
-      .addCase(saveNotes.fulfilled, (state) => {
-        state.notesSaving = false;
+      .addCase(submitListeningAnswer.fulfilled, (state, action) => {
+        state.submitting = false;
+        const { questionId, selectedIndex, feedback } = action.payload;
+        state.answers[questionId] = { selectedIndex, feedback };
       })
-      .addCase(saveNotes.rejected, (state) => {
-        state.notesSaving = false;
+      .addCase(submitListeningAnswer.rejected, (state, action) => {
+        state.submitting = false;
+        state.submitError = action.payload ?? 'Unknown error';
       });
 
-    builder
-      .addCase(completeSession.pending, (state) => {
-        state.completing = true;
-        state.completeError = null;
-      })
-      .addCase(completeSession.fulfilled, (state, action) => {
-        state.completing = false;
-        state.sessionResult = action.payload;
-        state.activeSession = null;
-      })
-      .addCase(completeSession.rejected, (state, action) => {
-        state.completing = false;
-        state.completeError = action.payload ?? 'Unknown error';
-      });
+    for (const thunk of [completeListening, expireListening]) {
+      builder
+        .addCase(thunk.pending, (state) => {
+          state.finishing = true;
+          state.finishError = null;
+        })
+        .addCase(thunk.fulfilled, (state, action) => applyResult(state, action.payload))
+        .addCase(thunk.rejected, (state, action) => {
+          state.finishing = false;
+          state.finishError = action.payload ?? 'Unknown error';
+        });
+    }
 
-    builder
-      .addCase(fetchHistory.pending, (state) => {
-        state.historyLoading = true;
-      })
-      .addCase(fetchHistory.fulfilled, (state, action) => {
-        state.historyLoading = false;
-        state.history = action.payload;
-      })
-      .addCase(fetchHistory.rejected, (state) => {
-        state.historyLoading = false;
-      });
+    builder.addCase(leaveListeningSession.fulfilled, (state) => {
+      state.session = null;
+      state.audio = emptyAudio;
+      state.answers = {};
+      state.submitting = false;
+      state.submitError = null;
+      state.finishing = false;
+      state.finishError = null;
+      state.result = null;
+      state.starting = false;
+      state.startError = null;
+    });
   },
 });
 
-export const { setFilter, selectAnswer, addNote, removeNote, clearPlayerState } =
-  listeningSlice.actions;
+export const { retryAudio, clearStartError } = listeningSlice.actions;

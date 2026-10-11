@@ -1,65 +1,55 @@
 import { api } from '../client';
 import type {
-  ScrambleExerciseSummary,
-  ScrambleExerciseDetail,
-  ScrambleSessionStart,
-  ScrambleSubmitResult,
-  ScrambleMode,
   ScrambleBlockStart,
-  ScrambleBlockCurrentItem,
-  ScrambleBlockSubmitResult,
-  ScrambleBlockExpireResult,
+  ScrambleBlockItem,
+  ScrambleLinearSubmitResult,
+  ScrambleFreeNavItemsResponse,
+  ScrambleFinishResult,
   ScrambleBlockReview,
 } from '@/types/scramble/Scramble.types';
 import type { Level } from '@/types/globalTypes';
 import type { ImportResult } from '@/types/admin/Admin.types';
 
-export interface GetScrambleParams {
-  level?: Level;
-  topic?: string;
-  topicSlug?: string;
-  mode?: ScrambleMode;
-}
-
-export interface StartScrambleSessionPayload {
-  exerciseId: string;
-  mode: ScrambleMode;
-}
-
-export interface SubmitScramblePayload {
+export interface SubmitScrambleItemPayload {
   wordOrder: string[];
+  filledBlanks?: Array<{ position: number; text: string }>;
   timeSpentSec: number;
   usedHint: boolean;
 }
 
+export interface SaveDraftPayload {
+  exerciseId: string;
+  wordOrder: string[];
+  filledBlanks?: Array<{ position: number; text: string }>;
+  usedHint: boolean;
+}
+
 export const scrambleApi = {
-  getExercises: (params?: GetScrambleParams) =>
-    api.get<ScrambleExerciseSummary[]>('/scramble', { params }),
+  startPracticeSet: (level: Level, count: number) =>
+    api.post<ScrambleBlockStart>('/scramble/practice-sets', { level, count }),
 
-  getExerciseById: (id: string, mode?: ScrambleMode) =>
-    api.get<ScrambleExerciseDetail>(`/scramble/${id}`, {
-      params: mode !== undefined ? { mode } : undefined,
-    }),
+  startExam: () => api.post<ScrambleBlockStart>('/scramble/blocks', {}),
 
-  startSession: (payload: StartScrambleSessionPayload) =>
-    api.post<ScrambleSessionStart>('/scramble/sessions', payload),
-
-  submitAnswer: (sessionId: string, payload: SubmitScramblePayload) =>
-    api.post<ScrambleSubmitResult>(`/scramble/sessions/${sessionId}/submit`, payload),
-
-  startBlock: (level: Level) => api.post<ScrambleBlockStart>('/scramble/blocks', { level }),
-
+  // guided linear flow (A1–A2+)
   getCurrentBlockItem: (blockId: string) =>
-    api.get<ScrambleBlockCurrentItem>(`/scramble/blocks/${blockId}/current`),
+    api.get<ScrambleBlockItem>(`/scramble/blocks/${blockId}/current`),
 
-  submitBlockItem: (blockId: string, payload: SubmitScramblePayload) =>
-    api.post<ScrambleBlockSubmitResult>(`/scramble/blocks/${blockId}/submit`, payload),
+  submitBlockItem: (blockId: string, payload: SubmitScrambleItemPayload) =>
+    api.post<ScrambleLinearSubmitResult>(`/scramble/blocks/${blockId}/submit`, payload),
 
-  expireBlock: (blockId: string) =>
-    api.post<ScrambleBlockExpireResult>(`/scramble/blocks/${blockId}/expire`),
+  // free-navigation flow (B1+ practice-set и EXAM)
+  getBlockItems: (blockId: string) =>
+    api.get<ScrambleFreeNavItemsResponse>(`/scramble/blocks/${blockId}/items`),
 
-  getBlockReview: (blockId: string) =>
-    api.get<ScrambleBlockReview>(`/scramble/blocks/${blockId}/review`),
+  saveDraft: (blockId: string, payload: SaveDraftPayload) =>
+    api.post<{ saved: true; exerciseId: string }>(`/scramble/blocks/${blockId}/draft`, payload),
+
+  finishBlock: (blockId: string) => api.post<ScrambleFinishResult>(`/scramble/blocks/${blockId}/finish`),
+
+  // общее для обоих потоков
+  expireBlock: (blockId: string) => api.post<ScrambleFinishResult>(`/scramble/blocks/${blockId}/expire`),
+
+  getBlockReview: (blockId: string) => api.get<ScrambleBlockReview>(`/scramble/blocks/${blockId}/review`),
 
   bulkCreate: (items: unknown[]) => api.post<ImportResult>('/scramble/bulk', { items }),
 };

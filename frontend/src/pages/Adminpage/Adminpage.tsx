@@ -37,7 +37,7 @@ import {
   selectErrorCount,
 } from '@/store/Slices/AdminSlice';
 import type { ContentType } from '@/types/admin/Admin.types';
-import { EXAMPLES } from '@/constants/example';
+import { EXAMPLES } from '@/constants/examples/example';
 import styles from './Adminpage.module.css';
 
 interface ContentConfig {

@@ -1,5 +1,6 @@
 import { Lock, Circle, Play, CheckCircle2, RotateCcw, type LucideIcon } from 'lucide-react';
 import type { RoadmapTopicNode, TopicNodeStatus } from '@/types/roadmap/Roadmap.types';
+import { LEVEL_COLOR as CANONICAL_LEVEL_COLOR, LEVEL_DISPLAY } from './level';
 
 export interface TopicStatusStyle {
   color: string;
@@ -15,13 +16,9 @@ export const TOPIC_STATUS_STYLE: Record<TopicNodeStatus, TopicStatusStyle> = {
   needs_review: { color: '#f43f5e', bg: 'rgba(244,63,94,0.12)', Icon: RotateCcw },
 };
 
-export const LEVEL_COLOR: Record<string, string> = {
-  'A1': '#22c55e', 'A1+': '#16a34a',
-  'A2': '#14b8a6', 'A2+': '#0d9488',
-  'B1': '#3b82f6', 'B1+': '#2563eb',
-  'B2': '#8b5cf6', 'B2+': '#7c3aed',
-  'C1': '#f59e0b', 'C2': '#ef4444',
-};
+export const LEVEL_COLOR: Record<string, string> = Object.fromEntries(
+  Object.entries(LEVEL_DISPLAY).map(([enumKey, display]) => [display, CANONICAL_LEVEL_COLOR[enumKey]!]),
+);
 
 export function topicPct(node: RoadmapTopicNode): number {
   const p = node.progress;

@@ -1,66 +1,41 @@
-import { api } from '@/api';
+import { api } from '../client';
 import type { ImportResult } from '@/types/admin/Admin.types';
+import type { ListeningMode, ListeningType } from '@/types/globalTypes';
 import type {
-  GetListeningParams,
-  ListeningMaterialListItem,
-  ListeningMaterialDetail,
-  StartSessionPayload,
-  StartSessionResponse,
-  PlayResponse,
-  SaveNotesPayload,
-  SubmitAnswerPayload,
-  SubmitAnswerResponse,
-  CompleteSessionResponse,
-  SessionHistoryItem,
+  ListeningAnswerResponse,
+  ListeningAudioResponse,
+  ListeningCompleteResult,
+  ListeningMaterialSummary,
+  ListeningNote,
+  ListeningSessionStart,
 } from '@/types/listening/Listening.types';
 
-
-
-export interface TtsSuccessResponse {
-  audioBase64: string;
-  cached: boolean;
-  fallback: false;
+export interface SubmitListeningAnswerPayload {
+  questionId: string;
+  selectedIndex: number;
 }
-
-export interface TtsFallbackResponse {
-  fallback: true;
-  reason?: string;
-}
-
-export type TtsResponse = TtsSuccessResponse | TtsFallbackResponse;
 
 export const listeningApi = {
-  bulkCreate: (listening: unknown[]) =>
-    api.post<ImportResult>('/listening/bulk', { items: listening }),
+  
+  list: (type: ListeningType) => api.get<ListeningMaterialSummary[]>('/listening', { params: { type } }),
 
-  getAll: (params?: GetListeningParams) =>
-    api.get<ListeningMaterialListItem[]>('/listening', { params }),
+  startSession: (materialId: string, mode: ListeningMode) =>
+    api.post<ListeningSessionStart>('/listening/sessions', { materialId, mode }),
 
-  getById: (id: string) => api.get<ListeningMaterialDetail>(`/listening/${id}`),
+  startToefl: (endpoint: string) => api.post<ListeningSessionStart>(`/listening/toefl-mode/${endpoint}/start`),
 
-  startSession: (payload: StartSessionPayload) =>
-    api.post<StartSessionResponse>('/listening/sessions', payload),
+  
+  getAudio: (sessionId: string) => api.get<ListeningAudioResponse>(`/listening/sessions/${sessionId}/audio`),
 
-  recordPlay: (sessionId: string) =>
-    api.post<PlayResponse>(`/listening/sessions/${sessionId}/play`),
+  submitAnswer: (sessionId: string, payload: SubmitListeningAnswerPayload) =>
+    api.post<ListeningAnswerResponse>(`/listening/sessions/${sessionId}/answers`, payload),
 
-  saveNotes: (sessionId: string, payload: SaveNotesPayload) =>
-    api.patch<{ id: string; notes: unknown[] }>(
-      `/listening/sessions/${sessionId}/notes`,
-      payload,
-    ),
+  saveNotes: (sessionId: string, notes: ListeningNote[]) =>
+    api.patch<{ id: string }>(`/listening/sessions/${sessionId}/notes`, { notes }),
 
-  submitAnswer: (sessionId: string, payload: SubmitAnswerPayload) =>
-    api.post<SubmitAnswerResponse>(`/listening/sessions/${sessionId}/answers`, payload),
+  complete: (sessionId: string) => api.post<ListeningCompleteResult>(`/listening/sessions/${sessionId}/complete`),
 
-  completeSession: (sessionId: string) =>
-    api.post<CompleteSessionResponse>(`/listening/sessions/${sessionId}/complete`),
+  expire: (sessionId: string) => api.post<ListeningCompleteResult>(`/listening/sessions/${sessionId}/expire`),
 
-  getUserSessions: (materialId?: string) =>
-    api.get<SessionHistoryItem[]>('/listening/sessions', {
-      params: materialId ? { materialId } : undefined,
-    }),
-
-  tts: (materialId: string, text: string, rate?: number, lang?: string) =>
-    api.post<TtsResponse>('/listening/tts', { materialId, text, rate, lang }),
+  bulkCreate: (items: unknown[]) => api.post<ImportResult>('/listening/bulk', { items }),
 };

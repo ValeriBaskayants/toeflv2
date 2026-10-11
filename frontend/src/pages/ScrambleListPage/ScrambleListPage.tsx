@@ -1,76 +1,60 @@
-import { useEffect, useCallback } from 'react';
+import { useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { useTranslation } from 'react-i18next';
-import { Shuffle, Play, CheckCircle2, Clock, AlertCircle, RefreshCw, FileText, ChevronRight } from 'lucide-react';
+import { FileText, ChevronRight, Sparkles } from 'lucide-react';
 import { useAppDispatch, useAppSelector } from '@/store/store';
-import { FullPageSpinner } from '@/components/ui/Spinner';
+import { selectUser } from '@/store/Slices/AuthSlice';
+import { startPracticeSet, startExam } from '@/store/Slices/ScrambleSlice';
+import { LEVEL_DISPLAY, getLevelColor } from '@/constants/level';
+import type { Level } from '@/types/globalTypes';
+import type { ScrambleBlockStart } from '@/types/scramble/Scramble.types';
 import styles from './ScrambleListPage.module.css';
-import { setFilter } from '@/store/Slices/ListeningSlice';
-import { fetchScrambleCatalog, startQueue } from '@/store/Slices/ScrambleSlice';
 
+const GUIDED_LEVELS: Level[] = ['A1', 'A1_PLUS', 'A2', 'A2_PLUS'] as Level[];
+const STRICT_LEVELS: Level[] = ['B1', 'B1_PLUS', 'B2', 'B2_PLUS', 'C1', 'C2'] as Level[];
+const PRACTICE_SET_SIZE = 10;
 
-const LEVELS = ['A1', 'A1_PLUS', 'A2', 'A2_PLUS', 'B1', 'B1_PLUS', 'B2', 'B2_PLUS', 'C1', 'C2'];
-const LEVEL_DISPLAY: Record<string, string> = {
-  A1: 'A1', A1_PLUS: 'A1+', A2: 'A2', A2_PLUS: 'A2+',
-  B1: 'B1', B1_PLUS: 'B1+', B2: 'B2', B2_PLUS: 'B2+', C1: 'C1', C2: 'C2',
-};
+function routeFor(data: ScrambleBlockStart): string {
+  return data.freeNavigation
+    ? `/writing/scramble/block/${data.blockId}`
+    : `/writing/scramble/session/${data.blockId}`;
+}
 
-const SESSION_SIZE = 10;
-
-export default function ScrambleListPage() {
+export default function ScrambleHubPage() {
   const { t } = useTranslation();
   const navigate = useNavigate();
   const dispatch = useAppDispatch();
-  const { catalog, catalogLoading, catalogError, filters } = useAppSelector((s) => s.scramble);
+  const user = useAppSelector(selectUser);
+  const isStarting = useAppSelector((s) => s.scramble.isStarting);
+  const error = useAppSelector((s) => s.scramble.error);
 
-  useEffect(() => {
-    const params: Record<string, string> = {};
-    if (filters.level !== null) params['level'] = filters.level;
-    void dispatch(fetchScrambleCatalog(Object.keys(params).length > 0 ? params : undefined));
-  }, [dispatch, filters.level]);
+  const handleStartLevel = useCallback(
+    async (level: Level) => {
+      try {
+        const data = await dispatch(startPracticeSet({ level, count: PRACTICE_SET_SIZE })).unwrap();
+        navigate(routeFor(data));
+      } catch {
+      }
+    },
+    [dispatch, navigate],
+  );
 
-  const handleRetry = useCallback(() => {
-    void dispatch(fetchScrambleCatalog());
-  }, [dispatch]);
-
-  const handleStartSession = (startId?: string) => {
-    const notCompletedPool = catalog.filter((c) => c.userStatus !== 'completed');
-    const pool = startId !== undefined
-      ? catalog.filter((c) => c.id === startId)
-      : notCompletedPool.length > 0 ? notCompletedPool : catalog;
-
-    const shuffled = [...pool].sort(() => Math.random() - 0.5).slice(0, SESSION_SIZE);
-    if (shuffled.length === 0) return;
-
-    dispatch(startQueue(shuffled));
-    navigate('/writing/scramble/session');
-  };
-
-  if (catalogLoading && catalog.length === 0) {
-    return <FullPageSpinner label={t('scramble.loading')} />;
-  }
-
-  const notCompleted = catalog.filter((c) => c.userStatus !== 'completed').length;
+  const handleStartExam = useCallback(async () => {
+    try {
+      const data = await dispatch(startExam()).unwrap();
+      navigate(routeFor(data));
+    } catch {
+    }
+  }, [dispatch, navigate]);
 
   return (
     <div className={styles['page']}>
       <header className={styles['header']}>
-        <div>
-          <h1 className={styles['pageTitle']}>
-            <Shuffle size={22} className={styles['pageTitleIcon']} />
-            {t('scramble.title')}
-          </h1>
-          <p className={styles['pageSubtitle']}>{t('scramble.subtitle')}</p>
-        </div>
-        {catalog.length > 0 && (
-          <button type="button" className={styles['startBtn']} onClick={() => handleStartSession()}>
-            <Play size={16} />
-            {t('scramble.startPractice', { count: Math.min(SESSION_SIZE, notCompleted || catalog.length) })}
-          </button>
-        )}
+        <h1 className={styles['pageTitle']}>{t('scramble.title')}</h1>
+        <p className={styles['pageSubtitle']}>{t('scramble.subtitle')}</p>
       </header>
 
-      <button type="button" className={styles['examCard']} onClick={() => navigate('/writing/scramble/exam')}>
+      <button type="button" className={styles['examCard']} onClick={() => { void handleStartExam(); }} disabled={isStarting}>
         <div className={styles['examCardIco']}>
           <FileText size={22} />
         </div>
@@ -81,71 +65,53 @@ export default function ScrambleListPage() {
         <ChevronRight size={18} className={styles['examCardArrow']} />
       </button>
 
-      <div className={styles['filterBar']}>
-        <span className={styles['filterLabel']}>{t('scramble.filters.level')}</span>
-        <div className={styles['chips']}>
-          <button
-            type="button"
-            className={`${styles['chip']} ${filters.level === null ? styles['chipActive'] : ''}`}
-            onClick={() => dispatch(setFilter({ key: 'level', value: null }))}
-          >
-            {t('scramble.filters.allLevels')}
-          </button>
-          {LEVELS.map((lv) => (
+      {error !== null && <p className={styles['errorText']}>{error}</p>}
+
+      <section className={styles['levelSection']}>
+        <div className={styles['levelSectionHead']}>
+          <Sparkles size={16} />
+          <h2 className={styles['levelSectionTitle']}>{t('scramble.levels.guidedTitle')}</h2>
+        </div>
+        <p className={styles['levelSectionDesc']}>{t('scramble.levels.guidedDesc')}</p>
+        <div className={styles['levelGrid']}>
+          {GUIDED_LEVELS.map((lv) => (
             <button
               key={lv}
               type="button"
-              className={`${styles['chip']} ${filters.level === lv ? styles['chipActive'] : ''}`}
-              onClick={() => dispatch(setFilter({ key: 'level', value: filters.level === lv ? null : lv }))}
+              className={styles['levelChip']}
+              style={{ '--level-color': getLevelColor(lv) } as React.CSSProperties}
+              onClick={() => { void handleStartLevel(lv); }}
+              disabled={isStarting}
             >
-              {LEVEL_DISPLAY[lv]}
+              <span className={styles['levelChipLabel']}>{LEVEL_DISPLAY[lv]}</span>
+              {user?.currentLevel === lv && <span className={styles['levelChipYou']}>{t('scramble.levels.yourLevel')}</span>}
             </button>
           ))}
         </div>
-      </div>
+      </section>
 
-      {catalogError !== null && (
-        <div className={styles['errorBanner']}>
-          <AlertCircle size={15} />
-          <span>{t('scramble.error')}</span>
-          <button type="button" className={styles['retryBtn']} onClick={handleRetry}>
-            <RefreshCw size={13} /> {t('scramble.retry')}
-          </button>
+      <section className={styles['levelSection']}>
+        <div className={styles['levelSectionHead']}>
+          <FileText size={16} />
+          <h2 className={styles['levelSectionTitle']}>{t('scramble.levels.strictTitle')}</h2>
         </div>
-      )}
-
-      {!catalogLoading && catalogError === null && catalog.length === 0 && (
-        <div className={styles['emptyState']}>
-          <Shuffle size={52} className={styles['emptyIcon']} />
-          <p className={styles['emptyTitle']}>{t('scramble.empty.title')}</p>
-          <p className={styles['emptyHint']}>{t('scramble.empty.hint')}</p>
-        </div>
-      )}
-
-      <div className={styles['grid']}>
-        {catalog.map((ex) => (
-          <article key={ex.id} className={styles['exCard']}>
-            <div className={styles['exCardTop']}>
-              <span className={styles['levelBadge']}>{LEVEL_DISPLAY[ex.level] ?? ex.level}</span>
-              {ex.userStatus === 'completed' && (
-                <span className={styles['statusDone']}>
-                  <CheckCircle2 size={12} />
-                  {ex.bestScore !== null ? `${ex.bestScore}%` : t('scramble.status.completed')}
-                </span>
-              )}
-              {ex.userStatus === 'in_progress' && (
-                <span className={styles['statusProgress']}><Clock size={12} />{t('scramble.status.inProgress')}</span>
-              )}
-            </div>
-            <p className={styles['exTopic']}>#{ex.topic}</p>
-            <p className={styles['exMeta']}>{ex.wordCount} {t('scramble.wordsCount')}</p>
-            <button type="button" className={styles['exStartBtn']} onClick={() => handleStartSession(ex.id)}>
-              <Play size={13} />
-              {t('scramble.practiceThis')}
+        <p className={styles['levelSectionDesc']}>{t('scramble.levels.strictDesc')}</p>
+        <div className={styles['levelGrid']}>
+          {STRICT_LEVELS.map((lv) => (
+            <button
+              key={lv}
+              type="button"
+              className={styles['levelChip']}
+              style={{ '--level-color': getLevelColor(lv) } as React.CSSProperties}
+              onClick={() => { void handleStartLevel(lv); }}
+              disabled={isStarting}
+            >
+              <span className={styles['levelChipLabel']}>{LEVEL_DISPLAY[lv]}</span>
+              {user?.currentLevel === lv && <span className={styles['levelChipYou']}>{t('scramble.levels.yourLevel')}</span>}
             </button>
-          </article>
-        ))}
-      </div>
+          ))}
+        </div>
+      </section>
     </div>
   );
 }

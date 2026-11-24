@@ -3,6 +3,7 @@ import { IsEnum, IsInt, IsOptional, Max, Min } from 'class-validator';
 import { Type } from 'class-transformer';
 import { MistakeSource } from '@prisma/client';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
 import { MistakesService } from './mistakes.service';
 
@@ -10,6 +11,13 @@ class GetMistakesDto {
   @IsOptional()
   @IsEnum(MistakeSource)
   source?: MistakeSource;
+
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  @Max(200)
+  limit?: number;
 }
 
 class GetDueDto {
@@ -27,7 +35,7 @@ export class MistakesController {
 
   @Get()
   findAll(@CurrentUser() user: JwtUserPayload, @Query() query: GetMistakesDto) {
-    return this.mistakesService.findAll(user.id, query.source);
+    return this.mistakesService.findAll(user.id, query.source, query.limit);
   }
 
   @Get('weak-spots')
@@ -50,8 +58,13 @@ export class MistakesController {
     return this.mistakesService.getDueCount(user.id);
   }
 
+  @Get('due/tasks')
+  getDueTasks(@CurrentUser() user: JwtUserPayload, @Query() query: GetDueDto) {
+    return this.mistakesService.getDueTasks(user.id, query.limit);
+  }
+
   @Patch(':id/mastered')
-  markMastered(@CurrentUser() user: JwtUserPayload, @Param('id') id: string) {
+  markMastered(@CurrentUser() user: JwtUserPayload, @Param('id', ParseObjectIdPipe) id: string) {
     return this.mistakesService.markMastered(user.id, id);
   }
 }

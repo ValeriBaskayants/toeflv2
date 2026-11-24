@@ -1,6 +1,6 @@
 import { Module } from '@nestjs/common';
 import { AzureSpeechService } from './azure-speech.service';
-import { RedisModule } from '../redis/redis.module'; // ⚠️ проверь актуальный путь/имя
+import { RedisModule } from '../redis/redis.module'; 
 
 @Module({
   imports: [RedisModule],

@@ -4,7 +4,7 @@ import { PrismaService } from '../prisma/prisma.service';
 import { ProgressService } from '../progress/progress.service';
 import { TopicMasteryService } from '../topic-mastery/topic-mastery.service';
 import { MistakesService } from '../mistakes/mistakes.service';
-import { computeXP, isSessionCountable, XP_BASE } from '../../constants/level-requirements';
+import { computeXP, isSessionCountable, MATERIAL_MASTERY_THRESHOLD, REREAD_XP_MULTIPLIER, XP_BASE } from '../../constants/level-requirements';
 import type { CreateReadingDto } from './dto/bulk-create-reading.dto';
 import type { SubmitReadingDto } from './dto/submit-reading.dto';
 import slugify from 'slugify';
@@ -16,17 +16,13 @@ interface QuestionShape {
 }
 
 export interface SubmitResult {
-  results: Array<{
-    questionIdx: number;
-    isCorrect: boolean;
-    correctIdx: number;
-    explanation?: string;
-  }>;
+  results: Array<{ questionIdx: number; isCorrect: boolean; correctIdx: number; explanation?: string }>;
   accuracy: number;
   xpEarned: number;
   countedAsCompleted: boolean;
   bestAccuracy: number;
   isFirstAttempt: boolean;
+  isLevelMatched: boolean;
   feedback: string;
 }
 
@@ -36,8 +32,7 @@ const LIST_SELECT = {
   wordCount: true, estimatedMinutes: true, coverImageUrl: true, createdAt: true,
 } satisfies Prisma.ReadingMaterialSelect;
 
-const REREAD_XP_MULTIPLIER = 0.3;
-const MATERIAL_MASTERY_THRESHOLD = 80;
+
 
 @Injectable()
 export class ReadingsService {
@@ -118,16 +113,10 @@ export class ReadingsService {
   }
 
   async submitAnswers(userId: string, dto: SubmitReadingDto, timezone?: string): Promise<SubmitResult> {
-    if (dto.answers.length === 0) {
-      throw new BadRequestException('At least one answer is required');
-    }
-
     const [material, user, existingHistory] = await Promise.all([
       this.prisma.readingMaterial.findUnique({ where: { id: dto.materialId } }),
-      this.prisma.user.findUnique({ where: { id: userId }, select: { streak: true } }),
-      this.prisma.userMistake.findUnique({
-        where: { userId_targetId: { userId, targetId: dto.materialId } },
-      }),
+      this.prisma.user.findUnique({ where: { id: userId }, select: { streak: true, currentLevel: true } }),
+      this.prisma.userMistake.findUnique({ where: { userId_targetId: { userId, targetId: dto.materialId } } }),
     ]);
 
     if (material === null) throw new NotFoundException(`Reading material ${dto.materialId} not found`);
@@ -141,47 +130,33 @@ export class ReadingsService {
       }
     }
 
-    const results = dto.answers.map((a) => {
-      const question = questions[a.questionIdx]!;
+    const answerMap = new Map(dto.answers.map((a) => [a.questionIdx, a.selectedOptionIdx]));
+
+    const results = questions.map((question, questionIdx) => {
       const correctIdx = question.options.findIndex((o) => o.isCorrect);
-      const isCorrect = question.options[a.selectedOptionIdx]?.isCorrect === true;
-      return {
-        questionIdx: a.questionIdx,
-        isCorrect,
-        correctIdx,
-        explanation: question.explanation,
-        selectedOptionIdx: a.selectedOptionIdx,
-      };
+      const selectedOptionIdx = answerMap.get(questionIdx);
+      const isCorrect = selectedOptionIdx !== undefined && question.options[selectedOptionIdx]?.isCorrect === true;
+      return { questionIdx, isCorrect, correctIdx, explanation: question.explanation, selectedOptionIdx: selectedOptionIdx ?? -1 };
     });
 
     const correctCount = results.filter((r) => r.isCorrect).length;
     const accuracy = Math.round((correctCount / results.length) * 100);
     const isFirstAttempt = existingHistory === null;
+    const isLevelMatched = user?.currentLevel === material.level;
 
     const prevBest = existingHistory
-      ? Math.round(
-        (existingHistory.correctCount /
-          Math.max(1, existingHistory.correctCount + existingHistory.wrongCount)) * 100,
-      )
+      ? Math.round((existingHistory.correctCount / Math.max(1, existingHistory.correctCount + existingHistory.wrongCount)) * 100)
       : 0;
     const bestAccuracy = Math.max(accuracy, prevBest);
+    const countedAsCompleted = isFirstAttempt && isLevelMatched && isSessionCountable(accuracy);
 
-    const countedAsCompleted = isFirstAttempt && isSessionCountable(accuracy);
-
-    const baseXP = isFirstAttempt
-      ? XP_BASE.READING_COMPLETED
-      : Math.round(XP_BASE.READING_COMPLETED * REREAD_XP_MULTIPLIER);
+    const baseXP = isFirstAttempt ? XP_BASE.READING_COMPLETED : Math.round(XP_BASE.READING_COMPLETED * REREAD_XP_MULTIPLIER);
     const xpEarned = computeXP({ base: baseXP, streak: user?.streak ?? 0, accuracy });
 
     if (countedAsCompleted) {
       await this.progress.recordSkillCompletion({ userId, skill: 'reading', accuracy, xpEarned, timezone });
     } else {
-      await this.progress.recordActivity({
-        userId,
-        xpEarned: Math.max(1, Math.round(xpEarned * 0.2)),
-        minutesSpent: material.estimatedMinutes,
-        timezone,
-      });
+      await this.progress.recordActivity({ userId, xpEarned: Math.max(1, Math.round(xpEarned * 0.2)), minutesSpent: material.estimatedMinutes, timezone });
     }
 
     if (material.grammarTopics.length > 0) {
@@ -191,37 +166,21 @@ export class ReadingsService {
     await Promise.all(
       results.map((r) =>
         this.mistakes.recordAttempt({
-          userId,
-          targetId: `${dto.materialId}:${r.questionIdx}`,
-          source: 'READING',
-          category: 'LOGIC',
-          topic: material.topic,
-          level: material.level,
-          isCorrect: r.isCorrect,
-          userAnswer: String(r.selectedOptionIdx),
-          correctAnswer: String(r.correctIdx),
+          userId, targetId: `${dto.materialId}:${r.questionIdx}`, source: 'READING', category: 'LOGIC',
+          topic: material.topic, level: material.level, isCorrect: r.isCorrect,
+          userAnswer: String(r.selectedOptionIdx), correctAnswer: String(r.correctIdx),
         }),
       ),
     );
 
     await this.updateMaterialCompletion({
-      userId,
-      materialId: material.id,
-      topic: material.topic,
-      level: material.level,
-      correctCount,
-      totalCount: results.length,
-      bestAccuracy,
-      isImprovement: accuracy >= prevBest,
+      userId, materialId: material.id, topic: material.topic, level: material.level,
+      correctCount, totalCount: results.length, bestAccuracy, isImprovement: accuracy >= prevBest,
     });
 
     return {
       results: results.map(({ selectedOptionIdx, ...rest }) => rest),
-      accuracy,
-      xpEarned,
-      countedAsCompleted,
-      bestAccuracy,
-      isFirstAttempt,
+      accuracy, xpEarned, countedAsCompleted, bestAccuracy, isFirstAttempt, isLevelMatched,
       feedback: buildReadingFeedback(accuracy, isFirstAttempt, correctCount, results.length),
     };
   }

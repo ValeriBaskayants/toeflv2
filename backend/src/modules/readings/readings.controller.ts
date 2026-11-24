@@ -19,11 +19,11 @@ export class ReadingsController {
 
   @Get()
   findAll(@CurrentUser() user: JwtUserPayload, @Query() query: GetReadingsWithSearchDto) {
-    // Передаем валидированный `search` напрямую в сервис
     return this.service.findMany({
       userId: user.id,
       level: query.level,
       topic: query.topic,
+      topicSlug: query.topicSlug,
       search: query.search,
     });
   }

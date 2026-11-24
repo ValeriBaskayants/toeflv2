@@ -1,8 +1,3 @@
-
-
-
-
-
 const FILLER_WORDS = new Set([
   'um', 'uh', 'like', 'basically', 'actually', 'literally', 'sort', 'kind',
 ]);
@@ -10,15 +5,15 @@ const FILLER_WORDS = new Set([
 export interface InterviewHeuristicInput {
   recognizedText: string;
   durationUsedSec: number;
-  windowSec: number; 
+  windowSec: number;
 }
 
 export interface InterviewHeuristicResult {
   wordCount: number;
   wordsPerMinute: number;
   fillerWordCount: number;
-  vocabularyDiversity: number; 
-  estimatedScore: number;      
+  vocabularyDiversity: number;
+  estimatedScore: number;
 }
 
 function normalizeWords(text: string): string[] {
@@ -41,16 +36,11 @@ export function computeInterviewHeuristic(input: InterviewHeuristicInput): Inter
   const uniqueContentWords = new Set(contentWords);
   const vocabularyDiversity = contentWords.length > 0 ? uniqueContentWords.size / contentWords.length : 0;
 
-  
-  
   const completenessScore = Math.min(1, input.durationUsedSec / (input.windowSec * 0.6));
-  
   const paceScore = wordsPerMinute >= 110 && wordsPerMinute <= 170
     ? 1
     : Math.max(0, 1 - Math.abs(wordsPerMinute - 140) / 140);
-  
   const fillerPenalty = Math.max(0, 1 - (fillerWordCount / wordCount) * 5);
-  
   const diversityScore = Math.min(1, vocabularyDiversity * 1.8);
 
   const composite = completenessScore * 0.35 + paceScore * 0.25 + fillerPenalty * 0.2 + diversityScore * 0.2;
@@ -66,4 +56,17 @@ export function computeInterviewHeuristic(input: InterviewHeuristicInput): Inter
 }
 
 export const INTERVIEW_QUESTION_COUNT = 4;
-export const INTERVIEW_RESPONSE_WINDOW_SEC = 45; 
+
+// Take an Interview: без паузы и без сигнала — запись стартует сразу по
+// окончании аудио вопроса (в отличие от Listen and Repeat).
+export interface TaskAudioTiming {
+  pauseBeforeBeepMs: number;
+  beepDurationMs: number;
+  recordingWindowSec: number;
+}
+
+export const INTERVIEW_TIMING: TaskAudioTiming = {
+  pauseBeforeBeepMs: 0,
+  beepDurationMs: 0,
+  recordingWindowSec: 45,
+};

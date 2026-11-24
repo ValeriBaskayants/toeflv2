@@ -29,7 +29,6 @@ model LevelProgress {
   writing    WritingStats
   listening  ProgressStats
   quiz       ProgressStats
-
   isReadyForTest Boolean   @default(false)
   testUnlockedAt DateTime?
 

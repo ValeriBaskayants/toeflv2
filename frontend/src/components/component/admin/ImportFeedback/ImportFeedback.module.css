@@ -1,0 +1,17 @@
+.issues {
+  margin: 0 1rem 0.75rem;
+  padding: 0.75rem 0.875rem;
+  border: 1px solid color-mix(in srgb, var(--warning) 40%, transparent);
+  background: color-mix(in srgb, var(--warning) 8%, transparent);
+  border-radius: var(--radius-md);
+}
+.issuesHead { display: flex; align-items: flex-start; gap: 0.5rem; font-size: 0.78rem; font-weight: 600; color: var(--warning); line-height: 1.5; }
+.issuesHead svg { flex-shrink: 0; margin-top: 3px; }
+.issuesList { list-style: none; display: flex; flex-direction: column; gap: 0.4rem; margin-top: 0.6rem; max-height: 180px; overflow-y: auto; }
+.issue { display: flex; flex-direction: column; gap: 0.1rem; font-size: 0.75rem; }
+.issueName { color: var(--text-1); font-weight: 700; }
+.issueReason { color: var(--text-2); font-family: 'JetBrains Mono', monospace; line-height: 1.5; overflow-wrap: anywhere; }
+
+.hint { display: flex; align-items: flex-start; gap: 0.4rem; margin-top: 0.5rem; font-size: 0.7rem; color: var(--text-3); line-height: 1.5; }
+.hint svg { flex-shrink: 0; margin-top: 2px; }
+.hint code { font-family: 'JetBrains Mono', monospace; color: var(--text-2); }

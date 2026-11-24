@@ -25,17 +25,23 @@ model SpeakingInterviewQuestion {
 }
 
 type InterviewItemResult {
-  questionId          String
-  questionText        String
-  recognizedText      String
-  wordCount           Int
-  wordsPerMinute      Float
-  fillerWordCount     Int
-  vocabularyDiversity Float
-  estimatedScore      Float  
-  userAudioBase64     String
-  userAudioMimeType   String @default("audio/webm")
-  attemptedAt         String
+  questionId           String
+  questionText         String
+  recognizedText       String
+  durationSec          Float   @default(0)
+  wordCount            Int
+  wordsPerMinute       Float
+  fillerWordCount      Int
+  vocabularyDiversity  Float
+  grammarIssueCount    Int?
+  fluencyScore         Float   @default(0)
+  intelligibilityScore Float   @default(0)
+  languageUseScore     Float   @default(0)
+  organizationScore    Float   @default(0)
+  estimatedScore       Float
+  userAudioBase64      String
+  userAudioMimeType    String  @default("audio/webm")
+  attemptedAt          String
 }
 
 model SpeakingInterviewSession {

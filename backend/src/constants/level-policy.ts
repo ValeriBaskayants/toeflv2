@@ -1,7 +1,9 @@
 import type { Level } from '@prisma/client';
 
-
 const GUIDED_LEVELS: ReadonlySet<Level> = new Set(['A1', 'A1_PLUS', 'A2', 'A2_PLUS']);
+const ALL_LEVELS: readonly Level[] = ['A1', 'A1_PLUS', 'A2', 'A2_PLUS', 'B1', 'B1_PLUS', 'B2', 'B2_PLUS', 'C1', 'C2'];
+
+export const EXAM_LEVEL_RANGE: readonly Level[] = ALL_LEVELS.filter((l) => !GUIDED_LEVELS.has(l));
 
 export interface ExamModePolicy {
   rate: number;

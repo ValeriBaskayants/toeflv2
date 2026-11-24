@@ -19,6 +19,8 @@ const envSchema = z.object({
 
   AZURE_SPEECH_KEY: z.string(),
   AZURE_SPEECH_REGION: z.string().default('eastus'),
+
+  GEMINI_API_KEY: z.string(),
 });
 
 export default () => {
@@ -58,6 +60,9 @@ export default () => {
     azureSpeech: {
       key: parsed.data.AZURE_SPEECH_KEY,
       region: parsed.data.AZURE_SPEECH_REGION,
+    },
+    gemini: {
+      apiKey: parsed.data.GEMINI_API_KEY,
     },
   };
 };

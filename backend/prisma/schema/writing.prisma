@@ -1,14 +1,20 @@
-
 enum WritingType {
-  SENTENCE
-  PARAGRAPH
-  ESSAY
+  BUILD_A_SENTENCE
+  EMAIL
+  ACADEMIC_DISCUSSION
 }
 
 enum SubmissionStatus {
   PENDING
   ANALYZED
   ERROR
+}
+
+enum WritingSessionStatus {
+  IN_PROGRESS
+  SUBMITTED
+  EXPIRED
+  ABANDONED
 }
 
 type WritingError {
@@ -20,56 +26,91 @@ type WritingError {
 }
 
 type WritingAnalysis {
-  overallScore    Float
-  grammarScore    Float
-  taskScore       Float
-  coherenceScore  Float
-  vocabularyScore Float   
-  wordCount       Int
-  errorCount      Int
-  feedback        String?
-  detectedTone    String?
-  errors          WritingError[]
+  overallScore      Float
+  officialBand      Int
+  grammarScore      Float
+  taskScore         Float
+  coherenceScore    Float
+  vocabularyScore   Float
+  taskSpecificScore Float
+  wordCount         Int
+  errorCount        Int
+  feedback          String?
+  detectedTone      String?
+  errors            WritingError[]
+}
+
+type DiscussionPeerResponse {
+  authorName String
+  text       String
 }
 
 model WritingPrompt {
-  id           String        @id @default(auto()) @map("_id") @db.ObjectId
-  
-  prompt       String
-  level        Level
-  type         WritingType   @default(PARAGRAPH)
-  
-  minWords     Int           @default(50)
-  maxWords     Int           @default(200)
-  
-  topic        String        @default("")
-  instructions String        @default("")
+  id   String      @id @default(auto()) @map("_id") @db.ObjectId
+  type WritingType
 
-  createdAt    DateTime      @default(now())
-  updatedAt    DateTime      @updatedAt
+  prompt String
 
-  submissions  WritingSubmission[]
+  discussionPeerResponses DiscussionPeerResponse[]
 
-  @@index([level])
+  level Level
+  topic String @default("")
+
+  minWords Int @default(80)
+  maxWords Int @default(120)
+
+  timeLimitSec Int @default(420)
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  submissions WritingSubmission[]
+  sessions    WritingSession[]
+
+  @@index([level, type])
+}
+
+model WritingSession {
+  id       String        @id @default(auto()) @map("_id") @db.ObjectId
+  userId   String        @db.ObjectId
+  user     User          @relation(fields: [userId], references: [id], onDelete: Cascade)
+  promptId String        @db.ObjectId
+  prompt   WritingPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+
+  status WritingSessionStatus @default(IN_PROGRESS)
+
+  minWords     Int
+  maxWords     Int
+  timeLimitSec Int
+
+  submissionId String? @db.ObjectId
+
+  startedAt   DateTime  @default(now())
+  submittedAt DateTime?
+
+  @@index([userId, promptId])
+  @@index([userId, status])
 }
 
 model WritingSubmission {
-  id          String            @id @default(auto()) @map("_id") @db.ObjectId
-  
-  userId      String            @db.ObjectId
-  user        User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  id String @id @default(auto()) @map("_id") @db.ObjectId
 
-  promptId    String            @db.ObjectId
-  prompt      WritingPrompt     @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  userId String @db.ObjectId
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
 
-  text        String
-  analysis    WritingAnalysis?
-  status      SubmissionStatus  @default(PENDING)
-  submittedAt DateTime          @default(now())
+  promptId  String  @db.ObjectId
+  prompt    WritingPrompt @relation(fields: [promptId], references: [id], onDelete: Cascade)
+  sessionId String? @db.ObjectId
 
-  createdAt   DateTime          @default(now())
-  updatedAt   DateTime          @updatedAt
+  text         String
+  analysis     WritingAnalysis?
+  status       SubmissionStatus @default(PENDING)
+  timeSpentSec Int?
+  submittedAt  DateTime         @default(now())
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
 
   @@index([userId, promptId])
-  @@index([userId, status])   
+  @@index([userId, status])
 }

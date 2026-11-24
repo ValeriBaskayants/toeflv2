@@ -34,7 +34,7 @@ interface RecordPracticeParams {
 export class TopicMasteryService {
   private readonly logger = new Logger(TopicMasteryService.name);
 
-  constructor(private readonly prisma: PrismaService) {}
+  constructor(private readonly prisma: PrismaService) { }
 
   async recordPractice(params: RecordPracticeParams): Promise<void> {
     const { userId, topicSlugs, kind, accuracy } = params;
@@ -102,9 +102,25 @@ export class TopicMasteryService {
       kind === 'scramble' && accuracy !== undefined
         ? emaAccuracy(scrambleCompleted, scrambleAccuracy, accuracy)
         : scrambleAccuracy;
+        
+    const TARGET_KEYS = Object.keys(DEFAULT_TARGETS) as Array<keyof PracticeTargetsShape>;
 
-    const targets: PracticeTargetsShape =
-      (rule.practiceTargets as PracticeTargetsShape | null) ?? DEFAULT_TARGETS;
+    function resolveTargets(raw: unknown): PracticeTargetsShape {
+      if (typeof raw !== 'object' || raw === null) {
+        return DEFAULT_TARGETS;
+      }
+      const source = raw as Record<string, unknown>;
+      const merged = { ...DEFAULT_TARGETS };
+      for (const key of TARGET_KEYS) {
+        const value = source[key];
+        if (typeof value === 'number' && Number.isFinite(value)) {
+          merged[key] = value;
+        }
+      }
+      return merged;
+    }
+
+    const targets = resolveTargets(rule.practiceTargets);
 
     const meetsTargets =
       nextGrammarCompleted >= targets.grammarRequired &&

@@ -195,6 +195,10 @@ export const LEVEL_REQUIREMENTS: Readonly<Record<Level, LevelRequirement>> = {
   },
 } as const;
 
+export const MASTERY_ACCURACY_THRESHOLD = 80;
+export const REREAD_XP_MULTIPLIER = 0.3;
+export const MATERIAL_MASTERY_THRESHOLD = 80;
+
 export function emaAccuracy(
   currentCompleted: number,
   historicalAccuracy: number,
@@ -274,3 +278,54 @@ export function buildInitialProgress(level: Level) {
     scramble: { required: req.scramble.required, completed: 0, accuracy: 0 },
   };
 }
+
+export const LEVEL_TO_BAND: Readonly<Record<Level, number>> = {
+  A1: 1.0, A1_PLUS: 1.5, A2: 2.0, A2_PLUS: 2.5,
+  B1: 3.0, B1_PLUS: 3.5, B2: 4.0, B2_PLUS: 4.5,
+  C1: 5.0, C2: 6.0,
+} as const;
+
+export const MIN_ITEMS_FOR_BAND_ESTIMATE = 15;
+export const MODERATE_CONFIDENCE_ITEMS = 25;
+export const GOOD_CONFIDENCE_ITEMS = 45;
+export const BAND_UPGRADE_MARGIN = 15;
+
+export type BandConfidence = 'insufficient_data' | 'low' | 'moderate' | 'good';
+
+export interface BandEstimateResult {
+  level: Level;
+  band: number | null;
+  confidence: BandConfidence;
+  itemsEvaluated: number;
+  weightedAccuracy: number | null;
+}
+
+export function computeBandEstimate(params: {
+  level: Level;
+  accuracyMin: number;
+  itemsEvaluated: number;
+  correctItems: number;
+}): BandEstimateResult {
+  const { level, accuracyMin, itemsEvaluated, correctItems } = params;
+
+  if (itemsEvaluated < MIN_ITEMS_FOR_BAND_ESTIMATE) {
+    return { level, band: null, confidence: 'insufficient_data', itemsEvaluated, weightedAccuracy: null };
+  }
+
+  const weightedAccuracy = Math.round((correctItems / itemsEvaluated) * 100);
+  const anchor = LEVEL_TO_BAND[level];
+
+  let band = anchor;
+  if (weightedAccuracy >= accuracyMin + BAND_UPGRADE_MARGIN) {
+    band = Math.min(6.0, anchor + 0.5);
+  } else if (weightedAccuracy < accuracyMin) {
+    band = Math.max(1.0, anchor - 0.5);
+  }
+
+  const confidence: BandConfidence =
+    itemsEvaluated >= GOOD_CONFIDENCE_ITEMS ? 'good' :
+    itemsEvaluated >= MODERATE_CONFIDENCE_ITEMS ? 'moderate' : 'low';
+
+  return { level, band, confidence, itemsEvaluated, weightedAccuracy };
+}
+

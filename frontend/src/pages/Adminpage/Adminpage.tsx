@@ -11,6 +11,8 @@ import {
   Layers,
   PenLine,
   Headphones,
+  Mic,
+  MessagesSquare,
   Target,
   FileText,
   Trash2,
@@ -38,6 +40,8 @@ import {
 } from '@/store/Slices/AdminSlice';
 import type { ContentType } from '@/types/admin/Admin.types';
 import { EXAMPLES } from '@/constants/examples/example';
+import { parseLooseJson } from '@/utils/looseJson';
+import { ImportIssues, LooseJsonHint } from '@/components/component/admin/ImportFeedback/ImportFeedback';
 import styles from './Adminpage.module.css';
 
 interface ContentConfig {
@@ -49,14 +53,16 @@ interface ContentConfig {
 }
 
 const CONTENT_CONFIGS: ContentConfig[] = [
+  { key: 'listening', label: 'Listening', short: 'LS', Icon: Headphones, color: '#f43f5e' },
+  { key: 'speakingRepeat', label: 'Speaking · Listen & Repeat', short: 'SLR', Icon: Mic, color: '#f97316' },
+  { key: 'speakingInterview', label: 'Speaking · Interview', short: 'SIN', Icon: MessagesSquare, color: '#a855f7' },
+  { key: 'writingPrompts', label: 'Writing · Email / Discussion', short: 'WR', Icon: PenLine, color: '#ec4899' },
+  { key: 'scramble', label: 'Build a Sentence', short: 'SCR', Icon: Shuffle, color: '#0ea5e9' },
   { key: 'exercises', label: 'Exercises', short: 'EX', Icon: CheckCheck, color: '#14b8a6' },
   { key: 'grammarRules', label: 'Grammar Rules', short: 'GR', Icon: BookOpen, color: '#22c55e' },
   { key: 'vocabulary', label: 'Vocabulary', short: 'VOC', Icon: Layers, color: '#8b5cf6' },
   { key: 'readings', label: 'Readings', short: 'RD', Icon: FileText, color: '#f59e0b' },
   { key: 'multipleChoice', label: 'Multiple Choice', short: 'MC', Icon: Target, color: '#6366f1' },
-  { key: 'writingPrompts', label: 'Writing Prompts', short: 'WR', Icon: PenLine, color: '#ec4899' },
-  { key: 'listening', label: 'Listening', short: 'LS', Icon: Headphones, color: '#f43f5e' },
-  { key: 'scramble', label: 'Sentence Scramble', short: 'SCR', Icon: Shuffle, color: '#0ea5e9' },
 ];
 
 function formatTime(iso: string): string {
@@ -71,7 +77,7 @@ function ImportTerminal() {
   const textareaId = useId();
   const dispatch = useAppDispatch();
 
-  const [activeType, setActiveType] = useState<ContentType>('exercises');
+  const [activeType, setActiveType] = useState<ContentType>('listening');
   const [json, setJson] = useState('');
   const [copied, setCopied] = useState(false);
   const [parseError, setParseError] = useState<string | null>(null);
@@ -80,27 +86,19 @@ function ImportTerminal() {
   const cfg = CONTENT_CONFIGS.find((c) => c.key === activeType)!;
   const isLoading = slot.status === 'loading';
 
-  
-  
-  
   const hasResetForCurrentEdit = useRef(false);
 
-  const handleTypeSwitch = useCallback(
-    (type: ContentType) => {
-      setActiveType(type);
-      setParseError(null);
-      hasResetForCurrentEdit.current = false;
-    },
-    [],
-  );
+  const handleTypeSwitch = useCallback((type: ContentType) => {
+    setActiveType(type);
+    setParseError(null);
+    hasResetForCurrentEdit.current = false;
+  }, []);
 
   const handleJsonChange = useCallback(
     (val: string) => {
       setJson(val);
       setParseError(null);
 
-      
-      
       if (slot.status !== 'idle' && !hasResetForCurrentEdit.current) {
         hasResetForCurrentEdit.current = true;
         dispatch(resetImportState(activeType));
@@ -110,9 +108,13 @@ function ImportTerminal() {
   );
 
   const handleCopyExample = useCallback(async () => {
-    await navigator.clipboard.writeText(EXAMPLES[activeType]);
-    setCopied(true);
-    setTimeout(() => setCopied(false), 2000);
+    try {
+      await navigator.clipboard.writeText(EXAMPLES[activeType]);
+      setCopied(true);
+      setTimeout(() => setCopied(false), 2000);
+    } catch {
+      
+    }
   }, [activeType]);
 
   const handleLoadExample = useCallback(() => {
@@ -131,7 +133,7 @@ function ImportTerminal() {
 
     let parsed: unknown[];
     try {
-      const raw: unknown = JSON.parse(trimmed);
+      const raw = parseLooseJson(trimmed);
       if (!Array.isArray(raw)) {
         throw new Error('Root must be a JSON array [ ... ]');
       }
@@ -143,8 +145,12 @@ function ImportTerminal() {
 
     const result = await dispatch(importContent({ type: activeType, data: parsed }));
     if (importContent.fulfilled.match(result)) {
-      setJson('');
-      hasResetForCurrentEdit.current = false;
+      
+      const rejected = result.payload.result.errors?.length ?? 0;
+      if (rejected === 0) {
+        setJson('');
+        hasResetForCurrentEdit.current = false;
+      }
     }
   }, [json, activeType, dispatch]);
 
@@ -156,6 +162,8 @@ function ImportTerminal() {
   }, [activeType, dispatch]);
 
   const hasError = parseError !== null || slot.status === 'error';
+  const issues = slot.status === 'success' && slot.result !== null ? (slot.result.errors ?? []) : [];
+  const rejected = issues.length;
 
   return (
     <div className={styles['terminal']}>
@@ -240,9 +248,12 @@ function ImportTerminal() {
               aria-invalid={hasError}
               aria-describedby={hasError ? `${textareaId}-error` : undefined}
             />
+            <LooseJsonHint />
           </div>
         </div>
       </div>
+
+      <ImportIssues issues={issues} />
 
       <div className={styles['termFooter']}>
         <div className={styles['footerLeft']}>
@@ -256,10 +267,16 @@ function ImportTerminal() {
               <AlertCircle size={14} /> {slot.error}
             </span>
           )}
-          {slot.status === 'success' && slot.result !== null && (
+          {slot.status === 'success' && slot.result !== null && rejected > 0 && slot.result.inserted === 0 && (
+            <span className={styles['fErr']}>
+              <AlertCircle size={14} /> Nothing imported — {rejected} rejected (see details above)
+            </span>
+          )}
+          {slot.status === 'success' && slot.result !== null && !(rejected > 0 && slot.result.inserted === 0) && (
             <span className={styles['fOk']}>
               <CheckCircle2 size={14} />+{slot.result.inserted} inserted
-              {slot.result.skipped > 0 && ` (${slot.result.skipped} skipped)`}
+              {slot.result.skipped > 0 && ` · ${slot.result.skipped} already existed`}
+              {rejected > 0 && ` · ${rejected} rejected`}
             </span>
           )}
           {isLoading && (
@@ -313,12 +330,6 @@ export default function AdminPage() {
 
   const isAdmin = user !== null && user.role === 'ADMIN';
 
-  
-  
-  
-  
-  
-  
   useEffect(() => {
     if (isAdmin && statsStatus === 'idle') {
       void dispatch(fetchAdminStats());
@@ -384,7 +395,7 @@ export default function AdminPage() {
           </div>
           <div>
             <div className={styles['statVal']}>{errorCount}</div>
-            <div className={styles['statLbl']}>Errors (this session)</div>
+            <div className={styles['statLbl']}>Errors / rejected (this session)</div>
           </div>
         </div>
       </div>
@@ -411,6 +422,7 @@ export default function AdminPage() {
             {log.length === 0 && <p className={styles['logEmpty']}>No imports yet.</p>}
             {log.map((entry) => {
               const c = CONTENT_CONFIGS.find((x) => x.key === entry.type);
+              const rejectedCount = entry.result.errors?.length ?? 0;
               return (
                 <div
                   key={entry.id}
@@ -428,10 +440,10 @@ export default function AdminPage() {
                         <div className={styles['logMeta']}>
                           <span className={styles['logIns']}>+{entry.result.inserted}</span>
                           {entry.result.skipped > 0 && (
-                            <span className={styles['logSkip']}>
-                              {' '}
-                              · {entry.result.skipped} skip
-                            </span>
+                            <span className={styles['logSkip']}> · {entry.result.skipped} existed</span>
+                          )}
+                          {rejectedCount > 0 && (
+                            <span className={styles['logErrTxt']}> · {rejectedCount} rejected</span>
                           )}
                         </div>
                       )}

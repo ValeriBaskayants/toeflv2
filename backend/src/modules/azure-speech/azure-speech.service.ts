@@ -9,7 +9,7 @@ const TTS_MAX_CHARS = 3000;
 const STT_TIMEOUT_MS = 20_000;
 const TTS_TIMEOUT_MS = 15_000;
 const REDIS_TTS_TTL_SEC = 60 * 60 * 24 * 30;
-const MONTHLY_STT_LIMIT_SECONDS = 5 * 60 * 60; // Azure F0 free tier: 5 часов/мес
+const MONTHLY_STT_LIMIT_SECONDS = 5 * 60 * 60;
 
 export interface TtsResult {
   audioBase64: string;
@@ -152,12 +152,16 @@ export class AzureSpeechService {
     const estimatedSeconds = wavBuffer.length / 32000;
 
     return this.withQuotaReservation(estimatedSeconds, async () => {
-      const pronunciationConfig = Buffer.from(JSON.stringify({
-        ReferenceText: referenceText,
-        GradingSystem: 'HundredMark',
-        Granularity: 'Phoneme',
-        EnableMiscue: true,
-      })).toString('base64');
+      const pronunciationConfig = Buffer.from(
+        JSON.stringify({
+          ReferenceText: referenceText,
+          GradingSystem: 'HundredMark',
+          Granularity: 'Phoneme',
+          Dimension: 'Comprehensive',
+          EnableMiscue: 'True',
+          EnableProsodyAssessment: 'True',
+        }),
+      ).toString('base64');
 
       const url = `https://${this.region}.stt.speech.microsoft.com/speech/recognition/conversation/cognitiveservices/v1?language=en-US&format=detailed`;
 

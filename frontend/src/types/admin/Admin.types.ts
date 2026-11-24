@@ -9,10 +9,18 @@ export interface AdminStats {
   };
 }
 
+
+export interface ImportIssue {
+  title?: string; 
+  scenario?: string; 
+  reason: string;
+}
+
 export interface ImportResult {
   totalProcessed: number;
   inserted: number;
-  skipped: number;
+  skipped: number; 
+  errors?: ImportIssue[]; 
 }
 
 export type ContentType =
@@ -23,6 +31,8 @@ export type ContentType =
   | 'multipleChoice'
   | 'writingPrompts'
   | 'listening'
+  | 'speakingRepeat'
+  | 'speakingInterview'
   | 'scramble';
 
 export interface ImportLog {

@@ -1,4 +1,15 @@
-import { BadRequestException, Body, Controller, Get, Param, Post, Query, UploadedFile, UseGuards, UseInterceptors } from '@nestjs/common';
+import {
+  BadRequestException,
+  Body,
+  Controller,
+  Get,
+  Param,
+  Post,
+  Query,
+  UploadedFile,
+  UseGuards,
+  UseInterceptors,
+} from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
 import { SpeakingInterviewService } from './speaking-interview.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
@@ -6,9 +17,7 @@ import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
 import { BulkCreateInterviewDto, GetInterviewSetsDto } from './dto/interview.dto';
-
-const MAX_AUDIO_BYTES = 8 * 1024 * 1024; // 45 сек аудио — с запасом больше, чем у SpeakingRepeat
-const ALLOWED_AUDIO_MIME_TYPES = ['audio/webm', 'audio/ogg', 'audio/wav', 'audio/mp4', 'audio/mpeg'];
+import { MAX_INTERVIEW_UPLOAD_BYTES, isAllowedAudioMime, normalizeAudioMime } from '../../constants/speaking-constants';
 
 @Controller('speaking-interview')
 export class SpeakingInterviewController {
@@ -17,6 +26,12 @@ export class SpeakingInterviewController {
   @Get()
   findAll(@Query() query: GetInterviewSetsDto) {
     return this.service.findAll(query);
+  }
+
+  // Кнопка TOEFL Take an Interview — без выбора уровня и набора.
+  @Post('toefl-mode/start')
+  startToeflMode(@CurrentUser() user: JwtUserPayload) {
+    return this.service.startToeflModeSession(user.id);
   }
 
   @Post('sets/:id/start')
@@ -34,36 +49,38 @@ export class SpeakingInterviewController {
   }
 
   @Post('sessions/:sessionId/questions/:questionId/answer')
-  @UseInterceptors(FileInterceptor('audio', {
-    limits: { fileSize: MAX_AUDIO_BYTES },
-    fileFilter: (_req, file, cb) => {
-      if (!ALLOWED_AUDIO_MIME_TYPES.includes(file.mimetype)) {
-        cb(new BadRequestException('Unsupported audio format'), false);
-        return;
-      }
-      cb(null, true);
-    },
-  }))
+  @UseInterceptors(
+    FileInterceptor('audio', {
+      limits: { fileSize: MAX_INTERVIEW_UPLOAD_BYTES },
+      fileFilter: (_req, file, cb) => {
+        if (!isAllowedAudioMime(file.mimetype)) {
+          cb(new BadRequestException('Unsupported audio format'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
   submitAnswer(
     @CurrentUser() user: JwtUserPayload,
     @Param('sessionId') sessionId: string,
     @Param('questionId') questionId: string,
-    @Body('durationUsedSec') durationUsedSec: string,
     @UploadedFile() file?: Express.Multer.File,
   ) {
     if (!file || file.buffer.length === 0) {
       throw new BadRequestException('Audio recording is required.');
     }
-    const duration = Number(durationUsedSec);
-    return this.service.submitAnswer(
-      user.id, sessionId, questionId, file.buffer, file.mimetype,
-      Number.isFinite(duration) && duration > 0 ? duration : 45,
-    );
+    return this.service.submitAnswer(user.id, sessionId, questionId, file.buffer, normalizeAudioMime(file.mimetype));
   }
 
   @Post('sessions/:sessionId/complete')
   completeSession(@CurrentUser() user: JwtUserPayload, @Param('sessionId') sessionId: string) {
     return this.service.completeSession(user.id, sessionId);
+  }
+
+  @Post('sessions/:sessionId/expire')
+  expireSession(@CurrentUser() user: JwtUserPayload, @Param('sessionId') sessionId: string) {
+    return this.service.expireSession(user.id, sessionId);
   }
 
   @Get('sessions/:sessionId/review')

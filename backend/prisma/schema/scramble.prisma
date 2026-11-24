@@ -31,11 +31,13 @@ enum GrammarRole {
 }
 
 type ScrambleWord {
-  id           String
-  word         String
-  role         GrammarRole
-  position     Int
-  isDistractor Boolean     @default(false)
+  id                String
+  word              String
+  role              GrammarRole
+  position          Int
+  isDistractor      Boolean     @default(false)
+  requiresUserInput Boolean     @default(false)
+  isFixed           Boolean? 
 }
 
 type ScrambleAttempt {
@@ -47,6 +49,16 @@ type ScrambleAttempt {
   submittedAt    String
 }
 
+type FilledBlankAnswer {
+  position Int
+  text     String
+}
+
+type ScrambleAlternative {
+  order String[]              
+}
+
+
 type ScrambleBlockResult {
   exerciseId     String
   isCorrect      Boolean
@@ -54,6 +66,14 @@ type ScrambleBlockResult {
   timeSpentSec   Float
   usedHint       Boolean
   answeredAt     String
+}
+
+type ScrambleDraftAnswer {
+  exerciseId   String
+  wordOrder    String[]
+  filledBlanks FilledBlankAnswer[]
+  usedHint     Boolean             @default(false)
+  updatedAt    String
 }
 
 model ScrambleExercise {
@@ -80,6 +100,8 @@ model ScrambleExercise {
   isAvailableForPlacement Boolean @default(false)
   difficultyRating        Float?
   discriminationRating    Float?
+
+  lternatives ScrambleAlternative[]
 
   sessions ScrambleSession[]
   createdAt DateTime @default(now())
@@ -118,14 +140,28 @@ model ScrambleSession {
   @@index([userId, status])
 }
 
+enum ScrambleBlockKind {
+  PRACTICE_SET
+  EXAM
+}
+
 model ScrambleBlock {
   id          String                @id @default(auto()) @map("_id") @db.ObjectId
   userId      String                @db.ObjectId
   user        User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  level       Level
+  level       Level?
   exerciseIds String[]              @db.ObjectId
-  results     ScrambleBlockResult[]
-  status      ScrambleBlockStatus   @default(IN_PROGRESS)
+
+  draftAnswers  ScrambleDraftAnswer[]
+  draftsVersion Int                   @default(0)
+
+  results        ScrambleBlockResult[]
+  resultsVersion Int                   @default(0)
+
+  status ScrambleBlockStatus @default(IN_PROGRESS)
+  kind   ScrambleBlockKind   @default(EXAM)
+
+  totalTimeBudgetSec Int
 
   correctCount      Int?
   finalScorePercent Int?

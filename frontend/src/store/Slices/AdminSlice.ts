@@ -8,7 +8,7 @@ import {
   MultipleChoiceApi,
   writingApi,
   listeningApi,
-  scrambleApi
+  scrambleApi,
 } from '@/api';
 import type { AdminStats, ContentType, ImportLog, ImportResult } from '@/types/admin/Admin.types';
 
@@ -44,6 +44,8 @@ const ALL_TYPES: ContentType[] = [
   'multipleChoice',
   'writingPrompts',
   'listening',
+  'speakingRepeat',
+  'speakingInterview',
   'scramble',
 ];
 
@@ -99,6 +101,10 @@ export const importContent = createAsyncThunk<
           return writingApi.bulkCreatePrompts(data);
         case 'listening':
           return listeningApi.bulkCreate(data);
+        case 'speakingRepeat':
+          return adminApi.bulkSpeakingRepeat(data);
+        case 'speakingInterview':
+          return adminApi.bulkSpeakingInterview(data);
         case 'scramble':
           return scrambleApi.bulkCreate(data);
       }
@@ -159,7 +165,7 @@ export const adminSlice = createSlice({
         ].slice(0, 100);
       })
       .addCase(importContent.rejected, (state, action) => {
-        const type = action.payload?.type ?? ('exercises' as ContentType);
+        const type = action.payload?.type ?? action.meta.arg.type;
         const message = action.payload?.message ?? 'Unknown error';
         const now = new Date().toISOString();
         state.imports[type] = { status: 'error', result: null, error: message, lastImportAt: now };
@@ -191,5 +197,6 @@ export const selectImportState = (type: ContentType) => (s: AdminRootState) =>
   s.admin.imports[type];
 export const selectTotalInserted = (s: AdminRootState) =>
   s.admin.log.filter((l) => l.status === 'success').reduce((n, l) => n + l.result.inserted, 0);
+
 export const selectErrorCount = (s: AdminRootState) =>
-  s.admin.log.filter((l) => l.status === 'error').length;
+  s.admin.log.reduce((n, l) => n + (l.status === 'error' ? 1 : (l.result.errors?.length ?? 0)), 0);

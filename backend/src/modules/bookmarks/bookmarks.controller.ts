@@ -4,12 +4,18 @@ import { BookmarkType } from '@prisma/client';
 import { BookmarksService } from './bookmarks.service';
 import { ToggleBookmarkDto } from './dto/toggle-bookmark.dto';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
+import { ParseObjectIdPipe } from '../../common/pipes/parse-object-id.pipe';
 import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
 
 class GetBookmarksDto {
   @IsOptional()
-  @IsEnum(BookmarkType, { message: 'type must be a valid BookmarkType' })
+  @IsEnum(BookmarkType)
   type?: BookmarkType;
+}
+
+class GetBookmarkIdsDto {
+  @IsEnum(BookmarkType)
+  type!: BookmarkType;
 }
 
 @Controller('bookmarks')
@@ -27,8 +33,8 @@ export class BookmarksController {
   }
 
   @Get('ids')
-  getBookmarkedIds(@CurrentUser() user: JwtUserPayload, @Query('type') type: BookmarkType) {
-    return this.service.getBookmarkedIds(user.id, type);
+  getBookmarkedIds(@CurrentUser() user: JwtUserPayload, @Query() query: GetBookmarkIdsDto) {
+    return this.service.getBookmarkedIds(user.id, query.type);
   }
 
   @Post()
@@ -37,7 +43,7 @@ export class BookmarksController {
   }
 
   @Delete(':id')
-  remove(@CurrentUser() user: JwtUserPayload, @Param('id') id: string) {
+  remove(@CurrentUser() user: JwtUserPayload, @Param('id', ParseObjectIdPipe) id: string) {
     return this.service.remove(user.id, id);
   }
 }

@@ -1,0 +1,254 @@
+enum ReadingSessionStatus {
+  IN_PROGRESS
+  COMPLETED
+  ABANDONED
+}
+
+enum ReadingSessionMode {
+  PRACTICE
+  TOEFL
+}
+
+// ── Complete the Words ──
+type CompleteWordBlank {
+  index         Int
+  fullWord      String
+  visiblePrefix String
+}
+
+type CompleteWordAnswer {
+  blankIndex Int
+  typedText  String
+  isCorrect  Boolean
+}
+
+model ReadingCompleteWords {
+  id            String   @id @default(auto()) @map("_id") @db.ObjectId
+  level         Level
+  topic         String   @default("")
+  grammarTopics String[] @default([])
+
+  // fullText is the source of truth; blanks are DERIVED from it by the official C-test rule.
+  fullText String
+  blanks   CompleteWordBlank[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions ReadingCompleteWordsSession[]
+
+  @@index([level])
+  @@index([grammarTopics])
+}
+
+model ReadingCompleteWordsSession {
+  id     String               @id @default(auto()) @map("_id") @db.ObjectId
+  userId String               @db.ObjectId
+  user   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId String               @db.ObjectId
+  task   ReadingCompleteWords @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  status  ReadingSessionStatus @default(IN_PROGRESS)
+  answers CompleteWordAnswer[]
+
+  mode         ReadingSessionMode?
+  timeLimitSec Int?
+  timedOut     Boolean?
+
+  correctCount Int?
+  totalCount   Int?
+  finalScore   Int?
+  xpEarned     Int?
+  timeSpentSec Int?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId, status])
+  @@index([userId, taskId])
+  @@index([userId, mode, status])
+}
+
+// ── Read in Daily Life ──
+enum DailyLifeFormat {
+  EMAIL
+  NOTICE // poster, sign or notice
+  TEXT_CHAIN
+  SCHEDULE
+  ADVERTISEMENT
+  MEMO // not in the ETS list, kept for existing content
+  MENU
+  SOCIAL_POST
+  NEWS_ARTICLE
+  FORM
+  RECEIPT // invoice or receipt
+}
+
+// Skills named in the ETS Blueprint (Reading claim, A1-C2 descriptors)
+enum DailyLifeSkill {
+  NONLINEAR_INFO
+  MAIN_PURPOSE
+  PRONOUN_REFERENT
+  TELEGRAPHIC_LANGUAGE
+  INFORMAL_LANGUAGE
+  WRITER_PURPOSE
+  SUPPORTING_DETAIL
+  SCAN_DETAIL
+  SKIM_MAIN_IDEA
+  INFERENCE
+}
+
+type ReadingSimpleQuestion {
+  id           String
+  text         String
+  options      String[]
+  correctIndex Int
+  explanation  String?
+  skill        DailyLifeSkill?
+}
+
+type SimpleAnswerRecord {
+  questionId    String
+  selectedIndex Int
+  isCorrect     Boolean
+}
+
+model ReadingDailyLifeTask {
+  id            String          @id @default(auto()) @map("_id") @db.ObjectId
+  level         Level
+  topic         String          @default("")
+  grammarTopics String[]        @default([])
+  format        DailyLifeFormat
+
+  text      String
+  questions ReadingSimpleQuestion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions ReadingDailyLifeSession[]
+
+  @@index([level])
+  @@index([level, format])
+  @@index([grammarTopics])
+}
+
+model ReadingDailyLifeSession {
+  id     String               @id @default(auto()) @map("_id") @db.ObjectId
+  userId String               @db.ObjectId
+  user   User                 @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId String               @db.ObjectId
+  task   ReadingDailyLifeTask @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  status  ReadingSessionStatus @default(IN_PROGRESS)
+  answers SimpleAnswerRecord[]
+
+  mode         ReadingSessionMode?
+  timeLimitSec Int?
+  timedOut     Boolean?
+
+  correctCount Int?
+  totalCount   Int?
+  finalScore   Int?
+  xpEarned     Int?
+  timeSpentSec Int?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId, status])
+  @@index([userId, taskId])
+  @@index([userId, mode, status])
+}
+
+// ── Read an Academic Passage ──
+enum AcademicQuestionType {
+  MAIN_IDEA
+  DETAIL // "factual information / key details"
+  INFERENCE
+  VOCAB_IN_CONTEXT
+  RELATIONSHIP_BETWEEN_IDEAS
+  RHETORICAL_PURPOSE
+  SENTENCE_SIMPLIFICATION // LEGACY (pre-2026), not accepted for new content
+  INSERT_SENTENCE         // LEGACY (pre-2026), not accepted for new content
+}
+
+enum AcademicSubject {
+  HISTORY
+  ART_AND_MUSIC
+  BUSINESS_AND_ECONOMICS
+  LIFE_SCIENCE
+  PHYSICAL_SCIENCE
+  SOCIAL_SCIENCE
+}
+
+type AcademicPassageQuestion {
+  id          String
+  type        AcademicQuestionType
+  text        String
+  explanation String?
+
+  options      String[] @default([])
+  correctIndex Int?
+
+  sentenceToInsert   String? // LEGACY
+  correctMarkerIndex Int?    // LEGACY
+}
+
+type AcademicAnswerRecord {
+  questionId          String
+  selectedIndex       Int?
+  selectedMarkerIndex Int?
+  isCorrect           Boolean
+}
+
+model ReadingAcademicPassage {
+  id            String           @id @default(auto()) @map("_id") @db.ObjectId
+  level         Level
+  topic         String
+  subject       AcademicSubject?
+  grammarTopics String[]         @default([])
+  title         String
+
+  passage       String
+  insertMarkers Int[] @default([]) // LEGACY
+
+  questions AcademicPassageQuestion[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  sessions ReadingAcademicSession[]
+
+  @@index([level])
+  @@index([topic])
+  @@index([grammarTopics])
+}
+
+model ReadingAcademicSession {
+  id     String                 @id @default(auto()) @map("_id") @db.ObjectId
+  userId String                 @db.ObjectId
+  user   User                   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  taskId String                 @db.ObjectId
+  task   ReadingAcademicPassage @relation(fields: [taskId], references: [id], onDelete: Cascade)
+
+  status  ReadingSessionStatus   @default(IN_PROGRESS)
+  answers AcademicAnswerRecord[]
+
+  mode         ReadingSessionMode?
+  timeLimitSec Int?
+  timedOut     Boolean?
+
+  correctCount Int?
+  totalCount   Int?
+  finalScore   Int?
+  xpEarned     Int?
+  timeSpentSec Int?
+
+  startedAt   DateTime  @default(now())
+  completedAt DateTime?
+
+  @@index([userId, status])
+  @@index([userId, taskId])
+  @@index([userId, mode, status])
+}

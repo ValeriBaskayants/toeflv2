@@ -11,18 +11,14 @@ import {
   UseInterceptors,
 } from '@nestjs/common';
 import { FileInterceptor } from '@nestjs/platform-express';
-import { Level } from '@prisma/client';
 import { SpeakingRepeatService } from './speaking-repeat.service';
 import { CurrentUser } from '../auth/decorators/current-user.decorator';
 import type { JwtUserPayload } from '../auth/interfaces/jwt-payload.interface';
 import { Roles } from '../auth/decorators/roles.decorator';
 import { RolesGuard } from '../auth/guards/roles.guard';
-import {
-  BulkCreateSpeakingRepeatDto,
-  GetSpeakingSetsDto,
-} from './dto/speaking-repeat.dto';
-
-const MAX_AUDIO_BYTES = 5 * 1024 * 1024;
+import { OptionalLevelQueryDto } from '../../common/dto/optional-level-query.dto';
+import { BulkCreateSpeakingRepeatDto, GetSpeakingSetsDto } from './dto/speaking-repeat.dto';
+import { MAX_REPEAT_UPLOAD_BYTES, isAllowedAudioMime, normalizeAudioMime } from '../../constants/speaking-constants';
 
 @Controller('speaking-repeat')
 export class SpeakingRepeatController {
@@ -34,8 +30,14 @@ export class SpeakingRepeatController {
   }
 
   @Get('scenarios')
-  getScenarios(@Query('level') level?: Level) {
-    return this.service.getScenarios(level);
+  getScenarios(@Query() query: OptionalLevelQueryDto) {
+    return this.service.getScenarios(query.level);
+  }
+
+  
+  @Post('toefl-mode/start')
+  startToeflMode(@CurrentUser() user: JwtUserPayload) {
+    return this.service.startToeflModeSession(user.id);
   }
 
   @Get('sets/:id')
@@ -58,24 +60,38 @@ export class SpeakingRepeatController {
   }
 
   @Post('sessions/:sessionId/items/:itemId/answer')
-  @UseInterceptors(FileInterceptor('audio', { limits: { fileSize: MAX_AUDIO_BYTES } }))
+  @UseInterceptors(
+    FileInterceptor('audio', {
+      limits: { fileSize: MAX_REPEAT_UPLOAD_BYTES },
+      fileFilter: (_req, file, cb) => {
+        if (!isAllowedAudioMime(file.mimetype)) {
+          cb(new BadRequestException('Unsupported audio format'), false);
+          return;
+        }
+        cb(null, true);
+      },
+    }),
+  )
   submitAttempt(
     @CurrentUser() user: JwtUserPayload,
     @Param('sessionId') sessionId: string,
     @Param('itemId') itemId: string,
     @UploadedFile() file?: Express.Multer.File,
   ) {
-    // Раньше при отсутствующем/пустом файле (плохое имя поля, оборвавшийся
-    // аплоад) file.buffer в сервисе падал с TypeError вместо внятного 400.
     if (!file || file.buffer.length === 0) {
       throw new BadRequestException('Audio recording is required.');
     }
-    return this.service.submitAttempt(user.id, sessionId, itemId, file.buffer, file.mimetype);
+    return this.service.submitAttempt(user.id, sessionId, itemId, file.buffer, normalizeAudioMime(file.mimetype));
   }
 
   @Post('sessions/:sessionId/complete')
   completeSession(@CurrentUser() user: JwtUserPayload, @Param('sessionId') sessionId: string) {
     return this.service.completeSession(user.id, sessionId);
+  }
+
+  @Post('sessions/:sessionId/expire')
+  expireSession(@CurrentUser() user: JwtUserPayload, @Param('sessionId') sessionId: string) {
+    return this.service.expireSession(user.id, sessionId);
   }
 
   @Get('sessions/:sessionId/review')

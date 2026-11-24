@@ -27,6 +27,12 @@ import { AzureSpeechModule } from "./modules/azure-speech/azure-speech.module"
 import { RedisModule } from './modules/redis/redis.module';
 import { SpeakingRepeatModule } from './modules/speaking-repeat/speaking-repeat.module';
 import { SpeakingInterviewModule } from './modules/speaking-interview/speaking-interview.module';
+import { ReadingAcademicModule } from './modules/reading-academic/reading-academic.module';
+import { ReadingCompleteWordsModule } from './modules/reading-complete-words/reading-complete-words.module';
+import { ReadingDailyLifeModule } from './modules/reading-daily-life/reading-daily-life.module';
+import { GeminiWritingModule } from './modules/gemini-writin/gemini-writing.module';
+import { DeepPracticeModule } from './modules/deep-practice/deep-practice.module';
+import { ReadingBandEstimateModule } from './modules/reading-band-estimate/reading-band-estimate.module';
 
 @Module({
   imports: [
@@ -74,7 +80,13 @@ import { SpeakingInterviewModule } from './modules/speaking-interview/speaking-i
     AzureSpeechModule,
     SpeakingRepeatModule,
     RedisModule,
-    SpeakingInterviewModule
+    SpeakingInterviewModule,
+    ReadingCompleteWordsModule,
+    ReadingDailyLifeModule,
+    ReadingAcademicModule,
+    ReadingBandEstimateModule,
+    DeepPracticeModule,
+    GeminiWritingModule,
   ],
   providers: [
     { provide: APP_GUARD, useClass: ThrottlerGuard },

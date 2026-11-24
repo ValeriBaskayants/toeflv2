@@ -1,0 +1,56 @@
+enum DeepPracticeStatus {
+  DRAFT
+  PAUSED
+  SUBMITTED
+  ANALYZED
+}
+
+type DeepPracticeCard {
+  id         String
+  trigger    String
+  pattern    String 
+  coreReason String
+  category   String 
+  createdAt  String
+}
+
+model DeepPracticeTopic {
+  id          String @id @default(auto()) @map("_id") @db.ObjectId
+  core        String
+  constraint  String 
+  level       Level  @default(C1)
+
+  createdAt DateTime @default(now())
+
+  entries DeepPracticeEntry[]
+
+  @@index([level])
+}
+
+model DeepPracticeEntry {
+  id     String            @id @default(auto()) @map("_id") @db.ObjectId
+  userId String            @db.ObjectId
+  user   User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  topicId String           @db.ObjectId
+  topic   DeepPracticeTopic @relation(fields: [topicId], references: [id], onDelete: Cascade)
+
+  text   String
+  status DeepPracticeStatus @default(DRAFT)
+
+  textFinishedAt      DateTime?
+  pauseRequiredUntil  DateTime?
+
+  sentenceCount Int?
+  maxSentenceWordCount Int?
+  bannedWordsFound String[] @default([])
+  topicAdherenceOk     Boolean?
+  topicAdherenceReason String?
+
+  cards DeepPracticeCard[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([userId, status])
+  @@index([userId, topicId])
+}

@@ -1,21 +1,19 @@
 import {
   IsArray,
-  IsEnum,
+  IsIn,
   IsInt,
   IsOptional,
   IsString,
   MaxLength,
   Min,
   ValidateNested,
-} from 'class-validator';
-import { Type } from 'class-transformer';
-import { Level, WritingType } from '@prisma/client';
-import {
   Validate,
   type ValidationArguments,
   type ValidatorConstraintInterface,
   ValidatorConstraint,
 } from 'class-validator';
+import { Type } from 'class-transformer';
+import { Level, WritingType } from '@prisma/client';
 
 @ValidatorConstraint({ name: 'maxWordsAfterMinWords', async: false })
 class MaxWordsAfterMinWordsConstraint implements ValidatorConstraintInterface {
@@ -30,17 +28,33 @@ class MaxWordsAfterMinWordsConstraint implements ValidatorConstraintInterface {
   }
 }
 
+class DiscussionPeerResponseDto {
+  @IsString()
+  @MaxLength(50)
+  authorName!: string;
+
+  @IsString()
+  @MaxLength(1000)
+  text!: string;
+}
+
 export class CreateWritingPromptDto {
+  // Build a Sentence живёт в Scramble — сюда можно создавать только эти два типа.
+  @IsIn(['EMAIL', 'ACADEMIC_DISCUSSION'])
+  type!: Extract<WritingType, 'EMAIL' | 'ACADEMIC_DISCUSSION'>;
+
   @IsString()
   @MaxLength(2000)
   prompt!: string;
 
-  @IsEnum(Level)
+  @IsIn(['A1', 'A1_PLUS', 'A2', 'A2_PLUS', 'B1', 'B1_PLUS', 'B2', 'B2_PLUS', 'C1', 'C2'])
   level!: Level;
 
   @IsOptional()
-  @IsEnum(WritingType)
-  type?: WritingType;
+  @IsArray()
+  @ValidateNested({ each: true })
+  @Type(() => DiscussionPeerResponseDto)
+  discussionPeerResponses?: DiscussionPeerResponseDto[];
 
   @IsOptional()
   @IsInt()
@@ -54,14 +68,14 @@ export class CreateWritingPromptDto {
   maxWords?: number;
 
   @IsOptional()
-  @IsString()
-  @MaxLength(100)
-  topic?: string;
+  @IsInt()
+  @Min(60)
+  timeLimitSec?: number;
 
   @IsOptional()
   @IsString()
-  @MaxLength(1000)
-  instructions?: string;
+  @MaxLength(100)
+  topic?: string;
 }
 
 export class BulkCreatePromptsDto {
